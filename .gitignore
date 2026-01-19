@@ -92,7 +92,6 @@ temp/
 *.zip
 
 # Package manager
-uv.lock
 .python-version
 
 # CI/CD
