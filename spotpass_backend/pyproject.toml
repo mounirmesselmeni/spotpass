@@ -1,0 +1,105 @@
+[project]
+name = "spotpass-backend"
+version = "0.1.0"
+description = "SpotPass Backend API - Restaurant reservation and management system (FastAPI + SQLModel)"
+requires-python = ">=3.11"
+readme = "README.md"
+
+[project.scripts]
+spotpass = "cli:app"
+dev = "uvicorn main:app --reload --port 5001"
+
+dependencies = [
+    "typer[all]>=0.12.0",
+    "rich>=13.7.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "sqlmodel>=0.0.22",
+    "pydantic[email]>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-multipart>=0.0.12",
+    "redis>=6.0.0",
+    "requests>=2.32.0",
+    "phonenumbers>=9.0.15",
+    "pycountry>=24.6.1",
+    "python-dateutil>=2.9.0",
+    "pytz>=2025.2",
+    "alembic>=1.16.5",
+    "httpx>=0.28.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.27.0",
+    "factory-boy>=3.3.0",
+    "ruff>=0.8.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501", # line too long, handled by formatter
+    "B008", # do not perform function calls in argument defaults
+    "C901", # too complex
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["spotpass_backend"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--verbose",
+    "--cov=spotpass_backend",
+    "--cov-report=html",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["spotpass_backend"]
+omit = ["*/tests/*", "*/venv/*", "*/.venv/*", "*/config/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[dependency-groups]
+dev = [
+    "factory-boy>=3.3.3",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.0.0",
+    "rich>=14.2.0",
+    "ruff>=0.14.13",
+    "typer>=0.21.1",
+]

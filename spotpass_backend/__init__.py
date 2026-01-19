@@ -1,0 +1,1 @@
+"""SpotPass Backend - FastAPI Application"""
