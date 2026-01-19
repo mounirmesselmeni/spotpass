@@ -8,12 +8,12 @@ services:
       dockerfile: Dockerfile
     environment:
       ENVIRONMENT: production
-      DATABASE_URL: sqlite:///./serveme.db
+      DATABASE_URL: sqlite:///./data/serveme.db
       SECRET_KEY: ${SECRET_KEY:-your-super-secret-key-change-this}
       CORS_ORIGINS: '["https://spotpass.mounirmesselmeni.de"]'
     volumes:
       - ./spotpass_backend:/app
-      - sqlite_data:/app
+      - sqlite_data:/app/data
     networks:
       - spotpass_network
     restart: unless-stopped

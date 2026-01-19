@@ -49,6 +49,9 @@ RUN apt-get update && \
 
 WORKDIR /app
 
+# Create data directory for database
+RUN mkdir -p /app/data && chown app:app /app/data
+
 # Copy virtual environment from builder
 COPY --from=builder /home/app/venv /home/app/venv
 
