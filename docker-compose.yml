@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  # Backend API
+  backend:
+    build:
+      context: ./spotpass_backend
+      dockerfile: Dockerfile
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: sqlite:///./serveme.db
+      SECRET_KEY: ${SECRET_KEY:-your-super-secret-key-change-this}
+      CORS_ORIGINS: '["https://spotpass.mounirmesselmeni.de"]'
+    volumes:
+      - ./spotpass_backend:/app
+      - sqlite_data:/app
+    networks:
+      - spotpass_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "5001:5001"
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      VITE_API_URL: https://spotpass-backend.mounirmesselmeni.de
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - spotpass_network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "3000:3000"
+
+volumes:
+  sqlite_data:
+
+networks:
+  spotpass_network:
+    driver: bridge
