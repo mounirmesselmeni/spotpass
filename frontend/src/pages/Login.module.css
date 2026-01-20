@@ -1,0 +1,164 @@
+/**
+ * Login Page Styles
+ * Minimalist Monochrome - Oversized serif with editorial drama
+ */
+
+.loginPage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  background: var(--background);
+  position: relative;
+}
+
+.container {
+  width: 100%;
+  max-width: 600px;
+}
+
+/* ============================================================================
+   HERO SECTION - Oversized Typography
+   ============================================================================ */
+
+.hero {
+  margin-bottom: 64px;
+  text-align: left;
+}
+
+.heroTitle {
+  font-size: clamp(3rem, 10vw, 5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+  font-family: var(--font-body);
+  margin-bottom: 16px;
+}
+
+.heroSubtitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--muted-foreground);
+  font-family: var(--font-body);
+  text-transform: uppercase;
+  margin-bottom: 32px;
+}
+
+.decorative {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.rule {
+  flex: 1;
+}
+
+.square {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   FORM SECTION
+   ============================================================================ */
+
+.formSection {
+  padding: 48px 0;
+  border-top: 1px solid var(--border-light);
+}
+
+.formTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--foreground);
+  font-family: var(--font-body);
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+
+.formSubtitle {
+  font-size: 14px;
+  color: var(--muted-foreground);
+  font-family: var(--font-body);
+  line-height: 1.5;
+}
+
+/* ============================================================================
+   FOOTER
+   ============================================================================ */
+
+.footer {
+  text-align: center;
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border-light);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--muted-foreground);
+  font-family: var(--font-body);
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .loginPage {
+    padding: 32px 16px;
+  }
+  
+  .hero {
+    margin-bottom: 48px;
+  }
+  
+  .heroTitle {
+    font-size: clamp(3rem, 10vw, 5rem);
+  }
+  
+  .heroSubtitle {
+    font-size: 10px;
+  }
+  
+  .square {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .formSection {
+    padding: 32px 0;
+  }
+  
+  .formTitle {
+    font-size: 20px;
+  }
+  
+  .formSubtitle {
+    font-size: 13px;
+  }
+  
+  .footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    font-size: 9px;
+  }
+}
+
+/* ============================================================================
+   REDUCED MOTION
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

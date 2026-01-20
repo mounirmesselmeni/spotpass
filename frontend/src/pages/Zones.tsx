@@ -16,6 +16,7 @@ import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { IconPlus, IconPencil, IconTrash, IconSearch } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { useTranslation } from 'react-i18next';
 
 interface Zone {
   uuid: string;
@@ -30,6 +31,7 @@ const mockZones: Zone[] = [
 ];
 
 export function ZonesPage() {
+  const { t } = useTranslation();
   const [zones, setZones] = useState<Zone[]>(mockZones);
   const [opened, { open, close }] = useDisclosure(false);
   const [editingZone, setEditingZone] = useState<Zone | null>(null);
@@ -90,15 +92,15 @@ export function ZonesPage() {
   return (
     <Stack gap="lg">
       <Group justify="space-between">
-        <Title order={2}>Zones</Title>
+        <Title order={2}>{t('zones.title')}</Title>
         <Button leftSection={<IconPlus size={16} />} onClick={() => handleOpenModal()}>
-          New Zone
+          {t('zones.addZone')}
         </Button>
       </Group>
 
       <Card withBorder>
         <TextInput
-          placeholder="Search by zone name..."
+          placeholder={t('zones.searchPlaceholder')}
           leftSection={<IconSearch size={16} />}
           value={search}
           onChange={(e) => setSearch(e.currentTarget.value)}
@@ -201,12 +203,16 @@ export function ZonesPage() {
         </Box>
       </Card>
 
-      <Modal opened={opened} onClose={close} title={editingZone ? 'Edit Zone' : 'New Zone'}>
+      <Modal
+        opened={opened}
+        onClose={close}
+        title={editingZone ? t('zones.editZone') : t('zones.newZone')}
+      >
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack>
             <TextInput
-              label="Zone Name"
-              placeholder="Main Hall"
+              label={t('zones.zoneName')}
+              placeholder={t('zones.zoneNamePlaceholder')}
               required
               {...form.getInputProps('name')}
             />

@@ -281,16 +281,16 @@ class TestTableManagementIntegration:
         assert response.status_code == 200
         tables = response.json()
 
-        # Both tables should be returned
-        table1_data = next((t for t in tables if t["name"] == "Table 1"), None)
+        # Only available tables should be returned (Table 2)
+        # Table 1 is occupied so it should NOT be in the results
+        assert len(tables) == 1
         table2_data = next((t for t in tables if t["name"] == "Table 2"), None)
-
-        assert table1_data is not None
         assert table2_data is not None
-        # Table 1 should be marked as not available
-        assert table1_data["is_currently_available"] is False
-        # Table 2 should be available
         assert table2_data["is_currently_available"] is True
+
+        # Verify Table 1 is NOT in the results (it's occupied)
+        table1_data = next((t for t in tables if t["name"] == "Table 1"), None)
+        assert table1_data is None
 
     def test_time_slots_with_multiple_reservations(
         self, client: TestClient, session: Session, auth_headers_staff
@@ -374,9 +374,7 @@ class TestTableManagementIntegration:
         TableFactory(
             session=session, establishment=establishment, zone=terrace, name="Terrace Table"
         )
-        TableFactory(
-            session=session, establishment=establishment, zone=indoor, name="Indoor Table"
-        )
+        TableFactory(session=session, establishment=establishment, zone=indoor, name="Indoor Table")
 
         session.commit()
 

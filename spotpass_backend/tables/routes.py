@@ -13,6 +13,8 @@ from tables.schemas import (
     TableCreate,
     TableRead,
     TableUpdate,
+    TimeSlotRead,
+    TimeSlotReservationInfo,
     ZoneCreate,
     ZoneRead,
     ZoneUpdate,
@@ -198,7 +200,7 @@ def delete_table(table_id: uuid_lib.UUID, session: DatabaseSession, token_payloa
     return None
 
 
-@tables_router.get("/{table_id}/time-slots", response_model=list[dict])
+@tables_router.get("/{table_id}/time-slots", response_model=list[TimeSlotRead])
 def get_table_time_slots(
     table_id: uuid_lib.UUID, date: date, session: DatabaseSession, token_payload: StaffUser
 ):
@@ -256,23 +258,18 @@ def get_table_time_slots(
                 # Get client info
                 client = session.get(Client, occupied_reservation.client_id)
                 time_slots.append(
-                    {
-                        "time": time_str,
-                        "status": "occupied",
-                        "reservation": {
-                            "reference": occupied_reservation.reference,
-                            "guests": occupied_reservation.number_of_guests,
-                            "client_name": client.full_name if client else "Unknown",
-                        },
-                    }
+                    TimeSlotRead(
+                        time=time_str,
+                        status="occupied",
+                        reservation=TimeSlotReservationInfo(
+                            reference=occupied_reservation.reference,
+                            guests=occupied_reservation.number_of_guests,
+                            client_name=client.full_name if client else "Unknown",
+                        ),
+                    )
                 )
             else:
-                time_slots.append(
-                    {
-                        "time": time_str,
-                        "status": "available",
-                    }
-                )
+                time_slots.append(TimeSlotRead(time=time_str, status="available", reservation=None))
 
     return time_slots
 

@@ -74,6 +74,12 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6, max_length=32)
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [{"email": "john.doe@restaurant.com", "password": "SecurePass123"}]
+        }
+    }
+
 
 class LoginResponse(BaseModel):
     """Schema for login response with access and refresh tokens"""
@@ -84,6 +90,30 @@ class LoginResponse(BaseModel):
     expires_in: int  # seconds until access token expires
     expires_at: datetime  # exact expiration datetime
     user: "UserInfo"
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "token_type": "bearer",
+                    "expires_in": 1800,
+                    "expires_at": "2024-12-25T20:30:00",
+                    "user": {
+                        "id": 1,
+                        "email": "john.doe@restaurant.com",
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "full_name": "John Doe",
+                        "user_type": "staff",
+                        "role": "manager",
+                        "account_id": 1,
+                    },
+                }
+            ]
+        }
+    }
 
 
 class UserInfo(BaseModel):
@@ -123,3 +153,18 @@ class DashboardStats(BaseModel):
     pending_reservations: int
     todays_reservations: int
     upcoming_reservations: int
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "total_clients": 150,
+                    "total_tables": 20,
+                    "total_reservations": 450,
+                    "pending_reservations": 12,
+                    "todays_reservations": 8,
+                    "upcoming_reservations": 25,
+                }
+            ]
+        }
+    }

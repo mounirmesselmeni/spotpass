@@ -81,8 +81,8 @@ export function TablesPage() {
   // Filter states
   const [zoneFilter, setZoneFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [dateFrom, setDateFrom] = useState<Date | null>(null);
-  const [dateTo, setDateTo] = useState<Date | null>(null);
+  const [dateFrom, setDateFrom] = useState<string | null>(null);
+  const [dateTo, setDateTo] = useState<string | null>(null);
   const [nameSearch, setNameSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -91,7 +91,7 @@ export function TablesPage() {
   const [editingTable, setEditingTable] = useState<any | null>(null);
   const [timeSlotsModalOpen, setTimeSlotsModalOpen] = useState(false);
   const [selectedTableForSlots, setSelectedTableForSlots] = useState<any | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
@@ -104,8 +104,8 @@ export function TablesPage() {
     zone_id: zoneFilter || undefined,
     is_available:
       statusFilter === 'available' ? true : statusFilter === 'unavailable' ? false : undefined,
-    date_from: dateFrom?.toISOString().split('T')[0],
-    date_to: dateTo?.toISOString().split('T')[0],
+    date_from: dateFrom || undefined,
+    date_to: dateTo || undefined,
     name: nameSearch || undefined,
   });
 
@@ -254,12 +254,12 @@ export function TablesPage() {
     });
   };
 
-  const fetchTimeSlots = async (tableId: string, date: Date) => {
+  const fetchTimeSlots = async (tableId: string, date: string) => {
     setLoadingSlots(true);
     try {
       const response = await axios.get(`/api/staff/tables/${tableId}/time-slots`, {
         params: {
-          date: date.toISOString().split('T')[0],
+          date: date,
         },
       });
       setTimeSlots(response.data);

@@ -267,44 +267,49 @@ export function ClientsPage() {
       <Modal
         opened={opened}
         onClose={close}
-        title={editingClient ? 'Edit Client' : 'New Client'}
+        title={editingClient ? t('clients.editClient') : t('clients.addClient')}
         size="lg"
       >
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack>
             <TextInput
-              label="Full Name"
-              placeholder="Enter full name"
+              label={t('clients.fullName')}
+              placeholder={t('clients.enterFullName')}
               required
               {...form.getInputProps('full_name')}
             />
 
             <TextInput
-              label="Email"
-              placeholder="email@example.com"
+              label={t('clients.email')}
+              placeholder={t('clients.emailPlaceholder')}
               required
               {...form.getInputProps('email')}
             />
 
             <TextInput
-              label="Phone Number"
-              placeholder="+1234567890"
+              label={t('clients.phoneNumber')}
+              placeholder={t('clients.phonePlaceholder')}
               required
               {...form.getInputProps('phone_number')}
             />
 
-            <Switch label="VIP Client" {...form.getInputProps('is_vip', { type: 'checkbox' })} />
+            <Switch
+              label={t('clients.vipClient')}
+              {...form.getInputProps('is_vip', { type: 'checkbox' })}
+            />
 
             <Switch
-              label="Blacklisted"
+              label={t('clients.blacklisted')}
               {...form.getInputProps('is_blacklisted', { type: 'checkbox' })}
             />
 
             <Group justify="flex-end" mt="md">
               <Button variant="light" onClick={close}>
-                Cancel
+                {t('common.cancel')}
               </Button>
-              <Button type="submit">{editingClient ? 'Update' : 'Create'}</Button>
+              <Button type="submit">
+                {editingClient ? t('common.update') : t('common.create')}
+              </Button>
             </Group>
           </Stack>
         </form>

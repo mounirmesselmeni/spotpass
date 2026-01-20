@@ -50,11 +50,11 @@ A modern, full-stack restaurant reservation and management system built with Fas
 
 ## 📋 Prerequisites
 
-- **Node.js** 18+ (for frontend)
+- **Node.js** 20+ (for frontend)
 - **Python** 3.11+ (for backend)
 - **uv** (recommended for Python dependency management)
 - **Yarn** 4+ (for frontend package management)
-- **Redis** (optional, for caching)
+- **Docker & Docker Compose** (for containerized deployment)
 
 ## 🚀 Quick Start
 
@@ -222,29 +222,159 @@ uv run pytest --cov=.           # With coverage
 
 ## 🚀 Deployment
 
-### Production Backend
+### Docker Compose (Recommended)
+
+#### Production Setup
+
+1. **Clone and configure:**
+```bash
+git clone <your-repo-url>
+cd serveme-be
+
+# Copy environment file and configure
+cp .env.example .env
+# Edit .env with your production values
+```
+
+2. **Start production services:**
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+```
+
+3. **Initialize database (first time only):**
+```bash
+docker-compose exec backend uv run python -m cli init-db
+```
+
+#### Development Setup
+
+```bash
+# Start development services with hot reload
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+# Frontend will be available at http://localhost:3000
+# Backend API at http://localhost:5001
+```
+
+#### Using Makefile (Convenient Commands)
+
+```bash
+# Build all services
+make build
+
+# Start production
+make prod
+
+# Start development
+make dev
+
+# View logs
+make logs
+
+# Run tests
+make test
+
+# Clean up
+make clean
+```
+
+#### Nginx Reverse Proxy Configuration
+
+1. **Install nginx on your server:**
+```bash
+sudo apt update && sudo apt install nginx
+```
+
+2. **Copy nginx configuration:**
+```bash
+sudo cp nginx.conf /etc/nginx/sites-available/spotpass
+sudo ln -s /etc/nginx/sites-available/spotpass /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+3. **SSL Configuration (Let's Encrypt):**
+```bash
+# Install certbot
+sudo apt install certbot python3-certbot-nginx
+
+# Get SSL certificates
+sudo certbot --nginx -d spotpass.mounirmesselmeni.de -d spotpass-backend.mounirmesselmeni.de
+
+# Certificates will auto-renew
+```
+
+### Manual Production Deployment
+
+#### Backend Deployment
 
 ```bash
 cd spotpass_backend
 
+# Install uv
+pip install uv
+
+# Install dependencies
+uv pip install -e ".[dev]"
+
 # Set environment variables
 export ENVIRONMENT=production
-export DATABASE_URL="postgresql://user:pass@localhost/db"
+export DATABASE_URL="postgresql://user:pass@host:port/db"
+export SECRET_KEY="your-secret-key"
 
 # Run with gunicorn
 uv run gunicorn spotpass_backend.main:app -w 4 -k uvicorn.workers.UvicornWorker
 ```
 
-### Production Frontend
+#### Frontend Deployment
 
 ```bash
 cd frontend
 
+# Install dependencies
+yarn install
+
+# Generate API client
+yarn generate
+
 # Build for production
 yarn build
 
-# Serve static files (nginx, etc.)
+# Serve with nginx (copy dist/ to web server)
 ```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+**Production (.env):**
+```bash
+# Database
+DB_PASSWORD=your-secure-password
+
+# Security
+SECRET_KEY=your-super-secret-key-change-this
+
+# Optional Redis
+REDIS_HOST=redis
+REDIS_PORT=6379
+```
+
+**Frontend (.env):**
+```bash
+VITE_API_URL=https://spotpass-backend.mounirmesselmeni.de
+```
+
+### Domain Configuration
+
+- **Frontend**: `spotpass.mounirmesselmeni.de`
+- **Backend API**: `spotpass-backend.mounirmesselmeni.de`
+
+Make sure both domains point to your server's IP address.
 
 ### Environment Variables
 

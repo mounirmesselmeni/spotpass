@@ -14,6 +14,7 @@ from clients.models import Client  # noqa: F401
 from clients.routes import router as clients_router
 from core.config import settings
 from core.database import create_db_and_tables
+from core.schemas import HealthResponse, RootResponse
 from establishments.models import Establishment  # noqa: F401
 from reservations.models import Reservation  # noqa: F401
 from reservations.routes import (
@@ -86,20 +87,24 @@ app.include_router(client_reservations_router)
 app.include_router(messenger_router)
 
 
-@app.get("/", tags=["Health"])
+@app.get("/", tags=["Health"], response_model=RootResponse)
 def root():
     """Root endpoint - health check"""
-    return {"message": "SpotPass Backend API", "version": "1.0.0", "status": "healthy"}
+    from core.schemas import RootResponse
+
+    return RootResponse(message="SpotPass Backend API", version="1.0.0", status="healthy")
 
 
-@app.get("/health", tags=["Health"])
+@app.get("/health", tags=["Health"], response_model=HealthResponse)
 def health_check():
     """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "database": "connected",
-        "redis": "connected" if settings.redis_host else "not configured",
-    }
+    from core.schemas import HealthResponse
+
+    return HealthResponse(
+        status="healthy",
+        database="connected",
+        redis="connected" if settings.redis_host else "not configured",
+    )
 
 
 if __name__ == "__main__":

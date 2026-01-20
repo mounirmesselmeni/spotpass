@@ -20,6 +20,7 @@ import {
   Modal,
   NumberInput,
   Select,
+  SegmentedControl,
   Stack,
   Table,
   Text,
@@ -33,20 +34,33 @@ import { DatePickerInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconEye, IconPlus, IconSearch } from '@tabler/icons-react';
+import {
+  IconEye,
+  IconPlus,
+  IconSearch,
+  IconList,
+  IconCalendar,
+  IconTable as IconTableView,
+  IconFilter,
+} from '@tabler/icons-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { ReservationWizard } from '@/components/ReservationWizard';
+import { ReservationCalendar } from '@/components/ReservationCalendar';
+import { TableAvailabilityGrid } from '@/components/TableAvailabilityGrid';
 
 export function ReservationsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [opened, { open, close }] = useDisclosure(false);
+  const [wizardOpened, { open: openWizard, close: closeWizard }] = useDisclosure(false);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'tables'>('list');
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [dateFrom, setDateFrom] = useState<Date | null>(null);
-  const [dateTo, setDateTo] = useState<Date | null>(null);
+  const [dateFrom, setDateFrom] = useState<string | null>(null);
+  const [dateTo, setDateTo] = useState<string | null>(null);
   const [keyword, setKeyword] = useState('');
 
   // Client search state
@@ -60,8 +74,8 @@ export function ReservationsPage() {
     refetch,
   } = useListReservationsApiStaffReservationsGet({
     status: statusFilter || undefined,
-    date_from: dateFrom?.toISOString().split('T')[0],
-    date_to: dateTo?.toISOString().split('T')[0],
+    date_from: dateFrom || undefined,
+    date_to: dateTo || undefined,
     keyword: keyword || undefined,
   });
 
@@ -225,223 +239,291 @@ export function ReservationsPage() {
   }
 
   return (
-    <Box p="xl">
+    <Box p={{ base: 'md', sm: 'xl' }}>
       <Stack gap="xl">
-        <Group justify="space-between">
-          <Title order={1}>{t('reservations.title')}</Title>
-          <Button leftSection={<IconPlus size={16} />} onClick={open}>
-            {t('reservations.newReservation', 'New Reservation')}
-          </Button>
+        <Group justify="space-between" align="flex-start" wrap="wrap">
+          <div>
+            <Title order={1} mb="xs">
+              {t('reservations.title')}
+            </Title>
+            <Text c="dimmed" size="sm" mb="md">
+              {t('reservations.subtitle', 'Manage and track all restaurant reservations')}
+            </Text>
+            <SegmentedControl
+              value={viewMode}
+              onChange={(value: any) => setViewMode(value)}
+              data={[
+                { label: t('common.list'), value: 'list' },
+                { label: 'Calendrier', value: 'calendar' },
+                { label: 'Tables', value: 'tables' },
+              ]}
+              aria-label="Mode d'affichage des réservations"
+            />
+          </div>
+          <Group gap="xs" wrap="wrap">
+            <Button
+              variant="light"
+              leftSection={<IconPlus size={16} />}
+              onClick={open}
+              aria-label={t('reservations.newReservation')}
+            >
+              {t('reservations.newReservation')}
+            </Button>
+            <Button
+              leftSection={<IconPlus size={16} />}
+              onClick={openWizard}
+              aria-label="Nouvelle réservation avec assistant"
+            >
+              Nouvelle (Assistant)
+            </Button>
+          </Group>
         </Group>
 
-        {/* Filters */}
-        <Card withBorder>
-          <Grid>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Select
-                label={t('reservations.status', 'Status')}
-                placeholder={t('common.all', 'All')}
-                value={statusFilter}
-                onChange={setStatusFilter}
-                clearable
-                data={[
-                  { value: 'pending', label: t('reservations.pending', 'Pending') },
-                  { value: 'accepted', label: t('reservations.accepted', 'Accepted') },
-                  { value: 'refused', label: t('reservations.refused', 'Refused') },
-                  { value: 'canceled', label: t('reservations.canceled', 'Canceled') },
-                ]}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <DatePickerInput
-                label={t('common.from', 'From')}
-                placeholder={t('common.selectDate', 'Select date')}
-                value={dateFrom}
-                onChange={setDateFrom}
-                clearable
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <DatePickerInput
-                label={t('common.to', 'To')}
-                placeholder={t('common.selectDate', 'Select date')}
-                value={dateTo}
-                onChange={setDateTo}
-                clearable
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <TextInput
-                label={t('common.search', 'Search')}
-                placeholder={t(
-                  'reservations.searchPlaceholder',
-                  'Name, email, phone, reference...'
-                )}
-                leftSection={<IconSearch size={16} />}
-                value={keyword}
-                onChange={(e) => setKeyword(e.currentTarget.value)}
-              />
-            </Grid.Col>
-          </Grid>
-        </Card>
+        {/* Filters - Only show for list view */}
+        {viewMode === 'list' && (
+          <Card withBorder>
+            <Group justify="space-between" align="center" mb="md">
+              <Text fw={600} size="sm" tt="uppercase" style={{ letterSpacing: '0.1em' }}>
+                {t('common.filters', 'Filters')}
+              </Text>
+              {(statusFilter || dateFrom || dateTo || keyword) && (
+                <Button
+                  variant="subtle"
+                  size="xs"
+                  leftSection={<IconFilter size={14} />}
+                  onClick={() => {
+                    setStatusFilter(null);
+                    setDateFrom(null);
+                    setDateTo(null);
+                    setKeyword('');
+                  }}
+                >
+                  {t('common.clearFilters', 'Clear filters')}
+                </Button>
+              )}
+            </Group>
+            <Grid>
+              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                <Select
+                  label={t('reservations.status', 'Status')}
+                  placeholder={t('common.all', 'All')}
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  clearable
+                  data={[
+                    { value: 'pending', label: t('reservations.pending', 'Pending') },
+                    { value: 'accepted', label: t('reservations.accepted', 'Accepted') },
+                    { value: 'refused', label: t('reservations.refused', 'Refused') },
+                    { value: 'canceled', label: t('reservations.canceled', 'Canceled') },
+                  ]}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                <DatePickerInput
+                  label={t('common.from', 'From')}
+                  placeholder={t('common.selectDate', 'Select date')}
+                  value={dateFrom}
+                  onChange={setDateFrom}
+                  clearable
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                <DatePickerInput
+                  label={t('common.to', 'To')}
+                  placeholder={t('common.selectDate', 'Select date')}
+                  value={dateTo}
+                  onChange={setDateTo}
+                  clearable
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                <TextInput
+                  label={t('common.search', 'Search')}
+                  placeholder={t(
+                    'reservations.searchPlaceholder',
+                    'Name, email, phone, reference...'
+                  )}
+                  leftSection={<IconSearch size={16} />}
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.currentTarget.value)}
+                />
+              </Grid.Col>
+            </Grid>
+          </Card>
+        )}
+
+        {/* Calendar View */}
+        {viewMode === 'calendar' && (
+          <ReservationCalendar
+            onReservationClick={(reservation) => navigate(`/reservations/${reservation.id}`)}
+          />
+        )}
+
+        {/* Table Availability View */}
+        {viewMode === 'tables' && <TableAvailabilityGrid />}
 
         {/* Reservations Table */}
-        <Card withBorder>
-          {reservations && reservations.length > 0 ? (
-            <>
-              {/* Desktop Table */}
-              <Box visibleFrom="md">
-                <Table striped highlightOnHover>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>{t('reservations.reference', 'Reference')}</Table.Th>
-                      <Table.Th>{t('reservations.client', 'Client')}</Table.Th>
-                      <Table.Th>{t('reservations.date', 'Date')}</Table.Th>
-                      <Table.Th>{t('reservations.time', 'Time')}</Table.Th>
-                      <Table.Th>{t('reservations.guests', 'Guests')}</Table.Th>
-                      <Table.Th>{t('reservations.status', 'Status')}</Table.Th>
-                      <Table.Th>{t('common.actions', 'Actions')}</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {reservations.map((reservation: any) => (
-                      <Table.Tr
-                        key={reservation.id}
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => navigate(`/reservations/${reservation.id}`)}
-                      >
-                        <Table.Td>
-                          <Text fw={600}>{reservation.reference}</Text>
-                        </Table.Td>
-                        <Table.Td>
+        {viewMode === 'list' && (
+          <Card withBorder>
+            {reservations && reservations.length > 0 ? (
+              <>
+                {/* Desktop Table */}
+                <Box visibleFrom="md">
+                  <Table striped highlightOnHover>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>{t('reservations.reference', 'Reference')}</Table.Th>
+                        <Table.Th>{t('reservations.client', 'Client')}</Table.Th>
+                        <Table.Th>{t('reservations.date', 'Date')}</Table.Th>
+                        <Table.Th>{t('reservations.time', 'Time')}</Table.Th>
+                        <Table.Th>{t('reservations.guests', 'Guests')}</Table.Th>
+                        <Table.Th>{t('reservations.status', 'Status')}</Table.Th>
+                        <Table.Th>{t('common.actions', 'Actions')}</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {reservations.map((reservation: any) => (
+                        <Table.Tr
+                          key={reservation.id}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => navigate(`/reservations/${reservation.id}`)}
+                        >
+                          <Table.Td>
+                            <Text fw={600}>{reservation.reference}</Text>
+                          </Table.Td>
+                          <Table.Td>
+                            <Group gap="xs" wrap="nowrap">
+                              <Text>{reservation.client?.full_name || 'Unknown'}</Text>
+                              {reservation.client?.is_vip && (
+                                <Badge color="yellow" size="sm">
+                                  {t('clients.vip', 'VIP')}
+                                </Badge>
+                              )}
+                              {reservation.client?.is_blacklisted && (
+                                <Badge color="red" size="sm">
+                                  {t('clients.blacklisted', 'Blacklisté')}
+                                </Badge>
+                              )}
+                            </Group>
+                          </Table.Td>
+                          <Table.Td>
+                            {new Date(reservation.reservation_date).toLocaleDateString('fr-FR')}
+                          </Table.Td>
+                          <Table.Td>{reservation.reservation_time || '-'}</Table.Td>
+                          <Table.Td>
+                            <Badge variant="light">{reservation.number_of_guests}</Badge>
+                          </Table.Td>
+                          <Table.Td>
+                            <Badge color={getStatusColor(reservation.status)}>
+                              {String(t(`reservations.${reservation.status}`, reservation.status))}
+                            </Badge>
+                          </Table.Td>
+                          <Table.Td onClick={(e) => e.stopPropagation()}>
+                            <Tooltip label={t('common.details', 'Details')}>
+                              <ActionIcon
+                                variant="light"
+                                onClick={() => navigate(`/reservations/${reservation.id}`)}
+                              >
+                                <IconEye size={18} />
+                              </ActionIcon>
+                            </Tooltip>
+                          </Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Box>
+
+                {/* Mobile Card Layout */}
+                <Stack gap="sm" hiddenFrom="md">
+                  {reservations.map((reservation: any) => (
+                    <Card
+                      key={reservation.id}
+                      withBorder
+                      padding="sm"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => navigate(`/reservations/${reservation.id}`)}
+                    >
+                      <Group justify="space-between" mb="xs">
+                        <Text fw={600}>{reservation.reference}</Text>
+                        <Badge color={getStatusColor(reservation.status)} size="sm">
+                          {String(t(`reservations.${reservation.status}`, reservation.status))}
+                        </Badge>
+                      </Group>
+
+                      <Stack gap="xs">
+                        <Group gap="xs" wrap="wrap">
+                          <Text size="sm" c="dimmed">
+                            {t('reservations.client', 'Client')}:
+                          </Text>
                           <Group gap="xs" wrap="nowrap">
-                            <Text>{reservation.client?.full_name || 'Unknown'}</Text>
+                            <Text size="sm" fw={500}>
+                              {reservation.client?.full_name || 'Unknown'}
+                            </Text>
                             {reservation.client?.is_vip && (
-                              <Badge color="yellow" size="sm">
+                              <Badge color="yellow" size="xs">
                                 {t('clients.vip', 'VIP')}
                               </Badge>
                             )}
                             {reservation.client?.is_blacklisted && (
-                              <Badge color="red" size="sm">
+                              <Badge color="red" size="xs">
                                 {t('clients.blacklisted', 'Blacklisté')}
                               </Badge>
                             )}
                           </Group>
-                        </Table.Td>
-                        <Table.Td>
-                          {new Date(reservation.reservation_date).toLocaleDateString('fr-FR')}
-                        </Table.Td>
-                        <Table.Td>{reservation.reservation_time || '-'}</Table.Td>
-                        <Table.Td>
-                          <Badge variant="light">{reservation.number_of_guests}</Badge>
-                        </Table.Td>
-                        <Table.Td>
-                          <Badge color={getStatusColor(reservation.status)}>
-                            {String(t(`reservations.${reservation.status}`, reservation.status))}
-                          </Badge>
-                        </Table.Td>
-                        <Table.Td onClick={(e) => e.stopPropagation()}>
+                        </Group>
+
+                        <Group gap="xs" wrap="wrap">
+                          <Text size="sm" c="dimmed">
+                            {t('reservations.date', 'Date')}:
+                          </Text>
+                          <Text size="sm">
+                            {new Date(reservation.reservation_date).toLocaleDateString('fr-FR')}
+                          </Text>
+                          <Text size="sm" c="dimmed">
+                            {t('reservations.time', 'Time')}:
+                          </Text>
+                          <Text size="sm">{reservation.reservation_time || '-'}</Text>
+                        </Group>
+
+                        <Group justify="space-between" align="center">
+                          <Group gap="xs">
+                            <Text size="sm" c="dimmed">
+                              {t('reservations.guests', 'Guests')}:
+                            </Text>
+                            <Badge variant="light" size="sm">
+                              {reservation.number_of_guests}
+                            </Badge>
+                          </Group>
                           <Tooltip label={t('common.details', 'Details')}>
                             <ActionIcon
                               variant="light"
-                              onClick={() => navigate(`/reservations/${reservation.id}`)}
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/reservations/${reservation.id}`);
+                              }}
                             >
-                              <IconEye size={18} />
+                              <IconEye size={16} />
                             </ActionIcon>
                           </Tooltip>
-                        </Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </Box>
-
-              {/* Mobile Card Layout */}
-              <Stack gap="sm" hiddenFrom="md">
-                {reservations.map((reservation: any) => (
-                  <Card
-                    key={reservation.id}
-                    withBorder
-                    padding="sm"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => navigate(`/reservations/${reservation.id}`)}
-                  >
-                    <Group justify="space-between" mb="xs">
-                      <Text fw={600}>{reservation.reference}</Text>
-                      <Badge color={getStatusColor(reservation.status)} size="sm">
-                        {String(t(`reservations.${reservation.status}`, reservation.status))}
-                      </Badge>
-                    </Group>
-
-                    <Stack gap="xs">
-                      <Group gap="xs" wrap="wrap">
-                        <Text size="sm" c="dimmed">
-                          {t('reservations.client', 'Client')}:
-                        </Text>
-                        <Group gap="xs" wrap="nowrap">
-                          <Text size="sm" fw={500}>
-                            {reservation.client?.full_name || 'Unknown'}
-                          </Text>
-                          {reservation.client?.is_vip && (
-                            <Badge color="yellow" size="xs">
-                              {t('clients.vip', 'VIP')}
-                            </Badge>
-                          )}
-                          {reservation.client?.is_blacklisted && (
-                            <Badge color="red" size="xs">
-                              {t('clients.blacklisted', 'Blacklisté')}
-                            </Badge>
-                          )}
                         </Group>
-                      </Group>
-
-                      <Group gap="xs" wrap="wrap">
-                        <Text size="sm" c="dimmed">
-                          {t('reservations.date', 'Date')}:
-                        </Text>
-                        <Text size="sm">
-                          {new Date(reservation.reservation_date).toLocaleDateString('fr-FR')}
-                        </Text>
-                        <Text size="sm" c="dimmed">
-                          {t('reservations.time', 'Time')}:
-                        </Text>
-                        <Text size="sm">{reservation.reservation_time || '-'}</Text>
-                      </Group>
-
-                      <Group justify="space-between" align="center">
-                        <Group gap="xs">
-                          <Text size="sm" c="dimmed">
-                            {t('reservations.guests', 'Guests')}:
-                          </Text>
-                          <Badge variant="light" size="sm">
-                            {reservation.number_of_guests}
-                          </Badge>
-                        </Group>
-                        <Tooltip label={t('common.details', 'Details')}>
-                          <ActionIcon
-                            variant="light"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/reservations/${reservation.id}`);
-                            }}
-                          >
-                            <IconEye size={16} />
-                          </ActionIcon>
-                        </Tooltip>
-                      </Group>
-                    </Stack>
-                  </Card>
-                ))}
-              </Stack>
-            </>
-          ) : (
-            <Text c="dimmed" ta="center" py="xl">
-              {t('reservations.noReservations', 'No reservations found')}
-            </Text>
-          )}
-        </Card>
+                      </Stack>
+                    </Card>
+                  ))}
+                </Stack>
+              </>
+            ) : (
+              <Text c="dimmed" ta="center" py="xl">
+                {t('reservations.noReservations', 'No reservations found')}
+              </Text>
+            )}
+          </Card>
+        )}
       </Stack>
+
+      {/* Reservation Wizard */}
+      <ReservationWizard opened={wizardOpened} onClose={closeWizard} onSuccess={refetch} />
 
       {/* New Reservation Modal */}
       <Modal
@@ -540,7 +622,7 @@ export function ReservationsPage() {
               <Grid.Col span={6}>
                 <TextInput
                   label={t('reservations.time', 'Heure')}
-                  placeholder="HH:MM"
+                  placeholder={t('common.timeFormat')}
                   type="time"
                   {...form.getInputProps('reservation_time')}
                 />

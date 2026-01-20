@@ -34,8 +34,7 @@ export const useAuthStore = create<AuthState>()(
       expiresAt: null,
 
       setAuth: (accessToken, refreshToken, user, expiresAt) => {
-        localStorage.setItem('access_token', accessToken);
-        localStorage.setItem('refresh_token', refreshToken);
+        // Zustand persist middleware handles localStorage automatically
         set({
           accessToken,
           refreshToken,
@@ -46,13 +45,12 @@ export const useAuthStore = create<AuthState>()(
       },
 
       updateAccessToken: (accessToken, expiresAt) => {
-        localStorage.setItem('access_token', accessToken);
+        // Zustand persist middleware handles localStorage automatically
         set({ accessToken, expiresAt });
       },
 
       logout: () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        // Zustand persist middleware handles localStorage cleanup automatically
         set({
           accessToken: null,
           refreshToken: null,

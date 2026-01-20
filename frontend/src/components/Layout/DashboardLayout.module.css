@@ -1,0 +1,161 @@
+/**
+ * DashboardLayout Styles
+ * Minimalist Monochrome - Editorial precision with sharp edges
+ */
+
+/* ============================================================================
+   APP SHELL
+   ============================================================================ */
+
+.appShell {
+  background: var(--background);
+}
+
+/* ============================================================================
+   HEADER
+   ============================================================================ */
+
+.header {
+  background: var(--background);
+  border-bottom: 2px solid var(--border);
+}
+
+.logo {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--foreground);
+  font-family: var(--font-body);
+}
+
+.avatarButton {
+  transition: all var(--timing-fast);
+  border: 1px solid var(--border);
+}
+
+.avatarButton:hover {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.avatar {
+  background: var(--foreground);
+  color: var(--background);
+  font-weight: 700;
+  font-family: var(--font-body);
+}
+
+/* ============================================================================
+   MENU DROPDOWN
+   ============================================================================ */
+
+.menuDropdown {
+  background: var(--background);
+  border: 2px solid var(--border);
+}
+
+.logoutItem {
+  color: var(--foreground);
+  transition: all var(--timing-fast);
+  font-family: var(--font-body);
+}
+
+.logoutItem:hover {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+/* ============================================================================
+   NAVBAR
+   ============================================================================ */
+
+.navbar {
+  background: var(--background);
+  border-right: 2px solid var(--border);
+}
+
+.navContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.navLink {
+  padding: 16px;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  transition: all var(--timing-fast);
+  border-left: 4px solid transparent;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.navLink:hover {
+  background: var(--muted);
+  border-left-color: var(--border);
+}
+
+.navLinkActive {
+  background: var(--foreground);
+  color: var(--background);
+  border-left-color: var(--foreground);
+  border-bottom-color: var(--foreground);
+}
+
+.navLinkActive:hover {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+/* ============================================================================
+   MAIN CONTENT AREA
+   ============================================================================ */
+
+.main {
+  background: var(--background);
+  min-height: calc(100vh - 72px);
+}
+
+/* ============================================================================
+   MOBILE RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 16px;
+    border-bottom-width: 1px;
+  }
+  
+  .logo {
+    font-size: 16px;
+  }
+  
+  .navbar {
+    background: var(--background);
+    border-right-width: 1px;
+  }
+  
+  .navLink {
+    padding: 14px;
+    font-size: 12px;
+  }
+  
+  .main {
+    padding: 16px;
+  }
+}
+
+/* ============================================================================
+   REDUCED MOTION
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .avatarButton,
+  .navLink,
+  .logoutItem {
+    transition: none;
+  }
+}

@@ -343,7 +343,7 @@ export function ReservationDetailsPage() {
   const canCancel = ['pending', 'accepted'].includes(reservation.status);
 
   return (
-    <Box p="xl">
+    <Box p={{ base: 'md', sm: 'xl' }}>
       <Stack gap="xl">
         {/* Header */}
         <Group justify="space-between">

@@ -870,18 +870,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mantine/dates@npm:^7.4.2":
-  version: 7.17.8
-  resolution: "@mantine/dates@npm:7.17.8"
+"@mantine/dates@npm:^8.3.13":
+  version: 8.3.13
+  resolution: "@mantine/dates@npm:8.3.13"
   dependencies:
     clsx: "npm:^2.1.1"
   peerDependencies:
-    "@mantine/core": 7.17.8
-    "@mantine/hooks": 7.17.8
+    "@mantine/core": 8.3.13
+    "@mantine/hooks": 8.3.13
     dayjs: ">=1.0.0"
     react: ^18.x || ^19.x
     react-dom: ^18.x || ^19.x
-  checksum: d6129fdc5f3439aec0c7b322a9ecbc96321dcd2094f94afd2d6be02ebfa094c07c5c975c601af7e578290b33fb1e7c491fa335a988c4892bd17440aff909be5f
+  checksum: c20f7ce33ff701c845851cb5870889e544efb6c3f7eed5ce33279986414055932dbdef289afadfb20cfb6e41e612d9c0a07a3cd4699e625c2ee22b7bc740403c
   languageName: node
   linkType: hard
 
@@ -2468,7 +2468,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dayjs@npm:^1.11.10":
+"dayjs@npm:^1.11.19":
   version: 1.11.19
   resolution: "dayjs@npm:1.11.19"
   checksum: 7d8a6074a343f821f81ea284d700bd34ea6c7abbe8d93bce7aba818948957c1b7f56131702e5e890a5622cdfc05dcebe8aed0b8313bdc6838a594d7846b0b000
@@ -3243,6 +3243,28 @@ __metadata:
     hasown: "npm:^2.0.2"
     mime-types: "npm:^2.1.12"
   checksum: dd6b767ee0bbd6d84039db12a0fa5a2028160ffbfaba1800695713b46ae974a5f6e08b3356c3195137f8530dcd9dfcb5d5ae1eeff53d0db1e5aad863b619ce3b
+  languageName: node
+  linkType: hard
+
+"framer-motion@npm:^12.27.5":
+  version: 12.27.5
+  resolution: "framer-motion@npm:12.27.5"
+  dependencies:
+    motion-dom: "npm:^12.27.5"
+    motion-utils: "npm:^12.27.2"
+    tslib: "npm:^2.4.0"
+  peerDependencies:
+    "@emotion/is-prop-valid": "*"
+    react: ^18.0.0 || ^19.0.0
+    react-dom: ^18.0.0 || ^19.0.0
+  peerDependenciesMeta:
+    "@emotion/is-prop-valid":
+      optional: true
+    react:
+      optional: true
+    react-dom:
+      optional: true
+  checksum: 6d50127c3b27556f8d4daa34a8762fa7f0172cc66240752dc083ff0ce7ceb0053325d9def3c5bcbab00f664dbbe8d484cdc2ff79ee5f6df0069b4f9ba529dfb9
   languageName: node
   linkType: hard
 
@@ -4449,6 +4471,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"motion-dom@npm:^12.27.5":
+  version: 12.27.5
+  resolution: "motion-dom@npm:12.27.5"
+  dependencies:
+    motion-utils: "npm:^12.27.2"
+  checksum: 260c5cb7a4d9164559d27d1f6c33d79087017c2bde637cb206c31ef2ed9df21f65a2671666a1d2ee0f057e06f94afb364736af5cfaf14f3362fafea987b5a780
+  languageName: node
+  linkType: hard
+
+"motion-utils@npm:^12.27.2":
+  version: 12.27.2
+  resolution: "motion-utils@npm:12.27.2"
+  checksum: b04ed72b4d66565d3a2791577060e0a9662fbe6a23672ffa722950ec357fe464064091118f5283860878f2447392c3ba6520a6d69559bf4b20fe8fe7b3d7b95b
+  languageName: node
+  linkType: hard
+
 "ms@npm:^2.1.3":
   version: 2.1.3
   resolution: "ms@npm:2.1.3"
@@ -5386,7 +5424,7 @@ __metadata:
   dependencies:
     "@eslint/js": "npm:^9.39.2"
     "@mantine/core": "npm:^7.4.2"
-    "@mantine/dates": "npm:^7.4.2"
+    "@mantine/dates": "npm:^8.3.13"
     "@mantine/form": "npm:^7.4.2"
     "@mantine/hooks": "npm:^7.4.2"
     "@mantine/modals": "npm:^8.3.12"
@@ -5399,10 +5437,11 @@ __metadata:
     "@typescript-eslint/parser": "npm:^6.19.0"
     "@vitejs/plugin-react": "npm:^4.2.1"
     axios: "npm:^1.6.5"
-    dayjs: "npm:^1.11.10"
+    dayjs: "npm:^1.11.19"
     eslint: "npm:^8.56.0"
     eslint-plugin-react-hooks: "npm:^4.6.0"
     eslint-plugin-react-refresh: "npm:^0.4.5"
+    framer-motion: "npm:^12.27.5"
     globals: "npm:^17.0.0"
     i18next: "npm:^25.7.4"
     orval: "npm:^6.31.0"
@@ -5855,7 +5894,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^2.0.0, tslib@npm:^2.1.0, tslib@npm:^2.2.0, tslib@npm:^2.6.0, tslib@npm:^2.8.1":
+"tslib@npm:^2.0.0, tslib@npm:^2.1.0, tslib@npm:^2.2.0, tslib@npm:^2.4.0, tslib@npm:^2.6.0, tslib@npm:^2.8.1":
   version: 2.8.1
   resolution: "tslib@npm:2.8.1"
   checksum: 9c4759110a19c53f992d9aae23aac5ced636e99887b51b9e61def52611732872ff7668757d4e4c61f19691e36f4da981cd9485e869b4a7408d689f6bf1f14e62

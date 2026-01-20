@@ -1,1 +1,4121 @@
-{"openapi":"3.1.0","info":{"title":"SpotPass Backend API","description":"Restaurant reservation and management system","version":"1.0.0"},"paths":{"/api/staff/auth/login":{"post":{"tags":["Authentication"],"summary":"Staff Login","description":"Staff user login endpoint - returns access and refresh tokens","operationId":"staff_login_api_staff_auth_login_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserLogin"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/LoginResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/staff/auth/refresh":{"post":{"tags":["Authentication"],"summary":"Refresh Staff Token","description":"Refresh staff access token using refresh token","operationId":"refresh_staff_token_api_staff_auth_refresh_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/RefreshTokenRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/RefreshTokenResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/staff/auth/me":{"get":{"tags":["Authentication"],"summary":"Get Current Staff User","description":"Get current staff user information","operationId":"get_current_staff_user_api_staff_auth_me_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserRead"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/staff/auth/dashboard/stats":{"get":{"tags":["Authentication"],"summary":"Get Dashboard Stats","description":"Get dashboard statistics for the current user's account","operationId":"get_dashboard_stats_api_staff_auth_dashboard_stats_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DashboardStats"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/bo/auth/login":{"post":{"tags":["Back Office"],"summary":"Bo Login","description":"Back office user login endpoint - returns access and refresh tokens","operationId":"bo_login_api_bo_auth_login_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserLogin"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/LoginResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/bo/auth/refresh":{"post":{"tags":["Back Office"],"summary":"Refresh Bo Token","description":"Refresh back office access token using refresh token","operationId":"refresh_bo_token_api_bo_auth_refresh_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/RefreshTokenRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/RefreshTokenResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/bo/auth/me":{"get":{"tags":["Back Office"],"summary":"Get Current Bo User","description":"Get current back office user information","operationId":"get_current_bo_user_api_bo_auth_me_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BoUserRead"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/bo/bo-users":{"get":{"tags":["Back Office"],"summary":"List Bo Users","description":"List all back office users (BO only)","operationId":"list_bo_users_api_bo_bo_users_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"items":{"$ref":"#/components/schemas/BoUserRead"},"type":"array","title":"Response List Bo Users Api Bo Bo Users Get"}}}}},"security":[{"HTTPBearer":[]}]},"post":{"tags":["Back Office"],"summary":"Create Bo User","description":"Create a new back office user (BO only)","operationId":"create_bo_user_api_bo_bo_users_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/BoUserCreate"}}},"required":true},"responses":{"201":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BoUserRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/bo/fo-users":{"get":{"tags":["Back Office"],"summary":"List Fo Users","description":"List all front office (staff) users (BO only)","operationId":"list_fo_users_api_bo_fo_users_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"items":{"$ref":"#/components/schemas/UserRead"},"type":"array","title":"Response List Fo Users Api Bo Fo Users Get"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/staff/clients/":{"get":{"tags":["Staff - Clients"],"summary":"List Clients","description":"List all clients (staff only)","operationId":"list_clients_api_staff_clients__get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"items":{"$ref":"#/components/schemas/ClientRead"},"type":"array","title":"Response List Clients Api Staff Clients  Get"}}}}},"security":[{"HTTPBearer":[]}]},"post":{"tags":["Staff - Clients"],"summary":"Create Client","description":"Create a new client (staff only)","operationId":"create_client_api_staff_clients__post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ClientCreate"}}},"required":true},"responses":{"201":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ClientRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/staff/clients/{client_id}":{"get":{"tags":["Staff - Clients"],"summary":"Get Client","description":"Get a specific client (staff only)","operationId":"get_client_api_staff_clients__client_id__get","security":[{"HTTPBearer":[]}],"parameters":[{"name":"client_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Client Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ClientRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"patch":{"tags":["Staff - Clients"],"summary":"Update Client","description":"Update a client (staff only)","operationId":"update_client_api_staff_clients__client_id__patch","security":[{"HTTPBearer":[]}],"parameters":[{"name":"client_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Client Id"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ClientUpdate"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ClientRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"delete":{"tags":["Staff - Clients"],"summary":"Delete Client","description":"Delete a client (staff only)","operationId":"delete_client_api_staff_clients__client_id__delete","security":[{"HTTPBearer":[]}],"parameters":[{"name":"client_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Client Id"}}],"responses":{"204":{"description":"Successful Response"},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/staff/tables/":{"get":{"tags":["Staff - Tables"],"summary":"List Tables","description":"List all tables with optional filters (staff only)","operationId":"list_tables_api_staff_tables__get","security":[{"HTTPBearer":[]}],"parameters":[{"name":"zone_id","in":"query","required":false,"schema":{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}],"title":"Zone Id"}},{"name":"is_available","in":"query","required":false,"schema":{"anyOf":[{"type":"boolean"},{"type":"null"}],"title":"Is Available"}},{"name":"date_from","in":"query","required":false,"schema":{"anyOf":[{"type":"string","format":"date"},{"type":"null"}],"title":"Date From"}},{"name":"date_to","in":"query","required":false,"schema":{"anyOf":[{"type":"string","format":"date"},{"type":"null"}],"title":"Date To"}},{"name":"name","in":"query","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Name"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/TableRead"},"title":"Response List Tables Api Staff Tables  Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"post":{"tags":["Staff - Tables"],"summary":"Create Table","description":"Create a new table (staff only)","operationId":"create_table_api_staff_tables__post","security":[{"HTTPBearer":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/TableCreate"}}}},"responses":{"201":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/TableRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/staff/tables/{table_id}":{"get":{"tags":["Staff - Tables"],"summary":"Get Table","description":"Get a specific table (staff only)","operationId":"get_table_api_staff_tables__table_id__get","security":[{"HTTPBearer":[]}],"parameters":[{"name":"table_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Table Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/TableRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"patch":{"tags":["Staff - Tables"],"summary":"Update Table","description":"Update a table (staff only)","operationId":"update_table_api_staff_tables__table_id__patch","security":[{"HTTPBearer":[]}],"parameters":[{"name":"table_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Table Id"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/TableUpdate"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/TableRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"delete":{"tags":["Staff - Tables"],"summary":"Delete Table","description":"Delete a table (staff only)","operationId":"delete_table_api_staff_tables__table_id__delete","security":[{"HTTPBearer":[]}],"parameters":[{"name":"table_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Table Id"}}],"responses":{"204":{"description":"Successful Response"},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/staff/tables/{table_id}/time-slots":{"get":{"tags":["Staff - Tables"],"summary":"Get Table Time Slots","description":"Get time slots for a table on a specific date (staff only)","operationId":"get_table_time_slots_api_staff_tables__table_id__time_slots_get","security":[{"HTTPBearer":[]}],"parameters":[{"name":"table_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Table Id"}},{"name":"date","in":"query","required":true,"schema":{"type":"string","format":"date","title":"Date"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"type":"object","additionalProperties":true},"title":"Response Get Table Time Slots Api Staff Tables  Table Id  Time Slots Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/staff/zones/":{"get":{"tags":["Staff - Zones"],"summary":"List Zones","description":"List all zones (staff only)","operationId":"list_zones_api_staff_zones__get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"items":{"$ref":"#/components/schemas/ZoneRead"},"type":"array","title":"Response List Zones Api Staff Zones  Get"}}}}},"security":[{"HTTPBearer":[]}]},"post":{"tags":["Staff - Zones"],"summary":"Create Zone","description":"Create a new zone (staff only)","operationId":"create_zone_api_staff_zones__post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ZoneCreate"}}},"required":true},"responses":{"201":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ZoneRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/staff/zones/{zone_id}":{"get":{"tags":["Staff - Zones"],"summary":"Get Zone","description":"Get a specific zone (staff only)","operationId":"get_zone_api_staff_zones__zone_id__get","security":[{"HTTPBearer":[]}],"parameters":[{"name":"zone_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Zone Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ZoneRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"patch":{"tags":["Staff - Zones"],"summary":"Update Zone","description":"Update a zone (staff only)","operationId":"update_zone_api_staff_zones__zone_id__patch","security":[{"HTTPBearer":[]}],"parameters":[{"name":"zone_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Zone Id"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ZoneUpdate"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ZoneRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"delete":{"tags":["Staff - Zones"],"summary":"Delete Zone","description":"Delete a zone (staff only)","operationId":"delete_zone_api_staff_zones__zone_id__delete","security":[{"HTTPBearer":[]}],"parameters":[{"name":"zone_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Zone Id"}}],"responses":{"204":{"description":"Successful Response"},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/staff/reservations/":{"get":{"tags":["Staff - Reservations"],"summary":"List Reservations","description":"List all reservations with optional filters (staff only)","operationId":"list_reservations_api_staff_reservations__get","security":[{"HTTPBearer":[]}],"parameters":[{"name":"status","in":"query","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Status"}},{"name":"date_from","in":"query","required":false,"schema":{"anyOf":[{"type":"string","format":"date"},{"type":"null"}],"title":"Date From"}},{"name":"date_to","in":"query","required":false,"schema":{"anyOf":[{"type":"string","format":"date"},{"type":"null"}],"title":"Date To"}},{"name":"keyword","in":"query","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Keyword"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/ReservationRead"},"title":"Response List Reservations Api Staff Reservations  Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"post":{"tags":["Staff - Reservations"],"summary":"Create Reservation","description":"Create a new reservation (staff only)","operationId":"create_reservation_api_staff_reservations__post","security":[{"HTTPBearer":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ReservationCreate"}}}},"responses":{"201":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ReservationRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/staff/reservations/{reservation_id}":{"get":{"tags":["Staff - Reservations"],"summary":"Get Reservation","description":"Get a specific reservation (staff only)","operationId":"get_reservation_api_staff_reservations__reservation_id__get","security":[{"HTTPBearer":[]}],"parameters":[{"name":"reservation_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Reservation Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ReservationRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"patch":{"tags":["Staff - Reservations"],"summary":"Update Reservation","description":"Update a reservation (staff only)","operationId":"update_reservation_api_staff_reservations__reservation_id__patch","security":[{"HTTPBearer":[]}],"parameters":[{"name":"reservation_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Reservation Id"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ReservationUpdate"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ReservationRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/staff/reservations/{reservation_id}/details":{"get":{"tags":["Staff - Reservations"],"summary":"Get Reservation Details","description":"Get reservation with full client details and history","operationId":"get_reservation_details_api_staff_reservations__reservation_id__details_get","security":[{"HTTPBearer":[]}],"parameters":[{"name":"reservation_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Reservation Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/staff/reservations/available-tables":{"post":{"tags":["Staff - Reservations"],"summary":"Get Available Tables","description":"Get list of available tables for a specific date/time","operationId":"get_available_tables_api_staff_reservations_available_tables_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AvailableTablesRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"items":{},"type":"array","title":"Response Get Available Tables Api Staff Reservations Available Tables Post"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/client/new-reservation-token":{"post":{"tags":["Client"],"summary":"Get New Reservation Token","description":"Get a token for making a new reservation (public endpoint)","operationId":"get_new_reservation_token_api_client_new_reservation_token_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/NewReservationTokenRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/NewReservationTokenResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/client/reservation-for-new-client":{"post":{"tags":["Client"],"summary":"Create Reservation For New Client","description":"Create reservation with a new client (public endpoint)","operationId":"create_reservation_for_new_client_api_client_reservation_for_new_client_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ReservationForNewClientRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ReservationRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/client/reservation-for-existing-client":{"post":{"tags":["Client"],"summary":"Create Reservation For Existing Client","description":"Create reservation with an existing client (public endpoint)","operationId":"create_reservation_for_existing_client_api_client_reservation_for_existing_client_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ReservationForExistingClientRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ReservationRead"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/client/cancel-reservation":{"post":{"tags":["Client"],"summary":"Cancel Reservation","description":"Cancel a reservation (public endpoint)","operationId":"cancel_reservation_api_client_cancel_reservation_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CancelReservationRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/new-reservation-url":{"post":{"tags":["Messenger Bot"],"summary":"Create New Reservation Url","description":"Create URL for new reservation via messenger bot","operationId":"create_new_reservation_url_api_new_reservation_url_post","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}},"/":{"get":{"tags":["Health"],"summary":"Root","description":"Root endpoint - health check","operationId":"root__get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}},"/health":{"get":{"tags":["Health"],"summary":"Health Check","description":"Health check endpoint","operationId":"health_check_health_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}}},"components":{"schemas":{"AccountRead":{"properties":{"name":{"type":"string","title":"Name"},"multi_establishment":{"type":"boolean","title":"Multi Establishment","default":false},"country_code":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Country Code"},"currency":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Currency"},"timezone":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Timezone"},"id":{"type":"integer","title":"Id"}},"type":"object","required":["name","id"],"title":"AccountRead","description":"Schema for reading accounts"},"AvailableTablesRequest":{"properties":{"establishment_id":{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}],"title":"Establishment Id"},"reservation_date":{"type":"string","format":"date","title":"Reservation Date"},"reservation_time":{"type":"string","title":"Reservation Time"},"number_of_guests":{"type":"integer","title":"Number Of Guests"}},"type":"object","required":["reservation_date","reservation_time","number_of_guests"],"title":"AvailableTablesRequest","description":"Request for getting available tables"},"BoUserCreate":{"properties":{"first_name":{"type":"string","maxLength":64,"minLength":2,"title":"First Name"},"last_name":{"type":"string","maxLength":64,"minLength":2,"title":"Last Name"},"email":{"type":"string","format":"email","title":"Email"},"password":{"type":"string","maxLength":32,"minLength":6,"title":"Password"},"disabled":{"type":"boolean","title":"Disabled","default":false}},"type":"object","required":["first_name","last_name","email","password"],"title":"BoUserCreate","description":"Schema for creating BO users"},"BoUserRead":{"properties":{"id":{"type":"integer","title":"Id"},"first_name":{"type":"string","title":"First Name"},"last_name":{"type":"string","title":"Last Name"},"email":{"type":"string","format":"email","title":"Email"},"disabled":{"type":"boolean","title":"Disabled"}},"type":"object","required":["id","first_name","last_name","email","disabled"],"title":"BoUserRead","description":"Schema for reading BO users"},"CancelReservationRequest":{"properties":{"token":{"type":"string","title":"Token"},"reference":{"type":"string","title":"Reference"}},"type":"object","required":["token","reference"],"title":"CancelReservationRequest","description":"Request schema for canceling reservation"},"ClientCreate":{"properties":{"full_name":{"type":"string","maxLength":64,"minLength":1,"title":"Full Name"},"email":{"anyOf":[{"type":"string","format":"email"},{"type":"null"}],"title":"Email"},"phone_number":{"type":"string","maxLength":32,"minLength":1,"title":"Phone Number"},"messenger_id":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Messenger Id"},"is_blacklisted":{"type":"boolean","title":"Is Blacklisted","default":false},"is_vip":{"type":"boolean","title":"Is Vip","default":false}},"type":"object","required":["full_name","phone_number"],"title":"ClientCreate","description":"Schema for creating clients"},"ClientRead":{"properties":{"full_name":{"type":"string","maxLength":64,"minLength":1,"title":"Full Name"},"email":{"anyOf":[{"type":"string","format":"email"},{"type":"null"}],"title":"Email"},"phone_number":{"type":"string","maxLength":32,"minLength":1,"title":"Phone Number"},"messenger_id":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Messenger Id"},"is_blacklisted":{"type":"boolean","title":"Is Blacklisted","default":false},"is_vip":{"type":"boolean","title":"Is Vip","default":false},"id":{"type":"string","format":"uuid","title":"Id"},"created_at":{"type":"string","format":"date-time","title":"Created At"},"establishment":{"anyOf":[{"$ref":"#/components/schemas/EstablishmentRead"},{"type":"null"}]},"reservation_history":{"$ref":"#/components/schemas/ReservationHistory"}},"type":"object","required":["full_name","phone_number","id","created_at"],"title":"ClientRead","description":"Schema for reading clients"},"ClientUpdate":{"properties":{"is_blacklisted":{"anyOf":[{"type":"boolean"},{"type":"null"}],"title":"Is Blacklisted"},"is_vip":{"anyOf":[{"type":"boolean"},{"type":"null"}],"title":"Is Vip"}},"type":"object","title":"ClientUpdate","description":"Schema for updating clients"},"DashboardStats":{"properties":{"total_clients":{"type":"integer","title":"Total Clients"},"total_tables":{"type":"integer","title":"Total Tables"},"total_reservations":{"type":"integer","title":"Total Reservations"},"pending_reservations":{"type":"integer","title":"Pending Reservations"},"todays_reservations":{"type":"integer","title":"Todays Reservations"},"upcoming_reservations":{"type":"integer","title":"Upcoming Reservations"}},"type":"object","required":["total_clients","total_tables","total_reservations","pending_reservations","todays_reservations","upcoming_reservations"],"title":"DashboardStats","description":"Dashboard statistics schema"},"EstablishmentRead":{"properties":{"name":{"type":"string","title":"Name"},"address":{"type":"string","title":"Address"},"id":{"type":"string","format":"uuid","title":"Id"}},"type":"object","required":["name","address","id"],"title":"EstablishmentRead","description":"Schema for reading establishments"},"HTTPValidationError":{"properties":{"detail":{"items":{"$ref":"#/components/schemas/ValidationError"},"type":"array","title":"Detail"}},"type":"object","title":"HTTPValidationError"},"LoginResponse":{"properties":{"access_token":{"type":"string","title":"Access Token"},"refresh_token":{"type":"string","title":"Refresh Token"},"token_type":{"type":"string","title":"Token Type","default":"bearer"},"expires_in":{"type":"integer","title":"Expires In"},"expires_at":{"type":"string","format":"date-time","title":"Expires At"},"user":{"$ref":"#/components/schemas/UserInfo"}},"type":"object","required":["access_token","refresh_token","expires_in","expires_at","user"],"title":"LoginResponse","description":"Schema for login response with access and refresh tokens"},"NewReservationTokenRequest":{"properties":{"establishment_id":{"type":"string","format":"uuid","title":"Establishment Id"}},"type":"object","required":["establishment_id"],"title":"NewReservationTokenRequest","description":"Request schema for new reservation token"},"NewReservationTokenResponse":{"properties":{"token":{"type":"string","title":"Token"},"expires_at":{"type":"string","format":"date-time","title":"Expires At"}},"type":"object","required":["token","expires_at"],"title":"NewReservationTokenResponse","description":"Response schema for new reservation token"},"RefreshTokenRequest":{"properties":{"refresh_token":{"type":"string","title":"Refresh Token"}},"type":"object","required":["refresh_token"],"title":"RefreshTokenRequest","description":"Schema for refresh token request"},"RefreshTokenResponse":{"properties":{"access_token":{"type":"string","title":"Access Token"},"token_type":{"type":"string","title":"Token Type","default":"bearer"},"expires_in":{"type":"integer","title":"Expires In"},"expires_at":{"type":"string","format":"date-time","title":"Expires At"}},"type":"object","required":["access_token","expires_in","expires_at"],"title":"RefreshTokenResponse","description":"Schema for refresh token response"},"ReservationCreate":{"properties":{"number_of_guests":{"type":"integer","minimum":1.0,"title":"Number Of Guests"},"reservation_date":{"type":"string","format":"date","title":"Reservation Date"},"reservation_time":{"anyOf":[{"type":"string","format":"time"},{"type":"null"}],"title":"Reservation Time"},"special_request":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Special Request"},"client_id":{"type":"string","format":"uuid","title":"Client Id"},"table_id":{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}],"title":"Table Id"}},"type":"object","required":["number_of_guests","reservation_date","client_id"],"title":"ReservationCreate","description":"Schema for creating reservations"},"ReservationForExistingClientRequest":{"properties":{"token":{"type":"string","title":"Token"},"phone_number":{"type":"string","maxLength":32,"minLength":1,"title":"Phone Number"},"number_of_guests":{"type":"integer","minimum":1.0,"title":"Number Of Guests"},"reservation_date":{"type":"string","format":"date","title":"Reservation Date"},"reservation_time":{"anyOf":[{"type":"string","format":"time"},{"type":"null"}],"title":"Reservation Time"},"special_request":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Special Request"}},"type":"object","required":["token","phone_number","number_of_guests","reservation_date"],"title":"ReservationForExistingClientRequest","description":"Request schema for creating reservation with existing client"},"ReservationForNewClientRequest":{"properties":{"token":{"type":"string","title":"Token"},"full_name":{"type":"string","maxLength":64,"minLength":1,"title":"Full Name"},"phone_number":{"type":"string","maxLength":32,"minLength":1,"title":"Phone Number"},"email":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Email"},"number_of_guests":{"type":"integer","minimum":1.0,"title":"Number Of Guests"},"reservation_date":{"type":"string","format":"date","title":"Reservation Date"},"reservation_time":{"anyOf":[{"type":"string","format":"time"},{"type":"null"}],"title":"Reservation Time"},"special_request":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Special Request"}},"type":"object","required":["token","full_name","phone_number","number_of_guests","reservation_date"],"title":"ReservationForNewClientRequest","description":"Request schema for creating reservation with new client"},"ReservationHistory":{"properties":{"last_reservation":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Last Reservation"},"total_reservations":{"type":"integer","title":"Total Reservations","default":0},"total_accepted_reservations":{"type":"integer","title":"Total Accepted Reservations","default":0},"total_refused_reservations":{"type":"integer","title":"Total Refused Reservations","default":0},"total_canceled_reservations":{"type":"integer","title":"Total Canceled Reservations","default":0},"total_no_show":{"type":"integer","title":"Total No Show","default":0}},"type":"object","title":"ReservationHistory","description":"Reservation history stats"},"ReservationRead":{"properties":{"number_of_guests":{"type":"integer","minimum":1.0,"title":"Number Of Guests"},"reservation_date":{"type":"string","format":"date","title":"Reservation Date"},"reservation_time":{"anyOf":[{"type":"string","format":"time"},{"type":"null"}],"title":"Reservation Time"},"special_request":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Special Request"},"id":{"type":"string","format":"uuid","title":"Id"},"reference":{"type":"string","title":"Reference"},"status":{"$ref":"#/components/schemas/ReservationStatus"},"source":{"$ref":"#/components/schemas/ReservationSource"},"note":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Note"},"no_show":{"type":"boolean","title":"No Show"},"created_at":{"type":"string","format":"date-time","title":"Created At"},"accepted_at":{"anyOf":[{"type":"string","format":"date-time"},{"type":"null"}],"title":"Accepted At"},"refused_at":{"anyOf":[{"type":"string","format":"date-time"},{"type":"null"}],"title":"Refused At"},"canceled_at":{"anyOf":[{"type":"string","format":"date-time"},{"type":"null"}],"title":"Canceled At"},"establishment_id":{"type":"string","format":"uuid","title":"Establishment Id"}},"type":"object","required":["number_of_guests","reservation_date","id","reference","status","source","no_show","created_at","establishment_id"],"title":"ReservationRead","description":"Schema for reading reservations"},"ReservationSource":{"type":"string","enum":["messenger","staff"],"title":"ReservationSource","description":"Reservation source enumeration"},"ReservationStatus":{"type":"string","enum":["pending","accepted","refused","canceled"],"title":"ReservationStatus","description":"Reservation status enumeration"},"ReservationUpdate":{"properties":{"status":{"anyOf":[{"$ref":"#/components/schemas/ReservationStatus"},{"type":"null"}]},"table_id":{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}],"title":"Table Id"},"note":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Note"},"no_show":{"anyOf":[{"type":"boolean"},{"type":"null"}],"title":"No Show"},"duration_minutes":{"anyOf":[{"type":"integer","maximum":360.0,"minimum":30.0},{"type":"null"}],"title":"Duration Minutes"}},"type":"object","title":"ReservationUpdate","description":"Schema for updating reservations"},"TableCreate":{"properties":{"name":{"type":"string","maxLength":64,"minLength":1,"title":"Name"},"description":{"anyOf":[{"type":"string","maxLength":256},{"type":"null"}],"title":"Description"},"type":{"$ref":"#/components/schemas/TableType","default":"table"},"is_available":{"type":"boolean","title":"Is Available","default":true},"min_capacity":{"type":"integer","maximum":100.0,"minimum":1.0,"title":"Min Capacity"},"max_capacity":{"type":"integer","maximum":100.0,"minimum":1.0,"title":"Max Capacity"},"establishment_id":{"type":"string","format":"uuid","title":"Establishment Id"},"zone_id":{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}],"title":"Zone Id"}},"type":"object","required":["name","min_capacity","max_capacity","establishment_id"],"title":"TableCreate","description":"Schema for creating tables"},"TableRead":{"properties":{"name":{"type":"string","maxLength":64,"minLength":1,"title":"Name"},"description":{"anyOf":[{"type":"string","maxLength":256},{"type":"null"}],"title":"Description"},"type":{"$ref":"#/components/schemas/TableType","default":"table"},"is_available":{"type":"boolean","title":"Is Available","default":true},"min_capacity":{"type":"integer","maximum":100.0,"minimum":1.0,"title":"Min Capacity"},"max_capacity":{"type":"integer","maximum":100.0,"minimum":1.0,"title":"Max Capacity"},"id":{"type":"string","format":"uuid","title":"Id"},"created_at":{"type":"string","format":"date-time","title":"Created At"},"establishment":{"anyOf":[{"$ref":"#/components/schemas/EstablishmentRead"},{"type":"null"}]},"zone":{"anyOf":[{"$ref":"#/components/schemas/ZoneRead"},{"type":"null"}]}},"type":"object","required":["name","min_capacity","max_capacity","id","created_at"],"title":"TableRead","description":"Schema for reading tables"},"TableType":{"type":"string","enum":["table","parasol","hut"],"title":"TableType","description":"Table type enumeration"},"TableUpdate":{"properties":{"is_available":{"anyOf":[{"type":"boolean"},{"type":"null"}],"title":"Is Available"},"name":{"anyOf":[{"type":"string","maxLength":64,"minLength":1},{"type":"null"}],"title":"Name"},"description":{"anyOf":[{"type":"string","maxLength":256},{"type":"null"}],"title":"Description"},"min_capacity":{"anyOf":[{"type":"integer","maximum":100.0,"minimum":1.0},{"type":"null"}],"title":"Min Capacity"},"max_capacity":{"anyOf":[{"type":"integer","maximum":100.0,"minimum":1.0},{"type":"null"}],"title":"Max Capacity"}},"type":"object","title":"TableUpdate","description":"Schema for updating tables"},"UserInfo":{"properties":{"id":{"type":"integer","title":"Id"},"email":{"type":"string","title":"Email"},"first_name":{"type":"string","title":"First Name"},"last_name":{"type":"string","title":"Last Name"},"full_name":{"type":"string","title":"Full Name"},"user_type":{"type":"string","title":"User Type"},"role":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Role"},"account_id":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Account Id"}},"type":"object","required":["id","email","first_name","last_name","full_name","user_type"],"title":"UserInfo","description":"User information included in login response"},"UserLogin":{"properties":{"email":{"type":"string","format":"email","title":"Email"},"password":{"type":"string","maxLength":32,"minLength":6,"title":"Password"}},"type":"object","required":["email","password"],"title":"UserLogin","description":"Schema for user login"},"UserRead":{"properties":{"first_name":{"type":"string","maxLength":64,"minLength":2,"title":"First Name"},"last_name":{"type":"string","maxLength":64,"minLength":2,"title":"Last Name"},"email":{"type":"string","format":"email","title":"Email"},"id":{"type":"integer","title":"Id"},"role":{"$ref":"#/components/schemas/UserRole"},"disabled":{"type":"boolean","title":"Disabled"},"account":{"anyOf":[{"$ref":"#/components/schemas/AccountRead"},{"type":"null"}]}},"type":"object","required":["first_name","last_name","email","id","role","disabled"],"title":"UserRead","description":"Schema for reading users"},"UserRole":{"type":"string","enum":["admin","super_user","read_only"],"title":"UserRole","description":"User role enumeration"},"ValidationError":{"properties":{"loc":{"items":{"anyOf":[{"type":"string"},{"type":"integer"}]},"type":"array","title":"Location"},"msg":{"type":"string","title":"Message"},"type":{"type":"string","title":"Error Type"}},"type":"object","required":["loc","msg","type"],"title":"ValidationError"},"ZoneCreate":{"properties":{"name":{"type":"string","maxLength":64,"minLength":1,"title":"Name"},"establishment_id":{"type":"string","format":"uuid","title":"Establishment Id"}},"type":"object","required":["name","establishment_id"],"title":"ZoneCreate","description":"Schema for creating zones"},"ZoneRead":{"properties":{"name":{"type":"string","maxLength":64,"minLength":1,"title":"Name"},"id":{"type":"string","format":"uuid","title":"Id"}},"type":"object","required":["name","id"],"title":"ZoneRead","description":"Schema for reading zones"},"ZoneUpdate":{"properties":{"name":{"anyOf":[{"type":"string","maxLength":64,"minLength":1},{"type":"null"}],"title":"Name"}},"type":"object","title":"ZoneUpdate","description":"Schema for updating zones"}},"securitySchemes":{"HTTPBearer":{"type":"http","scheme":"bearer"}}}}
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SpotPass Backend API",
+    "description": "Restaurant reservation and management system",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/staff/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Staff Login",
+        "description": "Staff user login endpoint - returns access and refresh tokens",
+        "operationId": "staff_login_api_staff_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLogin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/auth/refresh": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Refresh Staff Token",
+        "description": "Refresh staff access token using refresh token",
+        "operationId": "refresh_staff_token_api_staff_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshTokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/auth/me": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Get Current Staff User",
+        "description": "Get current staff user information",
+        "operationId": "get_current_staff_user_api_staff_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/staff/auth/dashboard/stats": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Get Dashboard Stats",
+        "description": "Get dashboard statistics for the current user's account",
+        "operationId": "get_dashboard_stats_api_staff_auth_dashboard_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardStats"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/bo/auth/login": {
+      "post": {
+        "tags": [
+          "Back Office"
+        ],
+        "summary": "Bo Login",
+        "description": "Back office user login endpoint - returns access and refresh tokens",
+        "operationId": "bo_login_api_bo_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLogin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bo/auth/refresh": {
+      "post": {
+        "tags": [
+          "Back Office"
+        ],
+        "summary": "Refresh Bo Token",
+        "description": "Refresh back office access token using refresh token",
+        "operationId": "refresh_bo_token_api_bo_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshTokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bo/auth/me": {
+      "get": {
+        "tags": [
+          "Back Office"
+        ],
+        "summary": "Get Current Bo User",
+        "description": "Get current back office user information",
+        "operationId": "get_current_bo_user_api_bo_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoUserRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/bo/bo-users": {
+      "get": {
+        "tags": [
+          "Back Office"
+        ],
+        "summary": "List Bo Users",
+        "description": "List all back office users (BO only)",
+        "operationId": "list_bo_users_api_bo_bo_users_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BoUserRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Bo Users Api Bo Bo Users Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Back Office"
+        ],
+        "summary": "Create Bo User",
+        "description": "Create a new back office user (BO only)",
+        "operationId": "create_bo_user_api_bo_bo_users_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoUserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoUserRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/bo/fo-users": {
+      "get": {
+        "tags": [
+          "Back Office"
+        ],
+        "summary": "List Fo Users",
+        "description": "List all front office (staff) users (BO only)",
+        "operationId": "list_fo_users_api_bo_fo_users_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Fo Users Api Bo Fo Users Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/staff/clients/": {
+      "get": {
+        "tags": [
+          "Staff - Clients"
+        ],
+        "summary": "List Clients",
+        "description": "List all clients (staff only)",
+        "operationId": "list_clients_api_staff_clients__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ClientRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Clients Api Staff Clients  Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Staff - Clients"
+        ],
+        "summary": "Create Client",
+        "description": "Create a new client (staff only)",
+        "operationId": "create_client_api_staff_clients__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/staff/clients/{client_id}": {
+      "get": {
+        "tags": [
+          "Staff - Clients"
+        ],
+        "summary": "Get Client",
+        "description": "Get a specific client (staff only)",
+        "operationId": "get_client_api_staff_clients__client_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Staff - Clients"
+        ],
+        "summary": "Update Client",
+        "description": "Update a client (staff only)",
+        "operationId": "update_client_api_staff_clients__client_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Staff - Clients"
+        ],
+        "summary": "Delete Client",
+        "description": "Delete a client (staff only)",
+        "operationId": "delete_client_api_staff_clients__client_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/tables/": {
+      "get": {
+        "tags": [
+          "Staff - Tables"
+        ],
+        "summary": "List Tables",
+        "description": "List all tables with optional filters (staff only)",
+        "operationId": "list_tables_api_staff_tables__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "zone_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Zone Id"
+            }
+          },
+          {
+            "name": "is_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Available"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TableRead"
+                  },
+                  "title": "Response List Tables Api Staff Tables  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Staff - Tables"
+        ],
+        "summary": "Create Table",
+        "description": "Create a new table (staff only)",
+        "operationId": "create_table_api_staff_tables__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TableCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TableRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/tables/{table_id}": {
+      "get": {
+        "tags": [
+          "Staff - Tables"
+        ],
+        "summary": "Get Table",
+        "description": "Get a specific table (staff only)",
+        "operationId": "get_table_api_staff_tables__table_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "table_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Table Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TableRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Staff - Tables"
+        ],
+        "summary": "Update Table",
+        "description": "Update a table (staff only)",
+        "operationId": "update_table_api_staff_tables__table_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "table_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Table Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TableUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TableRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Staff - Tables"
+        ],
+        "summary": "Delete Table",
+        "description": "Delete a table (staff only)",
+        "operationId": "delete_table_api_staff_tables__table_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "table_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Table Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/tables/{table_id}/time-slots": {
+      "get": {
+        "tags": [
+          "Staff - Tables"
+        ],
+        "summary": "Get Table Time Slots",
+        "description": "Get time slots for a table on a specific date (staff only)",
+        "operationId": "get_table_time_slots_api_staff_tables__table_id__time_slots_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "table_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Table Id"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TimeSlotRead"
+                  },
+                  "title": "Response Get Table Time Slots Api Staff Tables  Table Id  Time Slots Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/zones/": {
+      "get": {
+        "tags": [
+          "Staff - Zones"
+        ],
+        "summary": "List Zones",
+        "description": "List all zones (staff only)",
+        "operationId": "list_zones_api_staff_zones__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ZoneRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Zones Api Staff Zones  Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Staff - Zones"
+        ],
+        "summary": "Create Zone",
+        "description": "Create a new zone (staff only)",
+        "operationId": "create_zone_api_staff_zones__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZoneCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZoneRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/staff/zones/{zone_id}": {
+      "get": {
+        "tags": [
+          "Staff - Zones"
+        ],
+        "summary": "Get Zone",
+        "description": "Get a specific zone (staff only)",
+        "operationId": "get_zone_api_staff_zones__zone_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "zone_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Zone Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZoneRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Staff - Zones"
+        ],
+        "summary": "Update Zone",
+        "description": "Update a zone (staff only)",
+        "operationId": "update_zone_api_staff_zones__zone_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "zone_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Zone Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZoneUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZoneRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Staff - Zones"
+        ],
+        "summary": "Delete Zone",
+        "description": "Delete a zone (staff only)",
+        "operationId": "delete_zone_api_staff_zones__zone_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "zone_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Zone Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/reservations/": {
+      "get": {
+        "tags": [
+          "Staff - Reservations"
+        ],
+        "summary": "List Reservations",
+        "description": "List all reservations with optional filters (staff only)",
+        "operationId": "list_reservations_api_staff_reservations__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Keyword"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReservationWithClientRead"
+                  },
+                  "title": "Response List Reservations Api Staff Reservations  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Staff - Reservations"
+        ],
+        "summary": "Create Reservation",
+        "description": "Create a new reservation (staff only)\n\nThis endpoint uses pessimistic locking (SELECT FOR UPDATE) to prevent race conditions\nwhen multiple staff members try to book the same table simultaneously.",
+        "operationId": "create_reservation_api_staff_reservations__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReservationCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/reservations/{reservation_id}": {
+      "get": {
+        "tags": [
+          "Staff - Reservations"
+        ],
+        "summary": "Get Reservation",
+        "description": "Get a specific reservation (staff only)",
+        "operationId": "get_reservation_api_staff_reservations__reservation_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "reservation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Reservation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Staff - Reservations"
+        ],
+        "summary": "Update Reservation",
+        "description": "Update a reservation (staff only)\n\nWhen updating table assignment or time, uses pessimistic locking and validates availability.",
+        "operationId": "update_reservation_api_staff_reservations__reservation_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "reservation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Reservation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReservationUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/reservations/{reservation_id}/details": {
+      "get": {
+        "tags": [
+          "Staff - Reservations"
+        ],
+        "summary": "Get Reservation Details",
+        "description": "Get detailed reservation information with client history (staff only)",
+        "operationId": "get_reservation_details_api_staff_reservations__reservation_id__details_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "reservation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Reservation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationDetailsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/reservations/available-tables": {
+      "post": {
+        "tags": [
+          "Staff - Reservations"
+        ],
+        "summary": "Get Available Tables",
+        "description": "Get list of available tables for a specific date/time\n\nUses TableAvailabilityService to properly check for conflicts including duration overlap.",
+        "operationId": "get_available_tables_api_staff_reservations_available_tables_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvailableTablesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TableAvailabilityRead"
+                  },
+                  "type": "array",
+                  "title": "Response Get Available Tables Api Staff Reservations Available Tables Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/client/new-reservation-token": {
+      "post": {
+        "tags": [
+          "Client"
+        ],
+        "summary": "Get New Reservation Token",
+        "description": "Get a token for making a new reservation (public endpoint)",
+        "operationId": "get_new_reservation_token_api_client_new_reservation_token_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewReservationTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewReservationTokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/client/reservation-for-new-client": {
+      "post": {
+        "tags": [
+          "Client"
+        ],
+        "summary": "Create Reservation For New Client",
+        "description": "Create reservation with a new client (public endpoint)",
+        "operationId": "create_reservation_for_new_client_api_client_reservation_for_new_client_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReservationForNewClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/client/reservation-for-existing-client": {
+      "post": {
+        "tags": [
+          "Client"
+        ],
+        "summary": "Create Reservation For Existing Client",
+        "description": "Create reservation with an existing client (public endpoint)",
+        "operationId": "create_reservation_for_existing_client_api_client_reservation_for_existing_client_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReservationForExistingClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/client/cancel-reservation": {
+      "post": {
+        "tags": [
+          "Client"
+        ],
+        "summary": "Cancel Reservation",
+        "description": "Cancel a reservation (public endpoint)",
+        "operationId": "cancel_reservation_api_client_cancel_reservation_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelReservationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/new-reservation-url": {
+      "post": {
+        "tags": [
+          "Messenger Bot"
+        ],
+        "summary": "Create New Reservation Url",
+        "description": "Create URL for new reservation via messenger bot",
+        "operationId": "create_new_reservation_url_api_new_reservation_url_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationUrlResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Root",
+        "description": "Root endpoint - health check",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RootResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health Check",
+        "description": "Health check endpoint",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccountRead": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "multi_establishment": {
+            "type": "boolean",
+            "title": "Multi Establishment",
+            "default": false
+          },
+          "country_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country Code"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "id"
+        ],
+        "title": "AccountRead",
+        "description": "Schema for reading accounts"
+      },
+      "AvailableTablesRequest": {
+        "properties": {
+          "establishment_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Establishment Id"
+          },
+          "reservation_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Reservation Date"
+          },
+          "reservation_time": {
+            "type": "string",
+            "title": "Reservation Time"
+          },
+          "number_of_guests": {
+            "type": "integer",
+            "title": "Number Of Guests"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reservation_date",
+          "reservation_time",
+          "number_of_guests"
+        ],
+        "title": "AvailableTablesRequest",
+        "description": "Request for getting available tables"
+      },
+      "BoUserCreate": {
+        "properties": {
+          "first_name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 2,
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 2,
+            "title": "Last Name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 6,
+            "title": "Password"
+          },
+          "disabled": {
+            "type": "boolean",
+            "title": "Disabled",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "first_name",
+          "last_name",
+          "email",
+          "password"
+        ],
+        "title": "BoUserCreate",
+        "description": "Schema for creating BO users"
+      },
+      "BoUserRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "first_name": {
+            "type": "string",
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "disabled": {
+            "type": "boolean",
+            "title": "Disabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "first_name",
+          "last_name",
+          "email",
+          "disabled"
+        ],
+        "title": "BoUserRead",
+        "description": "Schema for reading BO users"
+      },
+      "CancelReservationRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "reference"
+        ],
+        "title": "CancelReservationRequest",
+        "description": "Request schema for canceling reservation"
+      },
+      "ClientCreate": {
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Full Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone_number": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Phone Number"
+          },
+          "messenger_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Messenger Id"
+          },
+          "is_blacklisted": {
+            "type": "boolean",
+            "title": "Is Blacklisted",
+            "default": false
+          },
+          "is_vip": {
+            "type": "boolean",
+            "title": "Is Vip",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "full_name",
+          "phone_number"
+        ],
+        "title": "ClientCreate",
+        "description": "Schema for creating clients",
+        "examples": [
+          {
+            "email": "jane.smith@example.com",
+            "full_name": "Jane Smith",
+            "is_blacklisted": false,
+            "is_vip": false,
+            "messenger_id": "messenger_12345",
+            "phone_number": "+33612345678"
+          }
+        ]
+      },
+      "ClientDetailRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "phone_number": {
+            "type": "string",
+            "title": "Phone Number"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "is_vip": {
+            "type": "boolean",
+            "title": "Is Vip"
+          },
+          "is_blacklisted": {
+            "type": "boolean",
+            "title": "Is Blacklisted"
+          },
+          "last_reservation_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Reservation Date"
+          },
+          "total_accepted": {
+            "type": "integer",
+            "title": "Total Accepted"
+          },
+          "total_canceled": {
+            "type": "integer",
+            "title": "Total Canceled"
+          },
+          "total_refused": {
+            "type": "integer",
+            "title": "Total Refused"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "full_name",
+          "phone_number",
+          "is_vip",
+          "is_blacklisted",
+          "total_accepted",
+          "total_canceled",
+          "total_refused"
+        ],
+        "title": "ClientDetailRead",
+        "description": "Client details with full history",
+        "examples": [
+          {
+            "email": "john.doe@example.com",
+            "full_name": "John Doe",
+            "id": "123e4567-e89b-12d3-a456-426614174002",
+            "is_blacklisted": false,
+            "is_vip": true,
+            "last_reservation_date": "2024-12-15",
+            "phone_number": "+33612345678",
+            "total_accepted": 15,
+            "total_canceled": 2,
+            "total_refused": 1
+          }
+        ]
+      },
+      "ClientRead": {
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Full Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone_number": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Phone Number"
+          },
+          "messenger_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Messenger Id"
+          },
+          "is_blacklisted": {
+            "type": "boolean",
+            "title": "Is Blacklisted",
+            "default": false
+          },
+          "is_vip": {
+            "type": "boolean",
+            "title": "Is Vip",
+            "default": false
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "establishment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstablishmentRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reservation_history": {
+            "$ref": "#/components/schemas/ReservationHistory"
+          }
+        },
+        "type": "object",
+        "required": [
+          "full_name",
+          "phone_number",
+          "id",
+          "created_at"
+        ],
+        "title": "ClientRead",
+        "description": "Schema for reading clients"
+      },
+      "ClientUpdate": {
+        "properties": {
+          "is_blacklisted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Blacklisted"
+          },
+          "is_vip": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Vip"
+          }
+        },
+        "type": "object",
+        "title": "ClientUpdate",
+        "description": "Schema for updating clients"
+      },
+      "ClientWithHistoryRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone_number": {
+            "type": "string",
+            "title": "Phone Number"
+          },
+          "is_vip": {
+            "type": "boolean",
+            "title": "Is Vip"
+          },
+          "is_blacklisted": {
+            "type": "boolean",
+            "title": "Is Blacklisted"
+          },
+          "last_reservation_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Reservation Date"
+          },
+          "total_accepted": {
+            "type": "integer",
+            "title": "Total Accepted",
+            "default": 0
+          },
+          "total_canceled": {
+            "type": "integer",
+            "title": "Total Canceled",
+            "default": 0
+          },
+          "total_refused": {
+            "type": "integer",
+            "title": "Total Refused",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "full_name",
+          "phone_number",
+          "is_vip",
+          "is_blacklisted"
+        ],
+        "title": "ClientWithHistoryRead",
+        "description": "Client details with reservation history"
+      },
+      "DashboardStats": {
+        "properties": {
+          "total_clients": {
+            "type": "integer",
+            "title": "Total Clients"
+          },
+          "total_tables": {
+            "type": "integer",
+            "title": "Total Tables"
+          },
+          "total_reservations": {
+            "type": "integer",
+            "title": "Total Reservations"
+          },
+          "pending_reservations": {
+            "type": "integer",
+            "title": "Pending Reservations"
+          },
+          "todays_reservations": {
+            "type": "integer",
+            "title": "Todays Reservations"
+          },
+          "upcoming_reservations": {
+            "type": "integer",
+            "title": "Upcoming Reservations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_clients",
+          "total_tables",
+          "total_reservations",
+          "pending_reservations",
+          "todays_reservations",
+          "upcoming_reservations"
+        ],
+        "title": "DashboardStats",
+        "description": "Dashboard statistics schema",
+        "examples": [
+          {
+            "pending_reservations": 12,
+            "todays_reservations": 8,
+            "total_clients": 150,
+            "total_reservations": 450,
+            "total_tables": 20,
+            "upcoming_reservations": 25
+          }
+        ]
+      },
+      "EstablishmentRead": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "address",
+          "id"
+        ],
+        "title": "EstablishmentRead",
+        "description": "Schema for reading establishments"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "database": {
+            "type": "string",
+            "title": "Database"
+          },
+          "redis": {
+            "type": "string",
+            "title": "Redis"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "database",
+          "redis"
+        ],
+        "title": "HealthResponse",
+        "description": "Health check response",
+        "examples": [
+          {
+            "database": "connected",
+            "redis": "connected",
+            "status": "healthy"
+          }
+        ]
+      },
+      "LoginResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "title": "Expires In"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserInfo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "refresh_token",
+          "expires_in",
+          "expires_at",
+          "user"
+        ],
+        "title": "LoginResponse",
+        "description": "Schema for login response with access and refresh tokens",
+        "examples": [
+          {
+            "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "expires_at": "2024-12-25T20:30:00",
+            "expires_in": 1800,
+            "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "token_type": "bearer",
+            "user": {
+              "account_id": 1,
+              "email": "john.doe@restaurant.com",
+              "first_name": "John",
+              "full_name": "John Doe",
+              "id": 1,
+              "last_name": "Doe",
+              "role": "manager",
+              "user_type": "staff"
+            }
+          }
+        ]
+      },
+      "MessageResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "MessageResponse",
+        "description": "Generic message response",
+        "examples": [
+          {
+            "message": "Operation completed successfully"
+          }
+        ]
+      },
+      "NewReservationTokenRequest": {
+        "properties": {
+          "establishment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Establishment Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "establishment_id"
+        ],
+        "title": "NewReservationTokenRequest",
+        "description": "Request schema for new reservation token"
+      },
+      "NewReservationTokenResponse": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "expires_at"
+        ],
+        "title": "NewReservationTokenResponse",
+        "description": "Response schema for new reservation token"
+      },
+      "RefreshTokenRequest": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshTokenRequest",
+        "description": "Schema for refresh token request"
+      },
+      "RefreshTokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "title": "Expires In"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "expires_in",
+          "expires_at"
+        ],
+        "title": "RefreshTokenResponse",
+        "description": "Schema for refresh token response"
+      },
+      "ReservationCreate": {
+        "properties": {
+          "number_of_guests": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Number Of Guests"
+          },
+          "reservation_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Reservation Date"
+          },
+          "reservation_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reservation Time"
+          },
+          "special_request": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Special Request"
+          },
+          "client_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Client Id"
+          },
+          "table_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table Id"
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 360.0,
+                "minimum": 30.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "number_of_guests",
+          "reservation_date",
+          "client_id"
+        ],
+        "title": "ReservationCreate",
+        "description": "Schema for creating reservations",
+        "examples": [
+          {
+            "client_id": "123e4567-e89b-12d3-a456-426614174000",
+            "duration_minutes": 120,
+            "number_of_guests": 4,
+            "reservation_date": "2024-12-25",
+            "reservation_time": "19:30:00",
+            "special_request": "Window seat please",
+            "table_id": "123e4567-e89b-12d3-a456-426614174001"
+          }
+        ]
+      },
+      "ReservationDetailRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "number_of_guests": {
+            "type": "integer",
+            "title": "Number Of Guests"
+          },
+          "reservation_date": {
+            "type": "string",
+            "title": "Reservation Date"
+          },
+          "reservation_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reservation Time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReservationStatus"
+          },
+          "special_request": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Special Request"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "accepted_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "refused_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refused At"
+          },
+          "canceled_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canceled At"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "establishment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Establishment Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "reference",
+          "number_of_guests",
+          "reservation_date",
+          "status",
+          "created_at"
+        ],
+        "title": "ReservationDetailRead",
+        "description": "Detailed reservation information",
+        "examples": [
+          {
+            "created_at": "2024-12-20T10:30:00",
+            "establishment_id": "123e4567-e89b-12d3-a456-426614174001",
+            "id": "123e4567-e89b-12d3-a456-426614174000",
+            "note": "Regular customer",
+            "number_of_guests": 4,
+            "reference": "REF1234567890",
+            "reservation_date": "2024-12-25",
+            "reservation_time": "19:30:00",
+            "special_request": "Window seat please",
+            "status": "pending"
+          }
+        ]
+      },
+      "ReservationDetailsResponse": {
+        "properties": {
+          "reservation": {
+            "$ref": "#/components/schemas/ReservationDetailRead"
+          },
+          "client": {
+            "$ref": "#/components/schemas/ClientDetailRead"
+          },
+          "table": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TableInfoRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "reservation",
+          "client"
+        ],
+        "title": "ReservationDetailsResponse",
+        "description": "Complete reservation details with client and table info",
+        "examples": [
+          {
+            "client": {
+              "email": "john.doe@example.com",
+              "full_name": "John Doe",
+              "id": "123e4567-e89b-12d3-a456-426614174002",
+              "is_blacklisted": false,
+              "is_vip": true,
+              "last_reservation_date": "2024-12-15",
+              "phone_number": "+33612345678",
+              "total_accepted": 15,
+              "total_canceled": 2,
+              "total_refused": 1
+            },
+            "reservation": {
+              "created_at": "2024-12-20T10:30:00",
+              "establishment_id": "123e4567-e89b-12d3-a456-426614174001",
+              "id": "123e4567-e89b-12d3-a456-426614174000",
+              "note": "Regular customer",
+              "number_of_guests": 4,
+              "reference": "REF1234567890",
+              "reservation_date": "2024-12-25",
+              "reservation_time": "19:30:00",
+              "special_request": "Window seat please",
+              "status": "pending"
+            },
+            "table": {
+              "id": "123e4567-e89b-12d3-a456-426614174003",
+              "name": "Table 5",
+              "type": "table"
+            }
+          }
+        ]
+      },
+      "ReservationForExistingClientRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "phone_number": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Phone Number"
+          },
+          "number_of_guests": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Number Of Guests"
+          },
+          "reservation_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Reservation Date"
+          },
+          "reservation_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reservation Time"
+          },
+          "special_request": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Special Request"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "phone_number",
+          "number_of_guests",
+          "reservation_date"
+        ],
+        "title": "ReservationForExistingClientRequest",
+        "description": "Request schema for creating reservation with existing client"
+      },
+      "ReservationForNewClientRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "full_name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Full Name"
+          },
+          "phone_number": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Phone Number"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "number_of_guests": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Number Of Guests"
+          },
+          "reservation_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Reservation Date"
+          },
+          "reservation_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reservation Time"
+          },
+          "special_request": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Special Request"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "full_name",
+          "phone_number",
+          "number_of_guests",
+          "reservation_date"
+        ],
+        "title": "ReservationForNewClientRequest",
+        "description": "Request schema for creating reservation with new client"
+      },
+      "ReservationHistory": {
+        "properties": {
+          "last_reservation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Reservation"
+          },
+          "total_reservations": {
+            "type": "integer",
+            "title": "Total Reservations",
+            "default": 0
+          },
+          "total_accepted_reservations": {
+            "type": "integer",
+            "title": "Total Accepted Reservations",
+            "default": 0
+          },
+          "total_refused_reservations": {
+            "type": "integer",
+            "title": "Total Refused Reservations",
+            "default": 0
+          },
+          "total_canceled_reservations": {
+            "type": "integer",
+            "title": "Total Canceled Reservations",
+            "default": 0
+          },
+          "total_no_show": {
+            "type": "integer",
+            "title": "Total No Show",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "ReservationHistory",
+        "description": "Reservation history stats"
+      },
+      "ReservationRead": {
+        "properties": {
+          "number_of_guests": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Number Of Guests"
+          },
+          "reservation_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Reservation Date"
+          },
+          "reservation_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reservation Time"
+          },
+          "special_request": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Special Request"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReservationStatus"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ReservationSource"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "no_show": {
+            "type": "boolean",
+            "title": "No Show"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "accepted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "refused_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refused At"
+          },
+          "canceled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canceled At"
+          },
+          "establishment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Establishment Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "number_of_guests",
+          "reservation_date",
+          "id",
+          "reference",
+          "status",
+          "source",
+          "no_show",
+          "created_at",
+          "establishment_id"
+        ],
+        "title": "ReservationRead",
+        "description": "Schema for reading reservations"
+      },
+      "ReservationSource": {
+        "type": "string",
+        "enum": [
+          "messenger",
+          "staff"
+        ],
+        "title": "ReservationSource",
+        "description": "Reservation source enumeration"
+      },
+      "ReservationStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "accepted",
+          "refused",
+          "canceled"
+        ],
+        "title": "ReservationStatus",
+        "description": "Reservation status enumeration"
+      },
+      "ReservationUpdate": {
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReservationStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "table_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table Id"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "no_show": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Show"
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 360.0,
+                "minimum": 30.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          }
+        },
+        "type": "object",
+        "title": "ReservationUpdate",
+        "description": "Schema for updating reservations",
+        "examples": [
+          {
+            "duration_minutes": 150,
+            "no_show": false,
+            "note": "VIP guest, prepare champagne",
+            "status": "accepted",
+            "table_id": "123e4567-e89b-12d3-a456-426614174001"
+          }
+        ]
+      },
+      "ReservationUrlResponse": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "ReservationUrlResponse",
+        "description": "New reservation URL response",
+        "examples": [
+          {
+            "url": "https://example.com/reservation/token123"
+          }
+        ]
+      },
+      "ReservationWithClientRead": {
+        "properties": {
+          "number_of_guests": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Number Of Guests"
+          },
+          "reservation_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Reservation Date"
+          },
+          "reservation_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reservation Time"
+          },
+          "special_request": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Special Request"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReservationStatus"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ReservationSource"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "no_show": {
+            "type": "boolean",
+            "title": "No Show"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "accepted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "refused_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refused At"
+          },
+          "canceled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canceled At"
+          },
+          "establishment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Establishment Id"
+          },
+          "client": {
+            "$ref": "#/components/schemas/ClientWithHistoryRead"
+          }
+        },
+        "type": "object",
+        "required": [
+          "number_of_guests",
+          "reservation_date",
+          "id",
+          "reference",
+          "status",
+          "source",
+          "no_show",
+          "created_at",
+          "establishment_id",
+          "client"
+        ],
+        "title": "ReservationWithClientRead",
+        "description": "Reservation with full client details"
+      },
+      "RootResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "version",
+          "status"
+        ],
+        "title": "RootResponse",
+        "description": "Root endpoint response",
+        "examples": [
+          {
+            "message": "SpotPass Backend API",
+            "status": "healthy",
+            "version": "1.0.0"
+          }
+        ]
+      },
+      "TableAvailabilityRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "min_capacity": {
+            "type": "integer",
+            "title": "Min Capacity"
+          },
+          "max_capacity": {
+            "type": "integer",
+            "title": "Max Capacity"
+          },
+          "zone_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone Name"
+          },
+          "is_currently_available": {
+            "type": "boolean",
+            "title": "Is Currently Available",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "min_capacity",
+          "max_capacity"
+        ],
+        "title": "TableAvailabilityRead",
+        "description": "Available table with zone info",
+        "examples": [
+          {
+            "id": "123e4567-e89b-12d3-a456-426614174000",
+            "is_currently_available": true,
+            "max_capacity": 4,
+            "min_capacity": 2,
+            "name": "Table 5",
+            "zone_name": "Terrace"
+          }
+        ]
+      },
+      "TableCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TableType",
+            "default": "table"
+          },
+          "is_available": {
+            "type": "boolean",
+            "title": "Is Available",
+            "default": true
+          },
+          "min_capacity": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Min Capacity"
+          },
+          "max_capacity": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Capacity"
+          },
+          "establishment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Establishment Id"
+          },
+          "zone_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "min_capacity",
+          "max_capacity",
+          "establishment_id"
+        ],
+        "title": "TableCreate",
+        "description": "Schema for creating tables",
+        "examples": [
+          {
+            "description": "Window table with city view",
+            "establishment_id": "123e4567-e89b-12d3-a456-426614174000",
+            "is_available": true,
+            "max_capacity": 4,
+            "min_capacity": 2,
+            "name": "Table 5",
+            "type": "table",
+            "zone_id": "123e4567-e89b-12d3-a456-426614174001"
+          }
+        ]
+      },
+      "TableInfoRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "type"
+        ],
+        "title": "TableInfoRead",
+        "description": "Table information in reservation details",
+        "examples": [
+          {
+            "id": "123e4567-e89b-12d3-a456-426614174000",
+            "name": "Table 5",
+            "type": "table"
+          }
+        ]
+      },
+      "TableRead": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TableType",
+            "default": "table"
+          },
+          "is_available": {
+            "type": "boolean",
+            "title": "Is Available",
+            "default": true
+          },
+          "min_capacity": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Min Capacity"
+          },
+          "max_capacity": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Capacity"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "establishment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstablishmentRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "zone": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ZoneRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "min_capacity",
+          "max_capacity",
+          "id",
+          "created_at"
+        ],
+        "title": "TableRead",
+        "description": "Schema for reading tables",
+        "examples": [
+          {
+            "created_at": "2024-01-01T10:00:00",
+            "description": "Window table with city view",
+            "id": "123e4567-e89b-12d3-a456-426614174000",
+            "is_available": true,
+            "max_capacity": 4,
+            "min_capacity": 2,
+            "name": "Table 5",
+            "type": "table"
+          }
+        ]
+      },
+      "TableType": {
+        "type": "string",
+        "enum": [
+          "table",
+          "parasol",
+          "hut"
+        ],
+        "title": "TableType",
+        "description": "Table type enumeration"
+      },
+      "TableUpdate": {
+        "properties": {
+          "is_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Available"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "min_capacity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Capacity"
+          },
+          "max_capacity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Capacity"
+          }
+        },
+        "type": "object",
+        "title": "TableUpdate",
+        "description": "Schema for updating tables",
+        "examples": [
+          {
+            "description": "Premium window table",
+            "is_available": true,
+            "max_capacity": 6,
+            "min_capacity": 2,
+            "name": "Table 5A"
+          }
+        ]
+      },
+      "TimeSlotRead": {
+        "properties": {
+          "time": {
+            "type": "string",
+            "title": "Time"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "reservation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimeSlotReservationInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "time",
+          "status"
+        ],
+        "title": "TimeSlotRead",
+        "description": "Time slot availability information",
+        "examples": [
+          {
+            "reservation": {
+              "client_name": "John Doe",
+              "guests": 4,
+              "reference": "REF1234567890"
+            },
+            "status": "occupied",
+            "time": "19:30"
+          },
+          {
+            "status": "available",
+            "time": "20:00"
+          }
+        ]
+      },
+      "TimeSlotReservationInfo": {
+        "properties": {
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "guests": {
+            "type": "integer",
+            "title": "Guests"
+          },
+          "client_name": {
+            "type": "string",
+            "title": "Client Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference",
+          "guests",
+          "client_name"
+        ],
+        "title": "TimeSlotReservationInfo",
+        "description": "Reservation information for a time slot",
+        "examples": [
+          {
+            "client_name": "John Doe",
+            "guests": 4,
+            "reference": "REF1234567890"
+          }
+        ]
+      },
+      "UserInfo": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "first_name": {
+            "type": "string",
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "user_type": {
+            "type": "string",
+            "title": "User Type"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "first_name",
+          "last_name",
+          "full_name",
+          "user_type"
+        ],
+        "title": "UserInfo",
+        "description": "User information included in login response"
+      },
+      "UserLogin": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 6,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserLogin",
+        "description": "Schema for user login",
+        "examples": [
+          {
+            "email": "john.doe@restaurant.com",
+            "password": "SecurePass123"
+          }
+        ]
+      },
+      "UserRead": {
+        "properties": {
+          "first_name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 2,
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 2,
+            "title": "Last Name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "disabled": {
+            "type": "boolean",
+            "title": "Disabled"
+          },
+          "account": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AccountRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "first_name",
+          "last_name",
+          "email",
+          "id",
+          "role",
+          "disabled"
+        ],
+        "title": "UserRead",
+        "description": "Schema for reading users"
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "admin",
+          "super_user",
+          "read_only"
+        ],
+        "title": "UserRole",
+        "description": "User role enumeration"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "ZoneCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "establishment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Establishment Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "establishment_id"
+        ],
+        "title": "ZoneCreate",
+        "description": "Schema for creating zones",
+        "examples": [
+          {
+            "establishment_id": "123e4567-e89b-12d3-a456-426614174000",
+            "name": "Terrace"
+          }
+        ]
+      },
+      "ZoneRead": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "id"
+        ],
+        "title": "ZoneRead",
+        "description": "Schema for reading zones"
+      },
+      "ZoneUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "title": "ZoneUpdate",
+        "description": "Schema for updating zones"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

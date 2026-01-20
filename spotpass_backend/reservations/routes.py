@@ -13,15 +13,22 @@ from reservations.models import Reservation, ReservationStatus
 from reservations.schemas import (
     AvailableTablesRequest,
     CancelReservationRequest,
+    ClientDetailRead,
     ClientWithHistoryRead,
+    MessageResponse,
     NewReservationTokenRequest,
     NewReservationTokenResponse,
     ReservationCreate,
+    ReservationDetailRead,
+    ReservationDetailsResponse,
     ReservationForExistingClientRequest,
     ReservationForNewClientRequest,
     ReservationRead,
     ReservationUpdate,
+    ReservationUrlResponse,
     ReservationWithClientRead,
+    TableAvailabilityRead,
+    TableInfoRead,
 )
 from tables.models import Table as TableModel
 
@@ -131,7 +138,9 @@ def get_reservation(
     return ReservationRead.model_validate(reservation)
 
 
-@staff_reservations_router.get("/{reservation_id}/details", response_model=dict)
+@staff_reservations_router.get(
+    "/{reservation_id}/details", response_model=ReservationDetailsResponse
+)
 def get_reservation_details(
     reservation_id: uuid_lib.UUID, session: DatabaseSession, token_payload: StaffUser
 ):
@@ -174,48 +183,48 @@ def get_reservation_details(
         table_statement = select(TableModel).where(TableModel.id == reservation.table_id)
         table = session.exec(table_statement).first()
         if table:
-            table_data = {
-                "id": str(table.uuid),
-                "name": table.name,
-                "type": table.type,
-            }
+            table_data = TableInfoRead(
+                id=str(table.uuid),
+                name=table.name,
+                type=table.type,
+            )
 
     # Get establishment UUID
     establishment = session.get(Establishment, reservation.establishment_id)
     establishment_uuid = str(establishment.uuid) if establishment else None
 
-    return {
-        "reservation": {
-            "id": str(reservation.uuid),
-            "reference": reservation.reference,
-            "number_of_guests": reservation.number_of_guests,
-            "reservation_date": reservation.reservation_date.isoformat(),
-            "reservation_time": reservation.reservation_time.isoformat()
+    return ReservationDetailsResponse(
+        reservation=ReservationDetailRead(
+            id=str(reservation.uuid),
+            reference=reservation.reference,
+            number_of_guests=reservation.number_of_guests,
+            reservation_date=reservation.reservation_date.isoformat(),
+            reservation_time=reservation.reservation_time.isoformat()
             if reservation.reservation_time
             else None,
-            "status": reservation.status,
-            "special_request": reservation.special_request,
-            "note": reservation.note,
-            "accepted_at": reservation.accepted_at.isoformat() if reservation.accepted_at else None,
-            "refused_at": reservation.refused_at.isoformat() if reservation.refused_at else None,
-            "canceled_at": reservation.canceled_at.isoformat() if reservation.canceled_at else None,
-            "created_at": reservation.created_at.isoformat(),
-            "establishment_id": establishment_uuid,
-        },
-        "client": {
-            "id": str(client.uuid),
-            "full_name": client.full_name,
-            "phone_number": client.phone_number,
-            "email": client.email,
-            "is_vip": client.is_vip,
-            "is_blacklisted": client.is_blacklisted,
-            "last_reservation_date": last_reservation.isoformat() if last_reservation else None,
-            "total_accepted": total_accepted,
-            "total_canceled": total_canceled,
-            "total_refused": total_refused,
-        },
-        "table": table_data,
-    }
+            status=reservation.status,
+            special_request=reservation.special_request,
+            note=reservation.note,
+            accepted_at=reservation.accepted_at.isoformat() if reservation.accepted_at else None,
+            refused_at=reservation.refused_at.isoformat() if reservation.refused_at else None,
+            canceled_at=reservation.canceled_at.isoformat() if reservation.canceled_at else None,
+            created_at=reservation.created_at.isoformat(),
+            establishment_id=establishment_uuid,
+        ),
+        client=ClientDetailRead(
+            id=str(client.uuid),
+            full_name=client.full_name,
+            phone_number=client.phone_number,
+            email=client.email,
+            is_vip=client.is_vip,
+            is_blacklisted=client.is_blacklisted,
+            last_reservation_date=last_reservation.isoformat() if last_reservation else None,
+            total_accepted=total_accepted,
+            total_canceled=total_canceled,
+            total_refused=total_refused,
+        ),
+        table=table_data,
+    )
 
 
 @staff_reservations_router.post(
@@ -224,7 +233,13 @@ def get_reservation_details(
 def create_reservation(
     reservation_data: ReservationCreate, session: DatabaseSession, token_payload: StaffUser
 ):
-    """Create a new reservation (staff only)"""
+    """
+    Create a new reservation (staff only)
+
+    This endpoint uses pessimistic locking (SELECT FOR UPDATE) to prevent race conditions
+    when multiple staff members try to book the same table simultaneously.
+    """
+    from reservations.services import TableAvailabilityService
 
     # Get establishment from user's account
     account_id = token_payload.get("account")
@@ -241,7 +256,7 @@ def create_reservation(
     if not client:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
 
-    # Check if table exists (if provided)
+    # Check if table exists and get internal ID (if provided)
     table_id = None
     if reservation_data.table_id:
         statement = select(TableModel).where(TableModel.uuid == reservation_data.table_id)
@@ -250,6 +265,32 @@ def create_reservation(
         if not table:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Table not found")
         table_id = table.id
+
+        # Validate table availability with pessimistic locking
+        # This locks the table row to prevent concurrent bookings
+        with session.begin_nested():  # Use savepoint for nested transaction
+            # Lock the table row to prevent race conditions
+            locked_table = session.exec(
+                select(TableModel).where(TableModel.id == table_id).with_for_update()
+            ).first()
+
+            if not locked_table:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Table not found")
+
+            # Check availability within the locked transaction
+            availability_service = TableAvailabilityService(session)
+            is_valid, error = availability_service.validate_reservation_time_slot(
+                table_id=table_id,
+                reservation_date=reservation_data.reservation_date,
+                reservation_time=reservation_data.reservation_time,
+                duration_minutes=reservation_data.duration_minutes or 120,
+            )
+
+            if not is_valid:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=error or "Table is not available for the selected time slot",
+                )
 
     # Generate reference
     reference = f"REF{datetime.utcnow().timestamp():.0f}"
@@ -261,6 +302,7 @@ def create_reservation(
         number_of_guests=reservation_data.number_of_guests,
         reservation_date=reservation_data.reservation_date,
         reservation_time=reservation_data.reservation_time,
+        duration_minutes=reservation_data.duration_minutes,
         special_request=reservation_data.special_request,
         client_id=client.id,
         establishment_id=establishment.id,
@@ -282,7 +324,13 @@ def update_reservation(
     session: DatabaseSession,
     token_payload: StaffUser,
 ):
-    """Update a reservation (staff only)"""
+    """
+    Update a reservation (staff only)
+
+    When updating table assignment or time, uses pessimistic locking and validates availability.
+    """
+    from reservations.services import TableAvailabilityService
+
     statement = select(Reservation).where(Reservation.uuid == reservation_id)
     reservation = session.exec(statement).first()
 
@@ -301,12 +349,66 @@ def update_reservation(
         elif new_status == ReservationStatus.CANCELED:
             reservation.canceled_at = datetime.utcnow()
 
-    # Handle table_id conversion
+    # Handle table_id conversion and availability validation
     if "table_id" in update_data and update_data["table_id"]:
         statement = select(TableModel).where(TableModel.uuid == update_data["table_id"])
         table = session.exec(statement).first()
         if table:
-            update_data["table_id"] = table.id
+            new_table_id = table.id
+
+            # Check if table or time is changing - need to validate availability
+            is_table_changing = new_table_id != reservation.table_id
+            is_time_changing = (
+                (
+                    "reservation_date" in update_data
+                    and update_data["reservation_date"] != reservation.reservation_date
+                )
+                or (
+                    "reservation_time" in update_data
+                    and update_data["reservation_time"] != reservation.reservation_time
+                )
+                or (
+                    "duration_minutes" in update_data
+                    and update_data["duration_minutes"] != reservation.duration_minutes
+                )
+            )
+
+            if is_table_changing or is_time_changing:
+                # Validate availability with locking
+                with session.begin_nested():
+                    # Lock the new table row
+                    locked_table = session.exec(
+                        select(TableModel).where(TableModel.id == new_table_id).with_for_update()
+                    ).first()
+
+                    if not locked_table:
+                        raise HTTPException(
+                            status_code=status.HTTP_404_NOT_FOUND, detail="Table not found"
+                        )
+
+                    # Check availability (exclude current reservation from conflict check)
+                    availability_service = TableAvailabilityService(session)
+                    is_valid, error = availability_service.validate_reservation_time_slot(
+                        table_id=new_table_id,
+                        reservation_date=update_data.get(
+                            "reservation_date", reservation.reservation_date
+                        ),
+                        reservation_time=update_data.get(
+                            "reservation_time", reservation.reservation_time
+                        ),
+                        duration_minutes=update_data.get(
+                            "duration_minutes", reservation.duration_minutes or 120
+                        ),
+                        exclude_reservation_id=reservation.id,  # Exclude current reservation
+                    )
+
+                    if not is_valid:
+                        raise HTTPException(
+                            status_code=status.HTTP_409_CONFLICT,
+                            detail=error or "Table is not available for the selected time slot",
+                        )
+
+            update_data["table_id"] = new_table_id
         else:
             del update_data["table_id"]
 
@@ -493,7 +595,7 @@ def create_reservation_for_existing_client(
     return ReservationRead.model_validate(reservation)
 
 
-@client_reservations_router.post("/cancel-reservation")
+@client_reservations_router.post("/cancel-reservation", response_model=MessageResponse)
 def cancel_reservation(request_data: CancelReservationRequest, session: DatabaseSession):
     """Cancel a reservation (public endpoint)"""
 
@@ -526,35 +628,55 @@ def cancel_reservation(request_data: CancelReservationRequest, session: Database
     session.add(reservation)
     session.commit()
 
-    return {"message": "Reservation canceled successfully"}
+    return MessageResponse(message="Reservation canceled successfully")
 
 
 # Messenger bot route
 messenger_router = APIRouter(prefix="/api", tags=["Messenger Bot"])
 
 
-@messenger_router.post("/new-reservation-url")
+@messenger_router.post("/new-reservation-url", response_model=ReservationUrlResponse)
 def create_new_reservation_url(session: DatabaseSession):
     """Create URL for new reservation via messenger bot"""
     # This would typically accept establishment_id and messenger_id
     # Simplified version for now
-    return {"url": "http://localhost:3000/reservation"}
+    return ReservationUrlResponse(url="http://localhost:3000/reservation")
 
 
 # Get available tables for a specific date/time
-@staff_reservations_router.post("/available-tables", response_model=list)
+@staff_reservations_router.post("/available-tables", response_model=list[TableAvailabilityRead])
 def get_available_tables(
     request_data: AvailableTablesRequest, session: DatabaseSession, token_payload: StaffUser
 ):
-    """Get list of available tables for a specific date/time"""
+    """
+    Get list of available tables for a specific date/time
+
+    Uses TableAvailabilityService to properly check for conflicts including duration overlap.
+    """
     from datetime import time as time_type
 
+    from reservations.services import TableAvailabilityService
     from tables.models import Zone
 
     # Parse request data
     reservation_date = request_data.reservation_date
     number_of_guests = request_data.number_of_guests
     reservation_time_str = request_data.reservation_time
+
+    # Parse time string (HH:MM:SS or HH:MM format)
+    if isinstance(reservation_time_str, str):
+        time_parts = reservation_time_str.split(":")
+        if len(time_parts) == 2:
+            reservation_time = time_type(int(time_parts[0]), int(time_parts[1]))
+        elif len(time_parts) == 3:
+            reservation_time = time_type(int(time_parts[0]), int(time_parts[1]), int(time_parts[2]))
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid time format. Use HH:MM or HH:MM:SS",
+            )
+    else:
+        reservation_time = reservation_time_str
 
     # Get establishment from user's account
     account_id = token_payload.get("account")
@@ -564,28 +686,20 @@ def get_available_tables(
     if not establishment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Establishment not found")
 
-    # Get all tables that match capacity
-    statement = select(TableModel).where(
-        TableModel.establishment_id == establishment.id,
-        TableModel.is_available,
-        TableModel.min_capacity <= number_of_guests,
-        TableModel.max_capacity >= number_of_guests,
+    # Use TableAvailabilityService to get available tables
+    # This properly handles duration-based conflicts, overnight reservations, etc.
+    availability_service = TableAvailabilityService(session)
+    available_tables = availability_service.get_available_tables(
+        establishment_id=establishment.id,
+        reservation_date=reservation_date,
+        reservation_time=reservation_time,
+        number_of_guests=number_of_guests,
+        duration_minutes=120,  # Default 2-hour reservation
     )
-    tables = session.exec(statement).all()
-
-    # Check which tables are already reserved for this time slot
-    statement = select(Reservation).where(
-        Reservation.establishment_id == establishment.id,
-        Reservation.reservation_date == reservation_date,
-        Reservation.status.in_([ReservationStatus.PENDING, ReservationStatus.ACCEPTED]),
-        Reservation.table_id is not None,
-    )
-    reserved_tables = session.exec(statement).all()
-    reserved_table_ids = {r.table_id for r in reserved_tables}
 
     # Build response with zone info
     result = []
-    for table in tables:
+    for table in available_tables:
         zone_name = None
         if table.zone_id:
             zone = session.get(Zone, table.zone_id)
@@ -593,92 +707,17 @@ def get_available_tables(
                 zone_name = zone.name
 
         result.append(
-            {
-                "id": str(table.uuid),
-                "name": table.name,
-                "min_capacity": table.min_capacity,
-                "max_capacity": table.max_capacity,
-                "zone_name": zone_name,
-                "is_currently_available": table.id not in reserved_table_ids,
-            }
+            TableAvailabilityRead(
+                id=table.uuid,
+                name=table.name,
+                min_capacity=table.min_capacity,
+                max_capacity=table.max_capacity,
+                zone_name=zone_name,
+                is_currently_available=True,  # All returned tables are available
+            )
         )
 
     return result
 
 
-# Get reservation with full client details
-@staff_reservations_router.get("/{reservation_id}/details")
-def get_reservation_details(
-    reservation_id: uuid_lib.UUID, session: DatabaseSession, token_payload: StaffUser
-):
-    """Get reservation with full client details and history"""
-    statement = select(Reservation).where(Reservation.uuid == reservation_id)
-    reservation = session.exec(statement).first()
-
-    if not reservation:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reservation not found")
-
-    # Get client
-    client = session.get(Client, reservation.client_id)
-
-    if not client:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
-
-    # Get client reservation history
-    from sqlmodel import func
-
-    # Last reservation date
-    last_res_stmt = (
-        select(Reservation.reservation_date)
-        .where(Reservation.client_id == client.id, Reservation.id != reservation.id)
-        .order_by(Reservation.reservation_date.desc())
-        .limit(1)
-    )
-    last_res_date = session.exec(last_res_stmt).first()
-
-    # Count by status
-    total_accepted = session.exec(
-        select(func.count(Reservation.id)).where(
-            Reservation.client_id == client.id, Reservation.status == ReservationStatus.ACCEPTED
-        )
-    ).one()
-
-    total_canceled = session.exec(
-        select(func.count(Reservation.id)).where(
-            Reservation.client_id == client.id, Reservation.status == ReservationStatus.CANCELED
-        )
-    ).one()
-
-    total_refused = session.exec(
-        select(func.count(Reservation.id)).where(
-            Reservation.client_id == client.id, Reservation.status == ReservationStatus.REFUSED
-        )
-    ).one()
-
-    # Get table info if assigned
-    table_info = None
-    if reservation.table_id:
-        table = session.get(TableModel, reservation.table_id)
-        if table:
-            table_info = {
-                "id": str(table.uuid),
-                "name": table.name,
-                "capacity": f"{table.min_capacity}-{table.max_capacity}",
-            }
-
-    return {
-        "reservation": ReservationRead.model_validate(reservation).model_dump(),
-        "table": table_info,
-        "client": {
-            "id": str(client.uuid),
-            "full_name": client.full_name,
-            "email": client.email,
-            "phone_number": client.phone_number,
-            "is_vip": client.is_vip,
-            "is_blacklisted": client.is_blacklisted,
-            "last_reservation_date": last_res_date.isoformat() if last_res_date else None,
-            "total_accepted": total_accepted,
-            "total_canceled": total_canceled,
-            "total_refused": total_refused,
-        },
-    }
+# This duplicate endpoint has been removed - use the one at line 134 instead

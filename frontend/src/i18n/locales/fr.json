@@ -19,7 +19,8 @@
     "signin": "Se connecter",
     "welcome": "Bienvenue, {{name}}!",
     "loginFailed": "Échec de la connexion",
-    "invalidCredentials": "Identifiants invalides"
+    "invalidCredentials": "Identifiants invalides",
+    "loginSuccess": "Connexion réussie"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -118,7 +119,11 @@
     "phonePlaceholder": "+33 6 12 34 56 78",
     "emailPlaceholder": "email@example.com",
     "create": "Créer client",
-    "addNew": "Ajouter un nouveau client"
+    "addNew": "Ajouter un nouveau client",
+    "fullName": "Nom complet",
+    "enterFullName": "Entrez le nom complet",
+    "phoneNumber": "Numéro de téléphone",
+    "vipClient": "Client VIP"
   },
   "tables": {
     "title": "Tables",
@@ -185,6 +190,28 @@
     "list": "Liste",
     "required": "Requis",
     "back": "Retour",
-    "selected": "Sélectionné"
+    "selected": "Sélectionné",
+    "close": "Fermer",
+    "timeFormat": "HH:MM"
+  },
+  "zones": {
+    "title": "Zones",
+    "name": "Nom",
+    "addZone": "Ajouter une zone",
+    "editZone": "Modifier la zone",
+    "deleteZone": "Supprimer la zone",
+    "newZone": "Nouvelle Zone",
+    "searchPlaceholder": "Rechercher par nom de zone...",
+    "noZones": "Aucune zone trouvée",
+    "zoneName": "Nom de la zone",
+    "zoneNamePlaceholder": "Salle principale",
+    "nameRequired": "Nom de la zone requis",
+    "createdSuccessfully": "Zone créée avec succès",
+    "updatedSuccessfully": "Zone mise à jour avec succès",
+    "deletedSuccessfully": "Zone supprimée avec succès",
+    "createError": "Échec de la création de la zone",
+    "updateError": "Échec de la mise à jour de la zone",
+    "deleteError": "Échec de la suppression de la zone",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette zone ?"
   }
 }

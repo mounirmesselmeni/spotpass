@@ -1,6 +1,5 @@
 """Account SQLModel models"""
 
-
 from sqlmodel import Field, SQLModel
 
 

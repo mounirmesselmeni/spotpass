@@ -20,6 +20,17 @@ class ZoneCreate(ZoneBase):
 
     establishment_id: UUID
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "name": "Terrace",
+                    "establishment_id": "123e4567-e89b-12d3-a456-426614174000",
+                }
+            ]
+        }
+    }
+
 
 class ZoneUpdate(BaseModel):
     """Schema for updating zones"""
@@ -61,6 +72,23 @@ class TableCreate(TableBase):
     establishment_id: UUID
     zone_id: UUID | None = None
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "name": "Table 5",
+                    "description": "Window table with city view",
+                    "type": "table",
+                    "is_available": True,
+                    "min_capacity": 2,
+                    "max_capacity": 4,
+                    "establishment_id": "123e4567-e89b-12d3-a456-426614174000",
+                    "zone_id": "123e4567-e89b-12d3-a456-426614174001",
+                }
+            ]
+        }
+    }
+
 
 class TableUpdate(BaseModel):
     """Schema for updating tables"""
@@ -71,6 +99,20 @@ class TableUpdate(BaseModel):
     min_capacity: int | None = Field(None, ge=1, le=100)
     max_capacity: int | None = Field(None, ge=1, le=100)
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "is_available": True,
+                    "name": "Table 5A",
+                    "description": "Premium window table",
+                    "min_capacity": 2,
+                    "max_capacity": 6,
+                }
+            ]
+        }
+    }
+
 
 class TableRead(TableBase):
     """Schema for reading tables"""
@@ -80,7 +122,23 @@ class TableRead(TableBase):
     establishment: EstablishmentRead | None = None
     zone: ZoneRead | None = None
 
-    model_config = {"from_attributes": True}
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "name": "Table 5",
+                    "description": "Window table with city view",
+                    "type": "table",
+                    "is_available": True,
+                    "min_capacity": 2,
+                    "max_capacity": 4,
+                    "created_at": "2024-01-01T10:00:00",
+                }
+            ]
+        },
+    }
 
     @classmethod
     def model_validate(cls, obj, *args, **kwargs):
@@ -99,3 +157,42 @@ class TableRead(TableBase):
             }
             return cls.model_construct(**data)
         return super().model_validate(obj, *args, **kwargs)
+
+
+class TimeSlotReservationInfo(BaseModel):
+    """Reservation information for a time slot"""
+
+    reference: str
+    guests: int
+    client_name: str
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [{"reference": "REF1234567890", "guests": 4, "client_name": "John Doe"}]
+        }
+    }
+
+
+class TimeSlotRead(BaseModel):
+    """Time slot availability information"""
+
+    time: str
+    status: str  # "available" or "occupied"
+    reservation: TimeSlotReservationInfo | None = None
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "time": "19:30",
+                    "status": "occupied",
+                    "reservation": {
+                        "reference": "REF1234567890",
+                        "guests": 4,
+                        "client_name": "John Doe",
+                    },
+                },
+                {"time": "20:00", "status": "available", "reservation": None},
+            ]
+        }
+    }

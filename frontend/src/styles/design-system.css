@@ -1,0 +1,331 @@
+/**
+ * Minimalist Modern Design System
+ * Clarity through structure, character through bold detail
+ * Professional yet design-forward aesthetic with Electric Blue accent
+ */
+
+/* ============================================================================
+   COLOR TOKENS - Warm Monochrome + Electric Blue Accent
+   ============================================================================ */
+
+:root {
+  /* Primary Palette */
+  --background: #fafafa;
+  --foreground: #0f172a;
+
+  /* Surface Colors */
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+
+  /* Electric Blue Accent (The Signature) */
+  --accent: #0052ff;
+  --accent-secondary: #4d7cff;
+  --accent-foreground: #ffffff;
+
+  /* Borders & Structural Elements */
+  --border: #e2e8f0;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+
+  /* Focus Ring */
+  --ring: #0052ff;
+
+  /* Shadows - Multi-layer with Accent Tints */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+  --shadow-accent: 0 4px 14px rgba(0, 82, 255, 0.25);
+  --shadow-accent-lg: 0 8px 24px rgba(0, 82, 255, 0.35);
+
+  /* Animation Timings - Smooth & Purposeful */
+  --timing-fast: 200ms;
+  --timing-standard: 300ms;
+  --timing-slow: 700ms;
+
+  /* Easing */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Typography - Single Font System */
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'Inter', system-ui, sans-serif;
+}
+
+/* ============================================================================
+   GLOBAL BASE STYLES
+   ============================================================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  background: var(--background);
+  color: var(--foreground);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ============================================================================
+   GRADIENT UTILITIES - Signature Electric Blue Gradient
+   ============================================================================ */
+
+/* Primary gradient (accent to secondary) */
+.gradient-primary {
+  background: linear-gradient(to right, var(--accent), var(--accent-secondary));
+}
+
+/* Diagonal gradient */
+.gradient-diagonal {
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+}
+
+/* Gradient text effect */
+.gradient-text {
+  background: linear-gradient(to right, var(--accent), var(--accent-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Gradient underline for headlines */
+.gradient-underline {
+  position: relative;
+}
+
+.gradient-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -0.25rem;
+  left: 0;
+  height: 0.75rem;
+  width: 100%;
+  border-radius: 0.125rem;
+  background: linear-gradient(to right, rgba(0, 82, 255, 0.15), rgba(77, 124, 255, 0.1));
+}
+
+/* ============================================================================
+   TEXTURE PATTERNS - Depth Through Subtle Details
+   ============================================================================ */
+
+/* Dot pattern for inverted sections */
+.dot-pattern {
+  position: relative;
+}
+
+.dot-pattern::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Radial glow accent (for corners/edges) */
+.radial-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.radial-glow::before {
+  content: '';
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent), transparent 70%);
+  opacity: 0.04;
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.radial-glow-top-left::before {
+  top: -300px;
+  left: -300px;
+}
+
+.radial-glow-top-right::before {
+  top: -300px;
+  right: -300px;
+}
+
+.radial-glow-bottom-left::before {
+  bottom: -300px;
+  left: -300px;
+}
+
+.radial-glow-bottom-right::before {
+  bottom: -300px;
+  right: -300px;
+}
+
+/* ============================================================================
+   TYPOGRAPHY UTILITIES - Editorial Scale
+   ============================================================================ */
+
+/* Display headlines - Inter */
+.text-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+/* Body text - Inter */
+.text-body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.625;
+}
+
+/* Section labels - Inter uppercase */
+.text-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  line-height: 1.4;
+}
+
+/* ============================================================================
+   INVERTED SECTION UTILITY - Dramatic Contrast
+   ============================================================================ */
+
+.section-inverted {
+  background: var(--foreground);
+  color: var(--card);
+  position: relative;
+}
+
+.section-inverted * {
+  color: inherit;
+}
+
+/* ============================================================================
+   SCROLL BEHAVIOR
+   ============================================================================ */
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================================
+   FOCUS VISIBLE STYLES - Accessibility with Accent Ring
+   ============================================================================ */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+/* ============================================================================
+   SELECTION STYLES
+   ============================================================================ */
+
+::selection {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+::-moz-selection {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+/* ============================================================================
+   ANIMATION UTILITIES
+   ============================================================================ */
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.7;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes rotate-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
+
+.animate-rotate-slow {
+  animation: rotate-slow 60s linear infinite;
+}
+
+/* ============================================================================
+   HOVER & INTERACTION UTILITIES
+   ============================================================================ */
+
+.hover-lift {
+  transition: all var(--timing-fast) var(--ease-out);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.hover-accent-shadow:hover {
+  box-shadow: var(--shadow-accent);
+}

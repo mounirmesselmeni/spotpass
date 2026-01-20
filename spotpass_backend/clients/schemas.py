@@ -22,6 +22,21 @@ class ClientBase(BaseModel):
 class ClientCreate(ClientBase):
     """Schema for creating clients"""
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "full_name": "Jane Smith",
+                    "email": "jane.smith@example.com",
+                    "phone_number": "+33612345678",
+                    "messenger_id": "messenger_12345",
+                    "is_blacklisted": False,
+                    "is_vip": False,
+                }
+            ]
+        }
+    }
+
 
 class ClientUpdate(BaseModel):
     """Schema for updating clients"""

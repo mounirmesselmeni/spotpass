@@ -336,14 +336,16 @@ class TestAvailableTables:
         assert response.status_code == 200
         data = response.json()
 
-        # Table1 should show as not available
-        assert len(data) == 2
-        table1_data = next((t for t in data if t["name"] == "Table 1"), None)
+        # Only Table 2 should be returned (Table 1 is occupied)
+        # The service now only returns available tables, not all tables
+        assert len(data) == 1
         table2_data = next((t for t in data if t["name"] == "Table 2"), None)
-        assert table1_data is not None
         assert table2_data is not None
-        assert table1_data["is_currently_available"] is False
         assert table2_data["is_currently_available"] is True
+
+        # Verify Table 1 is NOT in the results
+        table1_data = next((t for t in data if t["name"] == "Table 1"), None)
+        assert table1_data is None
 
     def test_available_tables_filters_by_capacity(
         self, client: TestClient, session: Session, auth_headers_staff

@@ -1,0 +1,27 @@
+/**
+ * RuleDivider Styles
+ * Horizontal rules with varying weights
+ */
+
+.ruleDivider {
+  border: none;
+  border-top-style: solid;
+  border-top-color: var(--border);
+  margin: 0;
+}
+
+.thin {
+  border-top-width: var(--border-thin);
+}
+
+.medium {
+  border-top-width: var(--border-medium);
+}
+
+.thick {
+  border-top-width: var(--border-thick);
+}
+
+.ultra {
+  border-top-width: var(--border-ultra);
+}

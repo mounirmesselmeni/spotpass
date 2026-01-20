@@ -1,39 +1,36 @@
-import { SimpleGrid, Card, Text, Group, ThemeIcon, Box, Title, Stack, Badge } from '@mantine/core';
-import {
-  IconUsers,
-  IconTable,
-  IconCalendar,
-  IconClock,
-  IconCalendarTime,
-  IconCalendarCheck,
-} from '@tabler/icons-react';
+import { SimpleGrid, Text, Group, Box, Stack, Loader, Center, Title } from '@mantine/core';
+import { IconUsers, IconTable, IconCalendar, IconClock, IconCalendarTime, IconCalendarCheck } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useGetDashboardStatsApiStaffAuthDashboardStatsGet } from '@/api/generated/authentication/authentication';
+import { ModernCard, GradientText, SectionBadge } from '@/components';
+import { motion } from 'framer-motion';
 
 interface StatCardProps {
   title: string;
   value: number;
   icon: React.ReactNode;
-  color: string;
+  delay?: number;
 }
 
-function StatCard({ title, value, icon, color }: StatCardProps) {
+function StatCard({ title, value, icon, delay = 0 }: StatCardProps) {
   return (
-    <Card padding="lg" radius="md" withBorder>
-      <Group justify="apart">
-        <div>
-          <Text size="xs" color="dimmed" fw={700} tt="uppercase">
-            {title}
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay }}>
+      <ModernCard padding="xl">
+        <Stack gap="lg">
+          <Group justify="space-between" align="center">
+            <Box style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #0052FF, #4D7CFF)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF' }}>
+              {icon}
+            </Box>
+            <Text size="xs" c="dimmed" fw={600} tt="uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>
+              {title}
+            </Text>
+          </Group>
+          <Text size="xl" fw={700} style={{ fontSize: 42, fontFamily: 'var(--font-display)', lineHeight: 1 }}>
+            {value.toLocaleString()}
           </Text>
-          <Text fw={700} size="xl" mt="xs">
-            {value}
-          </Text>
-        </div>
-        <ThemeIcon color={color} variant="light" size={48} radius="md">
-          {icon}
-        </ThemeIcon>
-      </Group>
-    </Card>
+        </Stack>
+      </ModernCard>
+    </motion.div>
   );
 }
 
@@ -43,69 +40,37 @@ export function DashboardPage() {
 
   if (isLoading) {
     return (
-      <Box p="xl">
-        <Title order={1} mb="xl">
-          {t('dashboard.title')}
-        </Title>
-        <Text>{t('common.loading')}</Text>
-      </Box>
+      <Center h="50vh">
+        <Stack align="center" gap="md">
+          <Loader size="lg" color="#0052FF" />
+          <Text c="dimmed">{t('common.loading')}</Text>
+        </Stack>
+      </Center>
     );
   }
 
   return (
-    <Box p="xl">
-      <Stack gap="xl">
-        <Group justify="space-between" align="center">
-          <div>
-            <Title order={1} mb="xs">
-              {t('dashboard.title')}
+    <Box style={{ padding: 48, maxWidth: 1400, margin: '0 auto' }}>
+      <Stack gap={64}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+          <Stack gap="lg">
+            <SectionBadge pulse>Overview</SectionBadge>
+            <Title order={1} style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 4vw, 3.25rem)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+              {t('dashboard.title')}, <GradientText>Welcome Back</GradientText>
             </Title>
-            <Text size="lg" c="dimmed">
+            <Text size="lg" c="dimmed" style={{ maxWidth: 600 }}>
               {t('dashboard.welcome')}
             </Text>
-          </div>
-          <Badge size="xl" variant="gradient" gradient={{ from: 'brand', to: 'cyan' }}>
-            {t('app.name')}
-          </Badge>
-        </Group>
+          </Stack>
+        </motion.div>
 
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
-          <StatCard
-            title={t('dashboard.stats.totalClients')}
-            value={stats?.total_clients || 0}
-            icon={<IconUsers size={24} />}
-            color="blue"
-          />
-          <StatCard
-            title={t('dashboard.stats.totalTables')}
-            value={stats?.total_tables || 0}
-            icon={<IconTable size={24} />}
-            color="grape"
-          />
-          <StatCard
-            title={t('dashboard.stats.totalReservations')}
-            value={stats?.total_reservations || 0}
-            icon={<IconCalendar size={24} />}
-            color="teal"
-          />
-          <StatCard
-            title={t('dashboard.stats.pendingReservations')}
-            value={stats?.pending_reservations || 0}
-            icon={<IconClock size={24} />}
-            color="orange"
-          />
-          <StatCard
-            title={t('dashboard.stats.todaysReservations')}
-            value={stats?.todays_reservations || 0}
-            icon={<IconCalendarTime size={24} />}
-            color="green"
-          />
-          <StatCard
-            title={t('dashboard.stats.upcomingReservations')}
-            value={stats?.upcoming_reservations || 0}
-            icon={<IconCalendarCheck size={24} />}
-            color="cyan"
-          />
+          <StatCard title={t('dashboard.stats.totalClients')} value={stats?.total_clients || 0} icon={<IconUsers size={24} />} delay={0.1} />
+          <StatCard title={t('dashboard.stats.totalTables')} value={stats?.total_tables || 0} icon={<IconTable size={24} />} delay={0.2} />
+          <StatCard title={t('dashboard.stats.totalReservations')} value={stats?.total_reservations || 0} icon={<IconCalendar size={24} />} delay={0.3} />
+          <StatCard title={t('dashboard.stats.pendingReservations')} value={stats?.pending_reservations || 0} icon={<IconClock size={24} />} delay={0.4} />
+          <StatCard title={t('dashboard.stats.todaysReservations')} value={stats?.todays_reservations || 0} icon={<IconCalendarTime size={24} />} delay={0.5} />
+          <StatCard title={t('dashboard.stats.upcomingReservations')} value={stats?.upcoming_reservations || 0} icon={<IconCalendarCheck size={24} />} delay={0.6} />
         </SimpleGrid>
       </Stack>
     </Box>
