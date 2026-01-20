@@ -25,12 +25,20 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Create virtual environment
+        run: uv venv
 
       - name: Install pre-commit
         run: uv pip install pre-commit
 
       - name: Run pre-commit on all files
         run: uv run pre-commit run --all-files
+        env:
+          PRE_COMMIT_HOME: ~/.cache/pre-commit
 
   backend-tests:
     name: Backend Tests & Linting
@@ -44,6 +52,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Set up Python
         run: uv python install 3.11
@@ -63,6 +72,9 @@ jobs:
           flags: backend
           name: backend-coverage
         if: github.event_name == 'pull_request'
+
+      - name: Minimize uv cache
+        run: uv cache prune --ci
 
   frontend-tests:
     name: Frontend Build & Linting
