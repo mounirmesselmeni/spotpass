@@ -93,9 +93,11 @@ jobs:
         run: corepack enable
 
       - name: Install correct yarn version
+        working-directory: ./frontend
         run: corepack install
 
       - name: Get yarn cache directory
+        working-directory: ./frontend
         id: yarn-cache-dir
         run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
 
