@@ -1,0 +1,55 @@
+repos:
+  # Backend Python checks
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.13
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        files: ^spotpass_backend/
+      - id: ruff-format
+        files: ^spotpass_backend/
+
+  # Frontend TypeScript checks
+  - repo: local
+    hooks:
+      - id: frontend-typecheck
+        name: Frontend TypeScript Type Check
+        entry: bash -c "cd frontend && yarn typecheck"
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+        description: Run TypeScript type checking for frontend
+
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: Frontend ESLint
+        entry: bash -c "cd frontend && yarn lint"
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+        description: Run ESLint for frontend
+
+  - repo: local
+    hooks:
+      - id: frontend-format-check
+        name: Frontend Prettier Format Check
+        entry: bash -c "cd frontend && yarn format:check"
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+        description: Check Prettier formatting for frontend
+
+  # General pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^frontend/src/api/generated/
+      - id: end-of-file-fixer
+        exclude: ^frontend/src/api/generated/
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-json
+        exclude: ^frontend/src/api/generated/|^frontend/tsconfig\.json$

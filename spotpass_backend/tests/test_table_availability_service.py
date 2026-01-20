@@ -596,7 +596,7 @@ class TestTableAvailabilityService:
         establishment = EstablishmentFactory(session=session, account=account)
 
         # Create tables with different capacities
-        small_table = TableFactory(
+        TableFactory(
             session=session,
             establishment=establishment,
             name="Small",
@@ -695,7 +695,7 @@ class TestTableAvailabilityService:
             max_capacity=4,
             is_available=True,
         )
-        disabled_table = TableFactory(
+        TableFactory(
             session=session,
             establishment=establishment,
             name="Disabled",

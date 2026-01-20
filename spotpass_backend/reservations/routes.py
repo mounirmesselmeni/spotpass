@@ -666,11 +666,11 @@ def get_available_tables(
     # Parse time string - handle various formats
     if isinstance(reservation_time_str, str):
         # Handle datetime-like strings (e.g., '2026-01-20T12')
-        if 'T' in reservation_time_str:
+        if "T" in reservation_time_str:
             # Extract time part from datetime string
-            time_part = reservation_time_str.split('T')[-1]
+            time_part = reservation_time_str.split("T")[-1]
             # If time part doesn't have minutes, add :00
-            if ':' not in time_part:
+            if ":" not in time_part:
                 time_part = f"{time_part}:00"
             reservation_time_str = time_part
 
@@ -681,11 +681,11 @@ def get_available_tables(
                 minute = int(time_parts[1])
                 second = int(time_parts[2]) if len(time_parts) > 2 else 0
                 reservation_time = time_type(hour, minute, second)
-            except ValueError as e:
+            except ValueError as exc:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Invalid time format: {reservation_time_str}. Use HH:MM or HH:MM:SS",
-                )
+                ) from exc
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

@@ -32,7 +32,7 @@ class TestClientList:
 
     def test_create_client(self, client: TestClient, session: Session, auth_headers_staff):
         """Test creating a new client"""
-        establishment = EstablishmentFactory(session=session, account_id=1)
+        EstablishmentFactory(session=session, account_id=1)
         session.commit()
 
         client_data = {
