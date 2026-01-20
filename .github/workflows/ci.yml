@@ -88,11 +88,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "yarn"
-          cache-dependency-path: frontend/yarn.lock
 
       - name: Enable Corepack
         run: corepack enable
+
+      - name: Install correct yarn version
+        run: corepack install
+
+      - name: Get yarn cache directory
+        id: yarn-cache-dir
+        run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+      - name: Cache yarn dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.yarn-cache-dir.outputs.dir }}
+          key: yarn-cache-${{ runner.os }}-${{ hashFiles('frontend/yarn.lock') }}
+          restore-keys: |
+            yarn-cache-${{ runner.os }}-
 
       - name: Install dependencies
         working-directory: ./frontend
