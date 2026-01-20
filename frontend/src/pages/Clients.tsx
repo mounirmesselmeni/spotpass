@@ -1,79 +1,62 @@
-import { useState } from 'react';
+import type { ClientRead } from '@/api/generated/models';
 import {
-  Stack,
-  Title,
-  Button,
-  Group,
-  TextInput,
-  Table,
-  Badge,
+  useCreateClientApiStaffClientsPost,
+  useDeleteClientApiStaffClientsClientIdDelete,
+  useListClientsApiStaffClientsGet,
+  useUpdateClientApiStaffClientsClientIdPatch,
+} from '@/api/generated/staff-clients/staff-clients';
+import {
   ActionIcon,
-  Modal,
-  Card,
-  Text,
-  Switch,
+  Badge,
   Box,
+  Button,
+  Card,
+  Group,
+  Loader,
+  Modal,
+  Stack,
+  Switch,
+  Table,
+  Text,
+  TextInput,
+  Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
-import { IconPlus, IconPencil, IconTrash, IconSearch } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { IconPencil, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-interface Client {
-  uuid: string;
-  full_name: string;
-  email: string;
-  phone_number: string;
-  is_vip: boolean;
-  is_blacklisted: boolean;
-}
-
-const mockClients: Client[] = [
-  {
-    uuid: '1',
-    full_name: 'John Doe',
-    email: 'john@example.com',
-    phone_number: '+1234567890',
-    is_vip: true,
-    is_blacklisted: false,
-  },
-  {
-    uuid: '2',
-    full_name: 'Jane Smith',
-    email: 'jane@example.com',
-    phone_number: '+0987654321',
-    is_vip: false,
-    is_blacklisted: false,
-  },
-];
 
 export function ClientsPage() {
   const { t } = useTranslation();
-  const [clients, setClients] = useState<Client[]>(mockClients);
+  const queryClient = useQueryClient();
   const [opened, { open, close }] = useDisclosure(false);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [editingClient, setEditingClient] = useState<ClientRead | null>(null);
   const [search, setSearch] = useState('');
+
+  const { data: clients, isLoading: loadingClients } = useListClientsApiStaffClientsGet();
+
+  const createClientMutation = useCreateClientApiStaffClientsPost();
+  const updateClientMutation = useUpdateClientApiStaffClientsClientIdPatch();
+  const deleteClientMutation = useDeleteClientApiStaffClientsClientIdDelete();
 
   const form = useForm({
     initialValues: {
-      full_name: '',
-      email: '',
-      phone_number: '',
       is_vip: false,
       is_blacklisted: false,
     },
-    validate: {
-      email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Invalid email'),
-      full_name: (value) => (value.length > 0 ? null : 'Name is required'),
-      phone_number: (value) => (value.length > 0 ? null : 'Phone is required'),
-    },
+    validate: {},
   });
 
-  const handleOpenModal = (client?: Client) => {
+  const handleOpenModal = (client?: ClientRead) => {
     if (client) {
       setEditingClient(client);
-      form.setValues(client);
+      form.setValues({
+        is_vip: client.is_vip || false,
+        is_blacklisted: client.is_blacklisted || false,
+      });
     } else {
       setEditingClient(null);
       form.reset();
@@ -81,43 +64,81 @@ export function ClientsPage() {
     open();
   };
 
-  const handleSubmit = (values: typeof form.values) => {
-    if (editingClient) {
-      setClients(
-        clients.map((c) => (c.uuid === editingClient.uuid ? { ...editingClient, ...values } : c))
-      );
+  const handleSubmit = async (values: typeof form.values) => {
+    try {
+      if (editingClient) {
+        await updateClientMutation.mutateAsync({
+          clientId: editingClient.id,
+          data: {
+            is_vip: values.is_vip,
+            is_blacklisted: values.is_blacklisted,
+          },
+        });
+        notifications.show({
+          title: t('common.success'),
+          message: t('clients.updatedSuccessfully'),
+          color: 'green',
+        });
+      } else {
+        // For new clients, we need to show a different modal or redirect to reservation wizard
+        notifications.show({
+          title: t('common.error'),
+          message: t('clients.createFromReservations'),
+          color: 'orange',
+        });
+        close();
+        return;
+      }
+
+      // Invalidate and refetch clients
+      queryClient.invalidateQueries({ queryKey: ['/api/staff/clients/'] });
+      close();
+      form.reset();
+    } catch (error) {
+      console.error('Error saving client:', error);
       notifications.show({
-        title: 'Success',
-        message: 'Client updated successfully',
-        color: 'green',
-      });
-    } else {
-      const newClient = { ...values, uuid: Date.now().toString() };
-      setClients([...clients, newClient]);
-      notifications.show({
-        title: 'Success',
-        message: 'Client created successfully',
-        color: 'green',
+        title: t('common.error'),
+        message: editingClient ? t('clients.updateError') : t('clients.createError'),
+        color: 'red',
       });
     }
-    close();
-    form.reset();
   };
 
-  const handleDelete = (uuid: string) => {
-    setClients(clients.filter((c) => c.uuid !== uuid));
-    notifications.show({
-      title: 'Success',
-      message: 'Client deleted successfully',
-      color: 'green',
-    });
+  const handleDelete = async (clientId: string) => {
+    try {
+      await deleteClientMutation.mutateAsync({ clientId });
+      notifications.show({
+        title: t('common.success'),
+        message: t('clients.deletedSuccessfully'),
+        color: 'green',
+      });
+      // Invalidate and refetch clients
+      queryClient.invalidateQueries({ queryKey: ['/api/staff/clients/'] });
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      notifications.show({
+        title: t('common.error'),
+        message: t('clients.deleteError'),
+        color: 'red',
+      });
+    }
   };
 
-  const filteredClients = clients.filter(
-    (c) =>
-      c.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      c.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredClients =
+    clients?.filter(
+      (c) =>
+        c.full_name.toLowerCase().includes(search.toLowerCase()) ||
+        (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
+    ) || [];
+
+  if (loadingClients) {
+    return (
+      <Stack gap="lg" align="center">
+        <Loader size="lg" />
+        <Text>{t('common.loading')}</Text>
+      </Stack>
+    );
+  }
 
   return (
     <Stack gap="lg">
@@ -160,9 +181,9 @@ export function ClientsPage() {
                 </Table.Tr>
               ) : (
                 filteredClients.map((client) => (
-                  <Table.Tr key={client.uuid}>
+                  <Table.Tr key={client.id}>
                     <Table.Td>{client.full_name}</Table.Td>
-                    <Table.Td>{client.email}</Table.Td>
+                    <Table.Td>{client.email || '-'}</Table.Td>
                     <Table.Td>{client.phone_number}</Table.Td>
                     <Table.Td>
                       <Group gap="xs">
@@ -187,7 +208,7 @@ export function ClientsPage() {
                         <ActionIcon
                           variant="light"
                           color="red"
-                          onClick={() => handleDelete(client.uuid)}
+                          onClick={() => handleDelete(client.id)}
                         >
                           <IconTrash size={16} />
                         </ActionIcon>
@@ -211,7 +232,7 @@ export function ClientsPage() {
               </Card>
             ) : (
               filteredClients.map((client) => (
-                <Card key={client.uuid} withBorder padding="md">
+                <Card key={client.id} withBorder padding="md">
                   <Group justify="space-between" mb="xs">
                     <Text fw={500} size="lg">
                       {client.full_name}
@@ -227,7 +248,7 @@ export function ClientsPage() {
                       <ActionIcon
                         variant="light"
                         color="red"
-                        onClick={() => handleDelete(client.uuid)}
+                        onClick={() => handleDelete(client.id)}
                       >
                         <IconTrash size={16} />
                       </ActionIcon>
@@ -239,7 +260,7 @@ export function ClientsPage() {
                       <Text span fw={500}>
                         {t('clients.email')}:{' '}
                       </Text>
-                      {client.email}
+                      {client.email || '-'}
                     </Text>
                     <Text size="sm" c="dimmed">
                       <Text span fw={500}>
@@ -272,44 +293,49 @@ export function ClientsPage() {
       >
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack>
-            <TextInput
-              label={t('clients.fullName')}
-              placeholder={t('clients.enterFullName')}
-              required
-              {...form.getInputProps('full_name')}
-            />
+            {editingClient ? (
+              <>
+                <Text size="sm" c="dimmed">
+                  {t('clients.editInfo')}
+                </Text>
+                <Card withBorder p="md">
+                  <Text fw={500} size="lg" mb="xs">
+                    {editingClient.full_name}
+                  </Text>
+                  <Text size="sm" c="dimmed" mb="xs">
+                    {t('clients.email')}: {editingClient.email || t('common.none')}
+                  </Text>
+                  <Text size="sm" c="dimmed">
+                    {t('clients.phone')}: {editingClient.phone_number}
+                  </Text>
+                </Card>
 
-            <TextInput
-              label={t('clients.email')}
-              placeholder={t('clients.emailPlaceholder')}
-              required
-              {...form.getInputProps('email')}
-            />
+                <Switch
+                  label={t('clients.vipClient')}
+                  {...form.getInputProps('is_vip', { type: 'checkbox' })}
+                />
 
-            <TextInput
-              label={t('clients.phoneNumber')}
-              placeholder={t('clients.phonePlaceholder')}
-              required
-              {...form.getInputProps('phone_number')}
-            />
-
-            <Switch
-              label={t('clients.vipClient')}
-              {...form.getInputProps('is_vip', { type: 'checkbox' })}
-            />
-
-            <Switch
-              label={t('clients.blacklisted')}
-              {...form.getInputProps('is_blacklisted', { type: 'checkbox' })}
-            />
+                <Switch
+                  label={t('clients.blacklisted')}
+                  {...form.getInputProps('is_blacklisted', { type: 'checkbox' })}
+                />
+              </>
+            ) : (
+              <Card withBorder p="md">
+                <Text ta="center" mb="md">
+                  {t('clients.createFromReservations')}
+                </Text>
+                <Text size="sm" c="dimmed" ta="center">
+                  {t('clients.createFromReservationsDesc')}
+                </Text>
+              </Card>
+            )}
 
             <Group justify="flex-end" mt="md">
               <Button variant="light" onClick={close}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit">
-                {editingClient ? t('common.update') : t('common.create')}
-              </Button>
+              {editingClient && <Button type="submit">{t('common.update')}</Button>}
             </Group>
           </Stack>
         </form>

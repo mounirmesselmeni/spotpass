@@ -115,36 +115,36 @@
   .loginPage {
     padding: 32px 16px;
   }
-  
+
   .hero {
     margin-bottom: 48px;
   }
-  
+
   .heroTitle {
     font-size: clamp(3rem, 10vw, 5rem);
   }
-  
+
   .heroSubtitle {
     font-size: 10px;
   }
-  
+
   .square {
     width: 16px;
     height: 16px;
   }
-  
+
   .formSection {
     padding: 32px 0;
   }
-  
+
   .formTitle {
     font-size: 20px;
   }
-  
+
   .formSubtitle {
     font-size: 13px;
   }
-  
+
   .footer {
     margin-top: 48px;
     padding-top: 24px;

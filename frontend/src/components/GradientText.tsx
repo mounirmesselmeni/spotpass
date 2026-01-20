@@ -6,11 +6,7 @@ interface GradientTextProps extends Omit<TextProps, 'children'> {
 
 export const GradientText = ({ children, className = '', ...props }: GradientTextProps) => {
   return (
-    <Text
-      component="span"
-      className={`gradient-text ${className}`}
-      {...props}
-    >
+    <Text component="span" className={`gradient-text ${className}`} {...props}>
       {children}
     </Text>
   );

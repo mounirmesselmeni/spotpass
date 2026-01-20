@@ -11,15 +11,15 @@ interface EditorialTitleProps extends Omit<TitleProps, 'children'> {
   size?: 'display' | 'hero' | 'large' | 'medium';
 }
 
-export const EditorialTitle = ({ 
+export const EditorialTitle = ({
   children,
   size = 'large',
   className = '',
   order = 1,
-  ...props 
+  ...props
 }: EditorialTitleProps) => {
   const sizeClass = styles[`size${size.charAt(0).toUpperCase() + size.slice(1)}`];
-  
+
   return (
     <Title
       order={order}
@@ -36,17 +36,14 @@ interface EditorialBodyProps extends Omit<TextProps, 'children'> {
   lead?: boolean;
 }
 
-export const EditorialBody = ({ 
+export const EditorialBody = ({
   children,
   lead = false,
   className = '',
-  ...props 
+  ...props
 }: EditorialBodyProps) => {
   return (
-    <Text
-      className={`${styles.editorialBody} ${lead ? styles.lead : ''} ${className}`}
-      {...props}
-    >
+    <Text className={`${styles.editorialBody} ${lead ? styles.lead : ''} ${className}`} {...props}>
       {children}
     </Text>
   );
@@ -56,16 +53,9 @@ interface EditorialLabelProps extends Omit<TextProps, 'children'> {
   children: React.ReactNode;
 }
 
-export const EditorialLabel = ({ 
-  children,
-  className = '',
-  ...props 
-}: EditorialLabelProps) => {
+export const EditorialLabel = ({ children, className = '', ...props }: EditorialLabelProps) => {
   return (
-    <Text
-      className={`${styles.editorialLabel} ${className}`}
-      {...props}
-    >
+    <Text className={`${styles.editorialLabel} ${className}`} {...props}>
       {children}
     </Text>
   );

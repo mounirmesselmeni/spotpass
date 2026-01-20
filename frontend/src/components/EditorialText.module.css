@@ -77,11 +77,11 @@
   .sizeDisplay {
     font-size: clamp(3rem, 10vw, 5rem);
   }
-  
+
   .sizeHero {
     font-size: clamp(2rem, 8vw, 4rem);
   }
-  
+
   .sizeLarge {
     font-size: clamp(1.5rem, 6vw, 2.5rem);
   }

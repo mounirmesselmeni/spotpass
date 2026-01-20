@@ -1,14 +1,4 @@
-import {
-  AppShell,
-  Burger,
-  Group,
-  Title,
-  ActionIcon,
-  Avatar,
-  Menu,
-  Text,
-  Box,
-} from '@mantine/core';
+import { AppShell, Burger, Group, Title, ActionIcon, Avatar, Menu, Text, Box } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
   IconLogout,
@@ -58,15 +48,22 @@ export function DashboardLayout() {
       padding="xl"
       style={{ background: '#FAFAFA' }}
     >
-      <AppShell.Header style={{ 
-        background: 'rgba(255, 255, 255, 0.8)', 
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #E2E8F0'
-      }}>
+      <AppShell.Header
+        style={{
+          background: 'rgba(255, 255, 255, 0.8)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid #E2E8F0',
+        }}
+      >
         <Group h="100%" px="xl" justify="space-between">
           <Group gap="md">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" color="#0052FF" />
-            <Title order={2} size="h5" fw={600} style={{ fontFamily: 'var(--font-body)', color: '#0F172A' }}>
+            <Title
+              order={2}
+              size="h5"
+              fw={600}
+              style={{ fontFamily: 'var(--font-body)', color: '#0F172A' }}
+            >
               SpotPass
             </Title>
           </Group>
@@ -75,7 +72,14 @@ export function DashboardLayout() {
             <Menu shadow="xl" width={240} position="bottom-end">
               <Menu.Target>
                 <ActionIcon variant="subtle" size="lg" radius="xl">
-                  <Avatar size="sm" radius="xl" style={{ background: 'linear-gradient(135deg, #0052FF, #4D7CFF)', color: '#FFFFFF' }}>
+                  <Avatar
+                    size="sm"
+                    radius="xl"
+                    style={{
+                      background: 'linear-gradient(135deg, #0052FF, #4D7CFF)',
+                      color: '#FFFFFF',
+                    }}
+                  >
                     {user?.full_name?.charAt(0) || 'U'}
                   </Avatar>
                 </ActionIcon>
@@ -83,11 +87,19 @@ export function DashboardLayout() {
 
               <Menu.Dropdown>
                 <Menu.Label>
-                  <Text size="sm" fw={600}>{user?.full_name || 'User'}</Text>
-                  <Text size="xs" c="dimmed">{user?.email || ''}</Text>
+                  <Text size="sm" fw={600}>
+                    {user?.full_name || 'User'}
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    {user?.email || ''}
+                  </Text>
                 </Menu.Label>
                 <Menu.Divider />
-                <Menu.Item leftSection={<IconLogout size={16} />} onClick={handleLogout} color="red">
+                <Menu.Item
+                  leftSection={<IconLogout size={16} />}
+                  onClick={handleLogout}
+                  color="red"
+                >
                   Logout
                 </Menu.Item>
               </Menu.Dropdown>
@@ -111,7 +123,9 @@ export function DashboardLayout() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 12,
-                  background: isActive ? 'linear-gradient(135deg, rgba(0,82,255,0.1), rgba(77,124,255,0.05))' : 'transparent',
+                  background: isActive
+                    ? 'linear-gradient(135deg, rgba(0,82,255,0.1), rgba(77,124,255,0.05))'
+                    : 'transparent',
                   border: isActive ? '1px solid rgba(0,82,255,0.2)' : '1px solid transparent',
                   color: isActive ? '#0052FF' : '#64748B',
                   fontWeight: isActive ? 600 : 500,

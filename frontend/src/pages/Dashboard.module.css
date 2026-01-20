@@ -95,27 +95,27 @@
   .dashboard {
     padding: 24px;
   }
-  
+
   .hero {
     margin-bottom: 48px;
   }
-  
+
   .title {
     font-size: clamp(2rem, 8vw, 3rem);
   }
-  
+
   .subtitle {
     font-size: 16px;
   }
-  
+
   .decorative {
     margin-top: 24px;
   }
-  
+
   .statValue {
     font-size: 36px;
   }
-  
+
   .iconWrapper {
     width: 32px;
     height: 32px;

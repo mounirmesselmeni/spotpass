@@ -12,17 +12,8 @@ interface RuleDividerProps extends Omit<DividerProps, 'children'> {
   weight?: RuleWeight;
 }
 
-export const RuleDivider = ({ 
-  weight = 'thin',
-  className = '',
-  ...props 
-}: RuleDividerProps) => {
+export const RuleDivider = ({ weight = 'thin', className = '', ...props }: RuleDividerProps) => {
   const weightClass = styles[weight];
-  
-  return (
-    <Divider
-      className={`${styles.ruleDivider} ${weightClass} ${className}`}
-      {...props}
-    />
-  );
+
+  return <Divider className={`${styles.ruleDivider} ${weightClass} ${className}`} {...props} />;
 };

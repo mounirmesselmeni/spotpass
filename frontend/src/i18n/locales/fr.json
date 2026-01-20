@@ -124,7 +124,16 @@
     "fullName": "Nom complet",
     "enterFullName": "Entrez le nom complet",
     "phoneNumber": "Numéro de téléphone",
-    "vipClient": "Client VIP"
+    "vipClient": "Client VIP",
+    "createdSuccessfully": "Client créé avec succès",
+    "updatedSuccessfully": "Client mis à jour avec succès",
+    "deletedSuccessfully": "Client supprimé avec succès",
+    "createError": "Échec de la création du client",
+    "updateError": "Échec de la mise à jour du client",
+    "deleteError": "Échec de la suppression du client",
+    "editInfo": "Vous pouvez uniquement modifier le statut VIP et la liste noire du client.",
+    "createFromReservations": "Créer des clients depuis les réservations",
+    "createFromReservationsDesc": "Les nouveaux clients doivent être créés lors de la création d'une réservation. Utilisez l'assistant de réservation pour ajouter de nouveaux clients."
   },
   "tables": {
     "title": "Tables",
