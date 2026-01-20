@@ -28,21 +28,55 @@
   font-family: var(--font-body);
 }
 
-.avatarButton {
-  transition: all var(--timing-fast);
-  border: 1px solid var(--border);
+.appTitle {
+  background: linear-gradient(to right, var(--accent), var(--accent-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  transition: var(--timing-fast) var(--ease-out);
+  cursor: default;
 }
 
-.avatarButton:hover {
-  background: var(--foreground);
-  color: var(--background);
+.appTitle:hover {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+}
+
+.avatarContainer {
+  transition: var(--timing-fast) var(--ease-out);
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.avatarContainer:hover {
+  background: linear-gradient(135deg, rgba(0, 82, 255, 0.1), rgba(77, 124, 255, 0.05));
+  border-color: rgba(0, 82, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .avatar {
-  background: var(--foreground);
-  color: var(--background);
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  color: var(--accent-foreground);
   font-weight: 700;
   font-family: var(--font-body);
+  border: 2px solid var(--card);
+  box-shadow: var(--shadow-sm);
+  transition: var(--timing-fast) var(--ease-out);
+}
+
+.avatarContainer:hover .avatarChevron {
+  color: var(--accent);
+  transform: translateY(1px);
+}
+
+.avatarChevron {
+  transition: var(--timing-fast) var(--ease-out);
+  color: var(--muted-foreground);
 }
 
 /* ============================================================================

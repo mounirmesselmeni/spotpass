@@ -112,9 +112,9 @@ export function ZonesPage() {
           <Table striped highlightOnHover>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Name</Table.Th>
-                <Table.Th>Number of Tables</Table.Th>
-                <Table.Th>Actions</Table.Th>
+                <Table.Th>{t('zones.name')}</Table.Th>
+                <Table.Th>{t('zones.numberOfTables')}</Table.Th>
+                <Table.Th>{t('zones.actions')}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -122,7 +122,7 @@ export function ZonesPage() {
                 <Table.Tr>
                   <Table.Td colSpan={3}>
                     <Text ta="center" c="dimmed">
-                      No zones found
+                      {t('zones.noZones')}
                     </Text>
                   </Table.Td>
                 </Table.Tr>
@@ -162,7 +162,7 @@ export function ZonesPage() {
             {filteredZones.length === 0 ? (
               <Card withBorder>
                 <Text ta="center" c="dimmed">
-                  No zones found
+                  {t('zones.noZones')}
                 </Text>
               </Card>
             ) : (
@@ -192,7 +192,7 @@ export function ZonesPage() {
 
                   <Text size="sm" c="dimmed">
                     <Text span fw={500}>
-                      Tables:{' '}
+                      {t('zones.tablesLabel')}:{' '}
                     </Text>
                     {zone.table_count}
                   </Text>
@@ -219,9 +219,9 @@ export function ZonesPage() {
 
             <Group justify="flex-end" mt="md">
               <Button variant="light" onClick={close}>
-                Cancel
+                {t('zones.cancel')}
               </Button>
-              <Button type="submit">{editingZone ? 'Update' : 'Create'}</Button>
+              <Button type="submit">{editingZone ? t('zones.update') : t('zones.create')}</Button>
             </Group>
           </Stack>
         </form>

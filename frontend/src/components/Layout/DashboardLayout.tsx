@@ -8,6 +8,7 @@ import {
   IconLayoutGrid,
   IconUser,
   IconDashboard,
+  IconChevronDown,
 } from '@tabler/icons-react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
@@ -58,12 +59,7 @@ export function DashboardLayout() {
         <Group h="100%" px="xl" justify="space-between">
           <Group gap="md">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" color="#0052FF" />
-            <Title
-              order={2}
-              size="h5"
-              fw={600}
-              style={{ fontFamily: 'var(--font-body)', color: '#0F172A' }}
-            >
+            <Title order={2} size="h1" fw={600} className="appTitle">
               SpotPass
             </Title>
           </Group>
@@ -71,18 +67,22 @@ export function DashboardLayout() {
           <Group gap="sm">
             <Menu shadow="xl" width={240} position="bottom-end">
               <Menu.Target>
-                <ActionIcon variant="subtle" size="lg" radius="xl">
-                  <Avatar
-                    size="sm"
-                    radius="xl"
-                    style={{
-                      background: 'linear-gradient(135deg, #0052FF, #4D7CFF)',
-                      color: '#FFFFFF',
-                    }}
-                  >
-                    {user?.full_name?.charAt(0) || 'U'}
-                  </Avatar>
-                </ActionIcon>
+                <Box
+                  className="avatarContainer"
+                  style={{
+                    cursor: 'pointer',
+                    borderRadius: '12px',
+                    padding: '8px',
+                    transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                >
+                  <Group gap="xs" align="center">
+                    <Avatar size="md" radius="xl" className="avatar">
+                      {user?.full_name?.charAt(0) || 'U'}
+                    </Avatar>
+                    <IconChevronDown size={16} strokeWidth={2} className="avatarChevron" />
+                  </Group>
+                </Box>
               </Menu.Target>
 
               <Menu.Dropdown>
