@@ -56,15 +56,15 @@ export function DashboardLayout() {
           borderBottom: '1px solid #E2E8F0',
         }}
       >
-        <Group h="100%" px="xl" justify="space-between">
-          <Group gap="md">
+        <Group h="100%" px="xl" justify="space-between" wrap="nowrap">
+          <Group gap="md" style={{ flexShrink: 0 }}>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" color="#0052FF" />
             <Title order={2} size="h1" fw={600} className="appTitle">
               SpotPass
             </Title>
           </Group>
 
-          <Group gap="sm">
+          <Group gap="sm" style={{ flexShrink: 0 }}>
             <Menu shadow="xl" width={240} position="bottom-end">
               <Menu.Target>
                 <Box

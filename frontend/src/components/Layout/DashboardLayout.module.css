@@ -180,6 +180,17 @@
   .main {
     padding: 16px;
   }
+
+  /* Prevent header content from wrapping on mobile */
+  .header .mantine-Group-root {
+    flex-wrap: nowrap !important;
+    min-width: 0;
+  }
+
+  .appTitle {
+    font-size: 20px;
+    line-height: 1.2;
+  }
 }
 
 /* ============================================================================
