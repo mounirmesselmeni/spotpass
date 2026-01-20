@@ -1,32 +1,37 @@
-import { useState } from 'react';
 import {
-  Modal,
-  Stepper,
-  Button,
-  Group,
-  NumberInput,
-  Textarea,
-  Select,
-  Stack,
-  Text,
-  Paper,
-  Badge,
-  Grid,
-  Card,
-  Title,
-  LoadingOverlay,
-  Alert,
-} from '@mantine/core';
-import { DatePickerInput, TimeInput } from '@mantine/dates';
-import { useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
-import { useTranslation } from 'react-i18next';
-import { IconCheck, IconClock, IconUsers, IconCalendar, IconInfoCircle } from '@tabler/icons-react';
-import { useListClientsApiStaffClientsGet } from '@/api/generated/staff-clients/staff-clients';
+  useCreateClientApiStaffClientsPost,
+  useListClientsApiStaffClientsGet,
+} from '@/api/generated/staff-clients/staff-clients';
 import {
   useCreateReservationApiStaffReservationsPost,
   useGetAvailableTablesApiStaffReservationsAvailableTablesPost,
 } from '@/api/generated/staff-reservations/staff-reservations';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Grid,
+  Group,
+  LoadingOverlay,
+  Modal,
+  NumberInput,
+  Paper,
+  Select,
+  Stack,
+  Stepper,
+  Text,
+  Textarea,
+  TextInput,
+  Title,
+} from '@mantine/core';
+import { DatePickerInput, TimeInput } from '@mantine/dates';
+import { useForm } from '@mantine/form';
+import { notifications } from '@mantine/notifications';
+import { IconCalendar, IconCheck, IconClock, IconInfoCircle, IconUsers } from '@tabler/icons-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ReservationWizardProps {
   opened: boolean;
@@ -36,8 +41,10 @@ interface ReservationWizardProps {
 
 export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWizardProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [active, setActive] = useState(0);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [showNewClientForm, setShowNewClientForm] = useState(false);
 
   const form = useForm({
     initialValues: {
@@ -47,16 +54,25 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
       number_of_guests: 2,
       special_request: '',
       table_id: null as number | null,
+      // New client fields
+      full_name: '',
+      phone_number: '',
+      email: '',
     },
     validate: {
-      client_id: (value) => (!value ? t('reservations.selectClientRequired') : null),
+      client_id: (value) =>
+        !showNewClientForm && !value ? t('reservations.selectClientRequired') : null,
       reservation_date: (value) => (!value ? t('reservations.dateRequired') : null),
       reservation_time: (value) => (!value ? t('reservations.dateRequired') : null),
       number_of_guests: (value) => (value < 1 ? t('reservations.guestsMin') : null),
+      full_name: (value) => (showNewClientForm && !value ? t('clients.nameRequired') : null),
+      phone_number: (value) => (showNewClientForm && !value ? t('clients.phoneRequired') : null),
     },
   });
 
   const { data: clients, isLoading: loadingClients } = useListClientsApiStaffClientsGet();
+
+  const createClientMutation = useCreateClientApiStaffClientsPost();
 
   const reservationDateTime =
     form.values.reservation_date && form.values.reservation_time
@@ -90,9 +106,18 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
 
   const handleNext = () => {
     if (active === 0) {
-      const errors = form.validateField('client_id');
-      if (!errors.hasError) {
-        setActive(1);
+      // Validate client selection or new client form
+      if (showNewClientForm) {
+        const nameErrors = form.validateField('full_name');
+        const phoneErrors = form.validateField('phone_number');
+        if (!nameErrors.hasError && !phoneErrors.hasError) {
+          setActive(1);
+        }
+      } else {
+        const errors = form.validateField('client_id');
+        if (!errors.hasError) {
+          setActive(1);
+        }
       }
     } else if (active === 1) {
       const dateErrors = form.validateField('reservation_date');
@@ -112,6 +137,24 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
 
   const handleSubmit = async () => {
     try {
+      let clientId = form.values.client_id;
+
+      // Create new client if needed
+      if (showNewClientForm) {
+        const newClient = await createClientMutation.mutateAsync({
+          data: {
+            full_name: form.values.full_name,
+            phone_number: form.values.phone_number,
+            email: form.values.email || undefined,
+            is_vip: false,
+            is_blacklisted: false,
+          },
+        });
+        clientId = newClient.id;
+        // Invalidate client queries to refresh the list
+        queryClient.invalidateQueries({ queryKey: ['/api/staff/clients/'] });
+      }
+
       // Ensure reservation_time is in HH:MM:SS format
       let timeValue = form.values.reservation_time;
       // If time doesn't have seconds, add them
@@ -121,7 +164,7 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
 
       await createReservationMutation.mutateAsync({
         data: {
-          client_id: form.values.client_id,
+          client_id: clientId,
           reservation_date: form.values.reservation_date.toISOString().split('T')[0],
           reservation_time: timeValue, // Format: HH:MM:SS
           number_of_guests: form.values.number_of_guests,
@@ -140,6 +183,7 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
       form.reset();
       setActive(0);
       setSelectedTable(null);
+      setShowNewClientForm(false);
       onClose();
       onSuccess?.();
     } catch (error) {
@@ -155,6 +199,7 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
     form.reset();
     setActive(0);
     setSelectedTable(null);
+    setShowNewClientForm(false);
     onClose();
   };
 
@@ -208,6 +253,45 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
               size="md"
               required
             />
+
+            <Button
+              variant="light"
+              leftSection={<IconUsers size={16} />}
+              onClick={() => setShowNewClientForm(!showNewClientForm)}
+              size="sm"
+            >
+              {showNewClientForm ? t('clients.selectExisting') : t('clients.addNew')}
+            </Button>
+
+            {showNewClientForm && (
+              <Card withBorder>
+                <Stack gap="md">
+                  <Text fw={600} size="sm">
+                    {t('clients.addNew')}
+                  </Text>
+                  <TextInput
+                    label={t('clients.fullName')}
+                    placeholder={t('clients.namePlaceholder')}
+                    {...form.getInputProps('full_name')}
+                    size="md"
+                    required
+                  />
+                  <TextInput
+                    label={t('clients.phoneNumber')}
+                    placeholder={t('clients.phonePlaceholder')}
+                    {...form.getInputProps('phone_number')}
+                    size="md"
+                    required
+                  />
+                  <TextInput
+                    label={t('clients.email')}
+                    placeholder={t('clients.emailPlaceholder')}
+                    {...form.getInputProps('email')}
+                    size="md"
+                  />
+                </Stack>
+              </Card>
+            )}
 
             {form.values.client_id && (
               <Card withBorder bg="blue.0">

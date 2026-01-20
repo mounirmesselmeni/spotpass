@@ -6,6 +6,9 @@ import {
   useCreateReservationApiStaffReservationsPost,
   useListReservationsApiStaffReservationsGet,
 } from '@/api/generated/staff-reservations/staff-reservations';
+import { ReservationCalendar } from '@/components/ReservationCalendar';
+import { ReservationWizard } from '@/components/ReservationWizard';
+import { TableAvailabilityGrid } from '@/components/TableAvailabilityGrid';
 import {
   ActionIcon,
   Badge,
@@ -19,8 +22,8 @@ import {
   Loader,
   Modal,
   NumberInput,
-  Select,
   SegmentedControl,
+  Select,
   Stack,
   Table,
   Text,
@@ -34,25 +37,16 @@ import { DatePickerInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import {
-  IconEye,
-  IconPlus,
-  IconSearch,
-  IconList,
-  IconCalendar,
-  IconTable as IconTableView,
-  IconFilter,
-} from '@tabler/icons-react';
+import { IconEye, IconFilter, IconPlus, IconSearch } from '@tabler/icons-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { ReservationWizard } from '@/components/ReservationWizard';
-import { ReservationCalendar } from '@/components/ReservationCalendar';
-import { TableAvailabilityGrid } from '@/components/TableAvailabilityGrid';
 
 export function ReservationsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [opened, { open, close }] = useDisclosure(false);
   const [wizardOpened, { open: openWizard, close: closeWizard }] = useDisclosure(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'tables'>('list');
@@ -152,6 +146,8 @@ export function ReservationsPage() {
           message: t('clients.createdSuccessfully', 'Client créé'),
           color: 'green',
         });
+        // Invalidate client queries to refresh the list
+        queryClient.invalidateQueries({ queryKey: ['/api/staff/clients/'] });
       } catch (error) {
         notifications.show({
           title: t('common.error'),
@@ -177,6 +173,8 @@ export function ReservationsPage() {
           },
         });
         clientId = newClient.id;
+        // Invalidate client queries to refresh the list
+        queryClient.invalidateQueries({ queryKey: ['/api/staff/clients/'] });
       }
 
       const createdReservation = await createReservationMutation.mutateAsync({

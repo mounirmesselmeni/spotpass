@@ -120,6 +120,7 @@
     "emailPlaceholder": "email@example.com",
     "create": "Créer client",
     "addNew": "Ajouter un nouveau client",
+    "selectExisting": "Sélectionner un client existant",
     "fullName": "Nom complet",
     "enterFullName": "Entrez le nom complet",
     "phoneNumber": "Numéro de téléphone",
