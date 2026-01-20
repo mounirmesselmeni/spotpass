@@ -5,6 +5,7 @@
  * Restaurant reservation and management system
  * OpenAPI spec version: 1.0.0
  */
+import type { ReservationCreateDurationMinutes } from './reservationCreateDurationMinutes';
 import type { ReservationCreateReservationTime } from './reservationCreateReservationTime';
 import type { ReservationCreateSpecialRequest } from './reservationCreateSpecialRequest';
 import type { ReservationCreateTableId } from './reservationCreateTableId';
@@ -14,6 +15,7 @@ import type { ReservationCreateTableId } from './reservationCreateTableId';
  */
 export interface ReservationCreate {
   client_id: string;
+  duration_minutes?: ReservationCreateDurationMinutes;
   /** @minimum 1 */
   number_of_guests: number;
   reservation_date: string;

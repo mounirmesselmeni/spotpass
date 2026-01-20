@@ -12,6 +12,7 @@ import type {
   UseQueryOptions,
   UseQueryResult,
 } from '@tanstack/react-query';
+import type { HealthResponse, RootResponse } from '.././models';
 import { customInstance } from '../../mutator/custom-instance';
 
 /**
@@ -19,7 +20,7 @@ import { customInstance } from '../../mutator/custom-instance';
  * @summary Root
  */
 export const rootGet = (signal?: AbortSignal) => {
-  return customInstance<unknown>({ url: `/`, method: 'GET', signal });
+  return customInstance<RootResponse>({ url: `/`, method: 'GET', signal });
 };
 
 export const getRootGetQueryKey = () => {
@@ -72,7 +73,7 @@ export const useRootGet = <
  * @summary Health Check
  */
 export const healthCheckHealthGet = (signal?: AbortSignal) => {
-  return customInstance<unknown>({ url: `/health`, method: 'GET', signal });
+  return customInstance<HealthResponse>({ url: `/health`, method: 'GET', signal });
 };
 
 export const getHealthCheckHealthGetQueryKey = () => {

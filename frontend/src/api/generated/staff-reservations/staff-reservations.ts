@@ -20,8 +20,11 @@ import type {
   HTTPValidationError,
   ListReservationsApiStaffReservationsGetParams,
   ReservationCreate,
+  ReservationDetailsResponse,
   ReservationRead,
   ReservationUpdate,
+  ReservationWithClientRead,
+  TableAvailabilityRead,
 } from '.././models';
 import { customInstance } from '../../mutator/custom-instance';
 
@@ -33,7 +36,7 @@ export const listReservationsApiStaffReservationsGet = (
   params?: ListReservationsApiStaffReservationsGetParams,
   signal?: AbortSignal
 ) => {
-  return customInstance<ReservationRead[]>({
+  return customInstance<ReservationWithClientRead[]>({
     url: `/api/staff/reservations/`,
     method: 'GET',
     params,
@@ -112,6 +115,9 @@ export const useListReservationsApiStaffReservationsGet = <
 
 /**
  * Create a new reservation (staff only)
+
+This endpoint uses pessimistic locking (SELECT FOR UPDATE) to prevent race conditions
+when multiple staff members try to book the same table simultaneously.
  * @summary Create Reservation
  */
 export const createReservationApiStaffReservationsPost = (reservationCreate: ReservationCreate) => {
@@ -272,6 +278,8 @@ export const useGetReservationApiStaffReservationsReservationIdGet = <
 
 /**
  * Update a reservation (staff only)
+
+When updating table assignment or time, uses pessimistic locking and validates availability.
  * @summary Update Reservation
  */
 export const updateReservationApiStaffReservationsReservationIdPatch = (
@@ -348,14 +356,14 @@ export const useUpdateReservationApiStaffReservationsReservationIdPatch = <
   return useMutation(mutationOptions);
 };
 /**
- * Get reservation with full client details and history
+ * Get detailed reservation information with client history (staff only)
  * @summary Get Reservation Details
  */
 export const getReservationDetailsApiStaffReservationsReservationIdDetailsGet = (
   reservationId: string,
   signal?: AbortSignal
 ) => {
-  return customInstance<unknown>({
+  return customInstance<ReservationDetailsResponse>({
     url: `/api/staff/reservations/${reservationId}/details`,
     method: 'GET',
     signal,
@@ -449,12 +457,14 @@ export const useGetReservationDetailsApiStaffReservationsReservationIdDetailsGet
 
 /**
  * Get list of available tables for a specific date/time
+
+Uses TableAvailabilityService to properly check for conflicts including duration overlap.
  * @summary Get Available Tables
  */
 export const getAvailableTablesApiStaffReservationsAvailableTablesPost = (
   availableTablesRequest: AvailableTablesRequest
 ) => {
-  return customInstance<unknown[]>({
+  return customInstance<TableAvailabilityRead[]>({
     url: `/api/staff/reservations/available-tables`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

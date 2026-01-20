@@ -16,13 +16,13 @@ import type {
   UseQueryResult,
 } from '@tanstack/react-query';
 import type {
-  GetTableTimeSlotsApiStaffTablesTableIdTimeSlotsGet200Item,
   GetTableTimeSlotsApiStaffTablesTableIdTimeSlotsGetParams,
   HTTPValidationError,
   ListTablesApiStaffTablesGetParams,
   TableCreate,
   TableRead,
   TableUpdate,
+  TimeSlotRead,
 } from '.././models';
 import { customInstance } from '../../mutator/custom-instance';
 
@@ -386,7 +386,7 @@ export const getTableTimeSlotsApiStaffTablesTableIdTimeSlotsGet = (
   params: GetTableTimeSlotsApiStaffTablesTableIdTimeSlotsGetParams,
   signal?: AbortSignal
 ) => {
-  return customInstance<GetTableTimeSlotsApiStaffTablesTableIdTimeSlotsGet200Item[]>({
+  return customInstance<TimeSlotRead[]>({
     url: `/api/staff/tables/${tableId}/time-slots`,
     method: 'GET',
     params,

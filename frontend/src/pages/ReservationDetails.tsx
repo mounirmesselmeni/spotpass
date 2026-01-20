@@ -96,10 +96,30 @@ export function ReservationDetailsPage() {
   const fetchAvailableTables = async (reservationDetails: ReservationDetails) => {
     setLoadingTables(true);
     try {
+      // Ensure reservation_time is in proper HH:MM format
+      let reservationTime = '12:00'; // default
+      if (reservationDetails.reservation.reservation_time) {
+        const timeStr = reservationDetails.reservation.reservation_time.toString();
+        // Handle various time formats
+        if (timeStr.includes('T')) {
+          // Extract time from datetime string like '2026-01-20T12'
+          const timePart = timeStr.split('T')[1];
+          if (timePart && timePart.length >= 2) {
+            reservationTime = timePart.length === 2 ? `${timePart}:00` : timePart;
+          }
+        } else if (timeStr.includes(':')) {
+          // Already in HH:MM or HH:MM:SS format
+          reservationTime = timeStr.split(':').slice(0, 2).join(':');
+        } else if (timeStr.length === 2) {
+          // Just hours like '12'
+          reservationTime = `${timeStr}:00`;
+        }
+      }
+
       const response = await axios.post('/api/staff/reservations/available-tables', {
         establishment_id: reservationDetails.reservation.establishment_id,
         reservation_date: reservationDetails.reservation.reservation_date,
-        reservation_time: reservationDetails.reservation.reservation_time || '12:00',
+        reservation_time: reservationTime,
         number_of_guests: reservationDetails.reservation.number_of_guests,
       });
       setAvailableTables(response.data);

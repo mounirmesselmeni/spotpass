@@ -663,17 +663,33 @@ def get_available_tables(
     number_of_guests = request_data.number_of_guests
     reservation_time_str = request_data.reservation_time
 
-    # Parse time string (HH:MM:SS or HH:MM format)
+    # Parse time string - handle various formats
     if isinstance(reservation_time_str, str):
+        # Handle datetime-like strings (e.g., '2026-01-20T12')
+        if 'T' in reservation_time_str:
+            # Extract time part from datetime string
+            time_part = reservation_time_str.split('T')[-1]
+            # If time part doesn't have minutes, add :00
+            if ':' not in time_part:
+                time_part = f"{time_part}:00"
+            reservation_time_str = time_part
+
         time_parts = reservation_time_str.split(":")
-        if len(time_parts) == 2:
-            reservation_time = time_type(int(time_parts[0]), int(time_parts[1]))
-        elif len(time_parts) == 3:
-            reservation_time = time_type(int(time_parts[0]), int(time_parts[1]), int(time_parts[2]))
+        if len(time_parts) >= 2:
+            try:
+                hour = int(time_parts[0])
+                minute = int(time_parts[1])
+                second = int(time_parts[2]) if len(time_parts) > 2 else 0
+                reservation_time = time_type(hour, minute, second)
+            except ValueError as e:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid time format: {reservation_time_str}. Use HH:MM or HH:MM:SS",
+                )
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid time format. Use HH:MM or HH:MM:SS",
+                detail=f"Invalid time format: {reservation_time_str}. Use HH:MM or HH:MM:SS",
             )
     else:
         reservation_time = reservation_time_str

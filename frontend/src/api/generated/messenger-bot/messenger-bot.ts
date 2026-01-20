@@ -11,6 +11,7 @@ import type {
   UseMutationOptions,
   UseMutationResult,
 } from '@tanstack/react-query';
+import type { ReservationUrlResponse } from '.././models';
 import { customInstance } from '../../mutator/custom-instance';
 
 /**
@@ -18,7 +19,10 @@ import { customInstance } from '../../mutator/custom-instance';
  * @summary Create New Reservation Url
  */
 export const createNewReservationUrlApiNewReservationUrlPost = () => {
-  return customInstance<unknown>({ url: `/api/new-reservation-url`, method: 'POST' });
+  return customInstance<ReservationUrlResponse>({
+    url: `/api/new-reservation-url`,
+    method: 'POST',
+  });
 };
 
 export const getCreateNewReservationUrlApiNewReservationUrlPostMutationOptions = <

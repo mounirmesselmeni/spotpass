@@ -14,6 +14,7 @@ import type {
 import type {
   CancelReservationRequest,
   HTTPValidationError,
+  MessageResponse,
   NewReservationTokenRequest,
   NewReservationTokenResponse,
   ReservationForExistingClientRequest,
@@ -278,7 +279,7 @@ export const useCreateReservationForExistingClientApiClientReservationForExistin
 export const cancelReservationApiClientCancelReservationPost = (
   cancelReservationRequest: CancelReservationRequest
 ) => {
-  return customInstance<unknown>({
+  return customInstance<MessageResponse>({
     url: `/api/client/cancel-reservation`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
