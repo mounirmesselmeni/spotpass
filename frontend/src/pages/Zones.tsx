@@ -66,7 +66,7 @@ export function ZonesPage() {
         color: 'green',
       });
     } else {
-      const newZone = { ...values, uuid: Date.now().toString(), table_count: 0 };
+      const newZone = { ...values, uuid: crypto.randomUUID(), table_count: 0 };
       setZones([...zones, newZone]);
       notifications.show({
         title: 'Success',
