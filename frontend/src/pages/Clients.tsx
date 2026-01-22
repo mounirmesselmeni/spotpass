@@ -14,6 +14,9 @@ import {
   Group,
   Loader,
   Modal,
+  Pagination,
+  SegmentedControl,
+  Skeleton,
   Stack,
   Switch,
   Table,
@@ -28,15 +31,37 @@ import { IconPencil, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SortableTableHeader } from '@/components/SortableTableHeader';
 
 export function ClientsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [opened, { open, close }] = useDisclosure(false);
+  const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
   const [editingClient, setEditingClient] = useState<ClientRead | null>(null);
   const [search, setSearch] = useState('');
 
-  const { data: clients, isLoading: loadingClients } = useListClientsApiStaffClientsGet();
+  const [page, setPage] = useState(1);
+  const [labelFilter, setLabelFilter] = useState<string | null>(null);
+
+  // Sorting state
+  const [sortBy, setSortBy] = useState<'name' | 'email' | 'phone' | 'created_at' | 'status'>(
+    'name'
+  );
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const { data: clientsResponse, isLoading: loadingClients } = useListClientsApiStaffClientsGet({
+    page: page,
+    page_size: 20,
+    sort_by: sortBy,
+    sort_order: sortOrder,
+    label_filter: labelFilter || undefined,
+  });
+
+  const clientsPaginatedData =
+    clientsResponse?.data && 'items' in clientsResponse.data ? clientsResponse.data : null;
+  const clients = clientsPaginatedData?.items || [];
+  const totalClients = clientsPaginatedData?.total || 0;
+  const totalPages = clientsPaginatedData?.total_pages || 0;
 
   const createClientMutation = useCreateClientApiStaffClientsPost();
   const updateClientMutation = useUpdateClientApiStaffClientsClientIdPatch();
@@ -44,16 +69,25 @@ export function ClientsPage() {
 
   const form = useForm({
     initialValues: {
+      full_name: '',
+      phone_number: '',
+      email: '',
       is_vip: false,
       is_blacklisted: false,
     },
-    validate: {},
+    validate: {
+      full_name: (value) => (value.trim().length > 0 ? null : t('clients.nameRequired')),
+      phone_number: (value) => (value.trim().length > 0 ? null : t('clients.phoneRequired')),
+    },
   });
 
   const handleOpenModal = (client?: ClientRead) => {
     if (client) {
       setEditingClient(client);
       form.setValues({
+        full_name: client.full_name,
+        phone_number: client.phone_number,
+        email: client.email || '',
         is_vip: client.is_vip || false,
         is_blacklisted: client.is_blacklisted || false,
       });
@@ -61,44 +95,60 @@ export function ClientsPage() {
       setEditingClient(null);
       form.reset();
     }
-    open();
+    openModal();
+  };
+
+  const handleCloseModal = () => {
+    setEditingClient(null);
+    form.reset();
+    closeModal();
   };
 
   const handleSubmit = async (values: typeof form.values) => {
+    const isEditing = !!editingClient;
     try {
-      if (editingClient) {
-        await updateClientMutation.mutateAsync({
+      let result;
+      if (isEditing) {
+        result = await updateClientMutation.mutateAsync({
           clientId: editingClient.id,
           data: {
+            full_name: values.full_name,
+            phone_number: values.phone_number,
+            email: values.email || undefined,
             is_vip: values.is_vip,
             is_blacklisted: values.is_blacklisted,
           },
         });
-        notifications.show({
-          title: t('common.success'),
-          message: t('clients.updatedSuccessfully'),
-          color: 'green',
-        });
       } else {
-        // For new clients, we need to show a different modal or redirect to reservation wizard
-        notifications.show({
-          title: t('common.error'),
-          message: t('clients.createFromReservations'),
-          color: 'orange',
+        result = await createClientMutation.mutateAsync({
+          data: {
+            full_name: values.full_name,
+            phone_number: values.phone_number,
+            email: values.email || undefined,
+            is_vip: values.is_vip,
+            is_blacklisted: values.is_blacklisted,
+          },
         });
-        close();
-        return;
       }
 
-      // Invalidate and refetch clients
+      if (result.status >= 400 && 'detail' in result.data) {
+        const detail = result.data.detail;
+        throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+      }
+
+      notifications.show({
+        title: t('common.success'),
+        message: isEditing ? t('clients.updatedSuccessfully') : t('clients.createdSuccessfully'),
+        color: 'green',
+      });
+
       queryClient.invalidateQueries({ queryKey: ['/api/staff/clients/'] });
-      close();
-      form.reset();
-    } catch (error) {
+      handleCloseModal();
+    } catch (error: any) {
       console.error('Error saving client:', error);
       notifications.show({
         title: t('common.error'),
-        message: editingClient ? t('clients.updateError') : t('clients.createError'),
+        message: error.message || (isEditing ? t('clients.updateError') : t('clients.createError')),
         color: 'red',
       });
     }
@@ -112,7 +162,6 @@ export function ClientsPage() {
         message: t('clients.deletedSuccessfully'),
         color: 'green',
       });
-      // Invalidate and refetch clients
       queryClient.invalidateQueries({ queryKey: ['/api/staff/clients/'] });
     } catch (error) {
       console.error('Error deleting client:', error);
@@ -124,79 +173,196 @@ export function ClientsPage() {
     }
   };
 
-  const filteredClients =
-    clients?.filter(
-      (c) =>
-        c.full_name.toLowerCase().includes(search.toLowerCase()) ||
-        (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
-    ) || [];
+  const handleSort = (newSortBy: typeof sortBy) => {
+    if (sortBy === newSortBy) {
+      // Toggle sort order if clicking same column
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new sort column with default ascending order
+      setSortBy(newSortBy);
+      setSortOrder('asc');
+    }
+  };
 
-  if (loadingClients) {
-    return (
-      <Stack gap="lg" align="center">
-        <Loader size="lg" />
-        <Text>{t('common.loading')}</Text>
-      </Stack>
-    );
-  }
+  const filteredClients = clients.filter(
+    (c: ClientRead) =>
+      c.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
+  );
 
   return (
-    <Stack gap="lg">
-      <Group justify="space-between">
-        <Title order={2}>{t('clients.title')}</Title>
-        <Button leftSection={<IconPlus size={16} />} onClick={() => handleOpenModal()}>
-          {t('clients.addClient')}
-        </Button>
-      </Group>
+    <Box p={{ base: 'md', sm: 'xl' }}>
+      <Stack gap="lg">
+        <Group justify="space-between">
+          <Title order={1}>{t('clients.title')}</Title>
+          <Button leftSection={<IconPlus size={16} />} onClick={() => handleOpenModal()}>
+            {t('clients.addClient')}
+          </Button>
+        </Group>
 
-      <Card withBorder>
-        <TextInput
-          placeholder={t('clients.searchPlaceholder', 'Search by name or email...')}
-          leftSection={<IconSearch size={16} />}
-          value={search}
-          onChange={(e) => setSearch(e.currentTarget.value)}
-          mb="md"
-        />
+        <Card withBorder>
+          <Stack gap="md" mb="md">
+            <TextInput
+              placeholder={t('clients.searchPlaceholder')}
+              leftSection={<IconSearch size={16} />}
+              value={search}
+              onChange={(e) => setSearch(e.currentTarget.value)}
+            />
 
-        {/* Desktop Table View */}
-        <Box visibleFrom="md">
-          <Table striped highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t('clients.name')}</Table.Th>
-                <Table.Th>{t('clients.email')}</Table.Th>
-                <Table.Th>{t('clients.phone')}</Table.Th>
-                <Table.Th>{t('common.status')}</Table.Th>
-                <Table.Th>{t('common.actions')}</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {filteredClients.length === 0 ? (
+            <SegmentedControl
+              value={labelFilter || 'all'}
+              onChange={(value) => setLabelFilter(value === 'all' ? null : value)}
+              data={[
+                { label: t('common.all', 'All'), value: 'all' },
+                { label: t('clients.vip', 'VIP'), value: 'vip' },
+                { label: t('clients.regular', 'Regular'), value: 'regular' },
+                { label: t('clients.blacklisted', 'Blacklisted'), value: 'blacklisted' },
+              ]}
+            />
+          </Stack>
+
+          {/* Desktop Table View */}
+          <Box visibleFrom="md">
+            <Table striped highlightOnHover>
+              <Table.Thead>
                 <Table.Tr>
-                  <Table.Td colSpan={5}>
-                    <Text ta="center" c="dimmed">
-                      {t('clients.noClients', 'Aucun client trouvé')}
-                    </Text>
-                  </Table.Td>
+                  <SortableTableHeader
+                    label={t('clients.name')}
+                    sortKey="name"
+                    currentSortBy={sortBy}
+                    currentSortOrder={sortOrder}
+                    onSort={handleSort}
+                  />
+                  <SortableTableHeader
+                    label={t('clients.email')}
+                    sortKey="email"
+                    currentSortBy={sortBy}
+                    currentSortOrder={sortOrder}
+                    onSort={handleSort}
+                  />
+                  <SortableTableHeader
+                    label={t('clients.phone')}
+                    sortKey="phone"
+                    currentSortBy={sortBy}
+                    currentSortOrder={sortOrder}
+                    onSort={handleSort}
+                  />
+                  <SortableTableHeader
+                    label={t('common.status')}
+                    sortKey="status"
+                    currentSortBy={sortBy}
+                    currentSortOrder={sortOrder}
+                    onSort={handleSort}
+                  />
+                  <Table.Th>{t('common.actions')}</Table.Th>
                 </Table.Tr>
-              ) : (
-                filteredClients.map((client) => (
-                  <Table.Tr key={client.id}>
-                    <Table.Td>{client.full_name}</Table.Td>
-                    <Table.Td>{client.email || '-'}</Table.Td>
-                    <Table.Td>{client.phone_number}</Table.Td>
-                    <Table.Td>
-                      <Group gap="xs">
-                        {client.is_vip && <Badge color="yellow">{t('clients.vip')}</Badge>}
-                        {client.is_blacklisted && (
-                          <Badge color="red">{t('clients.blacklisted')}</Badge>
-                        )}
-                        {!client.is_vip && !client.is_blacklisted && (
-                          <Badge color="gray">{t('clients.regular')}</Badge>
-                        )}
-                      </Group>
+              </Table.Thead>
+              <Table.Tbody>
+                {loadingClients ? (
+                  // Skeleton rows while loading
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <Table.Tr key={index}>
+                      <Table.Td>
+                        <Skeleton height={20} />
+                      </Table.Td>
+                      <Table.Td>
+                        <Skeleton height={20} />
+                      </Table.Td>
+                      <Table.Td>
+                        <Skeleton height={20} />
+                      </Table.Td>
+                      <Table.Td>
+                        <Skeleton height={20} width={80} />
+                      </Table.Td>
+                      <Table.Td>
+                        <Skeleton height={30} width={80} />
+                      </Table.Td>
+                    </Table.Tr>
+                  ))
+                ) : filteredClients.length === 0 ? (
+                  <Table.Tr>
+                    <Table.Td colSpan={5}>
+                      <Text ta="center" c="dimmed" py="xl">
+                        {t('clients.noClients')}
+                      </Text>
                     </Table.Td>
-                    <Table.Td>
+                  </Table.Tr>
+                ) : (
+                  filteredClients.map((client: ClientRead) => (
+                    <Table.Tr key={client.id}>
+                      <Table.Td>{client.full_name}</Table.Td>
+                      <Table.Td>{client.email || '-'}</Table.Td>
+                      <Table.Td>{client.phone_number}</Table.Td>
+                      <Table.Td>
+                        <Group gap="xs">
+                          {client.is_vip && (
+                            <Badge size="sm" variant="filled" color="yellow">
+                              {t('clients.vip')}
+                            </Badge>
+                          )}
+                          {client.is_blacklisted && (
+                            <Badge size="sm" variant="filled" color="red">
+                              {t('clients.blacklisted')}
+                            </Badge>
+                          )}
+                          {!client.is_vip && !client.is_blacklisted && (
+                            <Badge size="sm" variant="filled" color="gray">
+                              {t('clients.regular')}
+                            </Badge>
+                          )}
+                        </Group>
+                      </Table.Td>
+                      <Table.Td>
+                        <Group gap="xs">
+                          <ActionIcon
+                            variant="light"
+                            color="blue"
+                            onClick={() => handleOpenModal(client)}
+                          >
+                            <IconPencil size={16} />
+                          </ActionIcon>
+                          <ActionIcon
+                            variant="light"
+                            color="red"
+                            onClick={() => handleDelete(client.id)}
+                          >
+                            <IconTrash size={16} />
+                          </ActionIcon>
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))
+                )}
+              </Table.Tbody>
+            </Table>
+          </Box>
+
+          {/* Mobile Card View */}
+          <Box hiddenFrom="md">
+            <Stack gap="sm">
+              {loadingClients ? (
+                // Skeleton cards while loading
+                Array.from({ length: 3 }).map((_, index) => (
+                  <Card key={index} withBorder padding="md">
+                    <Skeleton height={20} width="60%" mb="sm" />
+                    <Skeleton height={16} mb="xs" />
+                    <Skeleton height={16} mb="xs" />
+                    <Skeleton height={16} width="40%" />
+                  </Card>
+                ))
+              ) : filteredClients.length === 0 ? (
+                <Card withBorder>
+                  <Text ta="center" c="dimmed" py="xl">
+                    {t('clients.noClients')}
+                  </Text>
+                </Card>
+              ) : (
+                filteredClients.map((client: ClientRead) => (
+                  <Card key={client.id} withBorder padding="md">
+                    <Group justify="space-between" mb="xs">
+                      <Text fw={500} size="lg">
+                        {client.full_name}
+                      </Text>
                       <Group gap="xs">
                         <ActionIcon
                           variant="light"
@@ -213,133 +379,91 @@ export function ClientsPage() {
                           <IconTrash size={16} />
                         </ActionIcon>
                       </Group>
-                    </Table.Td>
-                  </Table.Tr>
+                    </Group>
+                    <Stack gap="xs">
+                      <Text size="sm">
+                        {t('clients.email')}: {client.email || '-'}
+                      </Text>
+                      <Text size="sm">
+                        {t('clients.phone')}: {client.phone_number}
+                      </Text>
+                      <Group gap="xs">
+                        {client.is_vip && <Badge color="yellow">{t('clients.vip')}</Badge>}
+                        {client.is_blacklisted && (
+                          <Badge color="red">{t('clients.blacklisted')}</Badge>
+                        )}
+                        {!client.is_vip && !client.is_blacklisted && (
+                          <Badge color="gray">{t('clients.regular')}</Badge>
+                        )}
+                      </Group>
+                    </Stack>
+                  </Card>
                 ))
               )}
-            </Table.Tbody>
-          </Table>
-        </Box>
+            </Stack>
+          </Box>
 
-        {/* Mobile Card View */}
-        <Box hiddenFrom="md">
-          <Stack gap="sm">
-            {filteredClients.length === 0 ? (
-              <Card withBorder>
-                <Text ta="center" c="dimmed">
-                  {t('clients.noClients', 'Aucun client trouvé')}
-                </Text>
-              </Card>
-            ) : (
-              filteredClients.map((client) => (
-                <Card key={client.id} withBorder padding="md">
-                  <Group justify="space-between" mb="xs">
-                    <Text fw={500} size="lg">
-                      {client.full_name}
-                    </Text>
-                    <Group gap="xs">
-                      <ActionIcon
-                        variant="light"
-                        color="blue"
-                        onClick={() => handleOpenModal(client)}
-                      >
-                        <IconPencil size={16} />
-                      </ActionIcon>
-                      <ActionIcon
-                        variant="light"
-                        color="red"
-                        onClick={() => handleDelete(client.id)}
-                      >
-                        <IconTrash size={16} />
-                      </ActionIcon>
-                    </Group>
-                  </Group>
-
-                  <Stack gap="xs">
-                    <Text size="sm" c="dimmed">
-                      <Text span fw={500}>
-                        {t('clients.email')}:{' '}
-                      </Text>
-                      {client.email || '-'}
-                    </Text>
-                    <Text size="sm" c="dimmed">
-                      <Text span fw={500}>
-                        {t('clients.phone')}:{' '}
-                      </Text>
-                      {client.phone_number}
-                    </Text>
-                    <Group gap="xs">
-                      {client.is_vip && <Badge color="yellow">{t('clients.vip')}</Badge>}
-                      {client.is_blacklisted && (
-                        <Badge color="red">{t('clients.blacklisted')}</Badge>
-                      )}
-                      {!client.is_vip && !client.is_blacklisted && (
-                        <Badge color="gray">{t('clients.regular')}</Badge>
-                      )}
-                    </Group>
-                  </Stack>
-                </Card>
-              ))
-            )}
-          </Stack>
-        </Box>
-      </Card>
-
-      <Modal
-        opened={opened}
-        onClose={close}
-        title={editingClient ? t('clients.editClient') : t('clients.addClient')}
-        size="lg"
-      >
-        <form onSubmit={form.onSubmit(handleSubmit)}>
-          <Stack>
-            {editingClient ? (
-              <>
-                <Text size="sm" c="dimmed">
-                  {t('clients.editInfo')}
-                </Text>
-                <Card withBorder p="md">
-                  <Text fw={500} size="lg" mb="xs">
-                    {editingClient.full_name}
-                  </Text>
-                  <Text size="sm" c="dimmed" mb="xs">
-                    {t('clients.email')}: {editingClient.email || t('common.none')}
-                  </Text>
-                  <Text size="sm" c="dimmed">
-                    {t('clients.phone')}: {editingClient.phone_number}
-                  </Text>
-                </Card>
-
-                <Switch
-                  label={t('clients.vipClient')}
-                  {...form.getInputProps('is_vip', { type: 'checkbox' })}
-                />
-
-                <Switch
-                  label={t('clients.blacklisted')}
-                  {...form.getInputProps('is_blacklisted', { type: 'checkbox' })}
-                />
-              </>
-            ) : (
-              <Card withBorder p="md">
-                <Text ta="center" mb="md">
-                  {t('clients.createFromReservations')}
-                </Text>
-                <Text size="sm" c="dimmed" ta="center">
-                  {t('clients.createFromReservationsDesc')}
-                </Text>
-              </Card>
-            )}
-
-            <Group justify="flex-end" mt="md">
-              <Button variant="light" onClick={close}>
-                {t('common.cancel')}
-              </Button>
-              {editingClient && <Button type="submit">{t('common.update')}</Button>}
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Group justify="space-between" mt="md" wrap="wrap">
+              <Text size="sm" c="dimmed">
+                {t('common.showing', 'Showing')} {(page - 1) * 20 + 1} -{' '}
+                {Math.min(page * 20, totalClients)} {t('common.of', 'of')} {totalClients}{' '}
+                {t('clients.title', 'Clients')}
+              </Text>
+              <Pagination total={totalPages} value={page} onChange={setPage} size="sm" />
             </Group>
-          </Stack>
-        </form>
-      </Modal>
-    </Stack>
+          )}
+        </Card>
+
+        <Modal
+          opened={modalOpened}
+          onClose={handleCloseModal}
+          title={editingClient ? t('clients.editClient') : t('clients.addClient')}
+          size="lg"
+        >
+          <form onSubmit={form.onSubmit(handleSubmit)}>
+            <Stack>
+              <TextInput
+                label={t('clients.name')}
+                placeholder={t('clients.namePlaceholder')}
+                {...form.getInputProps('full_name')}
+                required
+              />
+              <TextInput
+                label={t('clients.phone')}
+                placeholder={t('clients.phonePlaceholder')}
+                {...form.getInputProps('phone_number')}
+                required
+              />
+              <TextInput
+                label={t('clients.email')}
+                placeholder={t('clients.emailPlaceholder')}
+                {...form.getInputProps('email')}
+              />
+              <Switch
+                label={t('clients.vipClient')}
+                {...form.getInputProps('is_vip', { type: 'checkbox' })}
+              />
+              <Switch
+                label={t('clients.blacklisted')}
+                {...form.getInputProps('is_blacklisted', { type: 'checkbox' })}
+              />
+              <Group justify="flex-end" mt="md">
+                <Button variant="light" onClick={handleCloseModal}>
+                  {t('common.cancel')}
+                </Button>
+                <Button
+                  type="submit"
+                  loading={createClientMutation.isPending || updateClientMutation.isPending}
+                >
+                  {editingClient ? t('common.update') : t('common.create')}
+                </Button>
+              </Group>
+            </Stack>
+          </form>
+        </Modal>
+      </Stack>
+    </Box>
   );
 }

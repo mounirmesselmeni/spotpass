@@ -6,14 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-/**
- * Schema for creating zones
- */
-export type ZoneCreate = {
-  /**
-   * @minLength 1
-   * @maxLength 64
-   */
-  name: string;
-  establishment_id?: string | null;
+export type ListClientsApiStaffClientsGetParams = {
+  page?: number;
+  page_size?: number;
+  sort_by?: string;
+  sort_order?: string;
+  label_filter?: string | null;
 };

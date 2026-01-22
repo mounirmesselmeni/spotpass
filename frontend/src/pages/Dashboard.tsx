@@ -68,7 +68,8 @@ function StatCard({ title, value, icon, delay = 0 }: StatCardProps) {
 
 export function DashboardPage() {
   const { t } = useTranslation();
-  const { data: stats, isLoading } = useGetDashboardStatsApiStaffAuthDashboardStatsGet();
+  const { data: statsResponse, isLoading } = useGetDashboardStatsApiStaffAuthDashboardStatsGet();
+  const stats = statsResponse?.data;
 
   if (isLoading) {
     return (

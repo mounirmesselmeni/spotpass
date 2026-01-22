@@ -18,6 +18,7 @@ from reservations.schemas import (
     MessageResponse,
     NewReservationTokenRequest,
     NewReservationTokenResponse,
+    PaginatedReservationResponse,
     ReservationCreate,
     ReservationDetailRead,
     ReservationDetailsResponse,
@@ -38,25 +39,58 @@ staff_reservations_router = APIRouter(
 )
 
 
-@staff_reservations_router.get("/", response_model=list[ReservationWithClientRead])
+@staff_reservations_router.get("/", response_model=PaginatedReservationResponse)
 def list_reservations(
     session: DatabaseSession,
     token_payload: StaffUser,
-    status: str | None = None,
+    status_filter: str | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
     keyword: str | None = None,
+    page: int = 1,
+    page_size: int = 20,
+    sort_by: str = "datetime",
+    sort_order: str = "desc",
 ):
-    """List all reservations with optional filters (staff only)"""
-    from sqlmodel import or_
+    """
+    List all reservations with optional filters, pagination, and sorting (staff only)
+
+    - **status_filter**: Filter by reservation status
+    - **page**: Page number (1-indexed), default: 1
+    - **page_size**: Number of items per page (max 100), default: 20
+    - **sort_by**: Sort field (datetime, client_name, guests, status), default: datetime
+    - **sort_order**: Sort order (asc, desc), default: desc
+    """
+    from sqlmodel import asc, desc, func, or_
+
+    # Validate pagination parameters
+    if page < 1:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Page must be >= 1")
+    if page_size < 1 or page_size > 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Page size must be between 1 and 100"
+        )
+
+    # Validate sorting parameters
+    valid_sort_fields = ["datetime", "client_name", "guests", "status"]
+    if sort_by not in valid_sort_fields:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid sort_by field. Must be one of: {', '.join(valid_sort_fields)}",
+        )
+
+    if sort_order not in ["asc", "desc"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="sort_order must be 'asc' or 'desc'"
+        )
 
     statement = select(Reservation)
 
     # Apply filters
     conditions = []
 
-    if status:
-        conditions.append(Reservation.status == status)
+    if status_filter:
+        conditions.append(Reservation.status == status_filter)
 
     if date_from:
         conditions.append(Reservation.reservation_date >= date_from)
@@ -82,10 +116,36 @@ def list_reservations(
     if conditions:
         statement = statement.where(*conditions)
 
+    # Get total count before pagination
+    count_statement = select(func.count()).select_from(statement.subquery())
+    total = session.exec(count_statement).one()
+
+    # Apply sorting
+    order_func = desc if sort_order == "desc" else asc
+
+    if sort_by == "datetime":
+        # Sort by date first, then time
+        statement = statement.order_by(
+            order_func(Reservation.reservation_date), order_func(Reservation.reservation_time)
+        )
+    elif sort_by == "client_name":
+        # Need to join Client if not already joined
+        if not keyword:  # keyword search already joins Client
+            statement = statement.join(Client, Reservation.client_id == Client.id)
+        statement = statement.order_by(order_func(Client.full_name))
+    elif sort_by == "guests":
+        statement = statement.order_by(order_func(Reservation.number_of_guests))
+    elif sort_by == "status":
+        statement = statement.order_by(order_func(Reservation.status))
+
+    # Apply pagination
+    offset = (page - 1) * page_size
+    statement = statement.offset(offset).limit(page_size)
+
     reservations = session.exec(statement).all()
 
     # Convert to response with establishment UUIDs and client details
-    result = []
+    items = []
     for r in reservations:
         establishment = session.get(Establishment, r.establishment_id)
         client = session.get(Client, r.client_id)
@@ -119,9 +179,48 @@ def list_reservations(
                 total_refused=0,
             ),
         )
-        result.append(reservation_data)
+        items.append(reservation_data)
 
-    return result
+    # Calculate total pages
+    total_pages = (total + page_size - 1) // page_size
+
+    # Build next/previous URLs
+    from urllib.parse import urlencode
+
+    base_params = {}
+    if status_filter:
+        base_params["status_filter"] = status_filter
+    if date_from:
+        base_params["date_from"] = date_from.isoformat()
+    if date_to:
+        base_params["date_to"] = date_to.isoformat()
+    if keyword:
+        base_params["keyword"] = keyword
+    if sort_by != "datetime":
+        base_params["sort_by"] = sort_by
+    if sort_order != "desc":
+        base_params["sort_order"] = sort_order
+    base_params["page_size"] = str(page_size)
+
+    next_url = None
+    if page < total_pages:
+        next_params = {**base_params, "page": str(page + 1)}
+        next_url = f"/api/staff/reservations/?{urlencode(next_params)}"
+
+    previous_url = None
+    if page > 1:
+        prev_params = {**base_params, "page": str(page - 1)}
+        previous_url = f"/api/staff/reservations/?{urlencode(prev_params)}"
+
+    return PaginatedReservationResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+        next=next_url,
+        previous=previous_url,
+    )
 
 
 @staff_reservations_router.get("/{reservation_id}", response_model=ReservationRead)

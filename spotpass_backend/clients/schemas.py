@@ -41,6 +41,9 @@ class ClientCreate(ClientBase):
 class ClientUpdate(BaseModel):
     """Schema for updating clients"""
 
+    full_name: str | None = Field(default=None, min_length=1, max_length=64)
+    email: EmailStr | None = None
+    phone_number: str | None = Field(default=None, min_length=1, max_length=32)
     is_blacklisted: bool | None = None
     is_vip: bool | None = None
 
@@ -84,3 +87,17 @@ class ClientRead(ClientBase):
             }
             return cls.model_construct(**data)
         return super().model_validate(obj, *args, **kwargs)
+
+
+class PaginatedClientResponse(BaseModel):
+    """Paginated response for clients list"""
+
+    items: list[ClientRead]
+    total: int = Field(..., description="Total number of items across all pages")
+    page: int = Field(..., description="Current page number (1-indexed)")
+    page_size: int = Field(..., description="Number of items per page")
+    total_pages: int = Field(..., description="Total number of pages")
+    next: str | None = Field(None, description="URL for the next page, if available")
+    previous: str | None = Field(None, description="URL for the previous page, if available")
+
+    model_config = {"from_attributes": True}

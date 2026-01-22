@@ -13,7 +13,7 @@ class TestReservationList:
     """Tests for /api/staff/reservations endpoint"""
 
     def test_get_reservations_list(self, client: TestClient, session: Session, auth_headers_staff):
-        """Test getting list of reservations"""
+        """Test getting list of reservations with pagination"""
         establishment = EstablishmentFactory(session=session)
         for _ in range(3):
             ReservationFactory(session=session, establishment=establishment)
@@ -23,8 +23,70 @@ class TestReservationList:
 
         assert response.status_code == 200
         data = response.json()
-        assert isinstance(data, list)
-        assert len(data) == 3
+        assert isinstance(data, dict)
+        assert "items" in data
+        assert "total" in data
+        assert "page" in data
+        assert "page_size" in data
+        assert "total_pages" in data
+        assert len(data["items"]) == 3
+        assert data["total"] == 3
+        assert data["page"] == 1
+        assert data["page_size"] == 20
+
+    def test_get_reservations_list_pagination(
+        self, client: TestClient, session: Session, auth_headers_staff
+    ):
+        """Test pagination parameters"""
+        establishment = EstablishmentFactory(session=session)
+        for _ in range(25):
+            ReservationFactory(session=session, establishment=establishment)
+        session.commit()
+
+        # Test first page
+        response = client.get(
+            "/api/staff/reservations/?page=1&page_size=10", headers=auth_headers_staff
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 10
+        assert data["total"] == 25
+        assert data["page"] == 1
+        assert data["total_pages"] == 3
+
+        # Test second page
+        response = client.get(
+            "/api/staff/reservations/?page=2&page_size=10", headers=auth_headers_staff
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 10
+        assert data["page"] == 2
+
+        # Test last page
+        response = client.get(
+            "/api/staff/reservations/?page=3&page_size=10", headers=auth_headers_staff
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 5
+        assert data["page"] == 3
+
+    def test_get_reservations_list_invalid_pagination(
+        self, client: TestClient, session: Session, auth_headers_staff
+    ):
+        """Test invalid pagination parameters"""
+        # Page < 1
+        response = client.get("/api/staff/reservations/?page=0", headers=auth_headers_staff)
+        assert response.status_code == 400
+
+        # Page size > 100
+        response = client.get("/api/staff/reservations/?page_size=101", headers=auth_headers_staff)
+        assert response.status_code == 400
+
+        # Page size < 1
+        response = client.get("/api/staff/reservations/?page_size=0", headers=auth_headers_staff)
+        assert response.status_code == 400
 
     def test_get_reservations_list_unauthorized(self, client: TestClient, session: Session):
         """Test getting reservations list without authentication"""

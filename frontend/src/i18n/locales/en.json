@@ -47,6 +47,7 @@
     "client": "Client",
     "date": "Date",
     "time": "Time",
+    "datetime": "Date & Time",
     "guests": "Guests",
     "status": "Status",
     "actions": "Actions",
@@ -78,6 +79,7 @@
     "email": "Email",
     "phone": "Phone",
     "vip": "VIP",
+    "regular": "Regular",
     "blacklisted": "Blacklisted",
     "addClient": "Add Client",
     "editClient": "Edit Client",
@@ -153,6 +155,10 @@
     "clearFilters": "Clear all",
     "grid": "Grid",
     "list": "List",
-    "required": "Required"
+    "required": "Required",
+    "showing": "Showing",
+    "of": "of",
+    "page": "Page",
+    "status": "Status"
   }
 }

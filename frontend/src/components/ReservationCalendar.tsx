@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Paper,
   Title,
@@ -17,9 +17,11 @@ import {
 } from '@mantine/core';
 import { Calendar } from '@mantine/dates';
 import { useTranslation } from 'react-i18next';
-import { IconFilter, IconX } from '@tabler/icons-react';
+import { IconChevronLeft, IconChevronRight, IconFilter, IconX } from '@tabler/icons-react';
 import { useListReservationsApiStaffReservationsGet } from '@/api/generated/staff-reservations/staff-reservations';
 import type { ReservationRead } from '@/api/generated/models';
+import { StatusBadge } from '@/components/StatusBadge';
+import { useAuthStore } from '@/stores/auth.store';
 
 interface ReservationCalendarProps {
   onReservationClick?: (reservation: ReservationRead) => void;
@@ -32,23 +34,114 @@ export function ReservationCalendar({ onReservationClick }: ReservationCalendarP
   );
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [guestsFilter, setGuestsFilter] = useState<number | string>('');
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+  const [allReservations, setAllReservations] = useState<ReservationRead[]>([]);
+  const [isFetchingAll, setIsFetchingAll] = useState(false);
 
-  const { data: reservations, isLoading } = useListReservationsApiStaffReservationsGet({
-    status: statusFilter === 'all' ? undefined : (statusFilter as any),
+  // Calculate date range for current month view (±1 month for better UX)
+  const firstDay = useMemo(
+    () => new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1),
+    [calendarMonth]
+  );
+  const lastDay = useMemo(
+    () => new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 2, 0),
+    [calendarMonth]
+  );
+
+  // Create stable date strings for useEffect dependencies
+  const dateFrom = useMemo(() => firstDay.toISOString().split('T')[0], [firstDay]);
+  const dateTo = useMemo(() => lastDay.toISOString().split('T')[0], [lastDay]);
+
+  // Fetch first page to know total count
+  const { data: reservationsResponse, isLoading } = useListReservationsApiStaffReservationsGet({
+    status_filter: statusFilter === 'all' || statusFilter === null ? undefined : statusFilter,
+    date_from: dateFrom,
+    date_to: dateTo,
+    page: 1,
+    page_size: 100,
   });
+
+  const paginatedData =
+    reservationsResponse?.data && 'items' in reservationsResponse.data
+      ? reservationsResponse.data
+      : null;
+
+  // Fetch all pages if there are more than 100 reservations
+  useEffect(() => {
+    const fetchAllReservations = async () => {
+      if (!paginatedData) {
+        setAllReservations([]);
+        return;
+      }
+
+      const firstPageItems = paginatedData.items;
+      let nextUrl = paginatedData.next;
+
+      // If no next page, use what we have
+      if (!nextUrl) {
+        setAllReservations(firstPageItems);
+        return;
+      }
+
+      // Need to fetch additional pages using next URLs
+      setIsFetchingAll(true);
+      const allItems = [...firstPageItems];
+
+      try {
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+        const token = useAuthStore.getState().accessToken;
+
+        if (!token) {
+          console.error('No access token available');
+          setAllReservations(firstPageItems);
+          return;
+        }
+
+        // Follow next links until no more pages
+        while (nextUrl) {
+          const response: Response = await fetch(`${baseUrl}${nextUrl}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!response.ok) break;
+
+          const result: any = await response.json();
+          if (result.items) {
+            allItems.push(...result.items);
+          }
+          nextUrl = result.next; // Get next page URL
+        }
+
+        setAllReservations(allItems);
+      } catch (error) {
+        console.error('Error fetching all reservations:', error);
+        setAllReservations(firstPageItems); // Fallback to first page
+      } finally {
+        setIsFetchingAll(false);
+      }
+    };
+
+    fetchAllReservations();
+  }, [paginatedData?.total_pages, paginatedData?.page, dateFrom, dateTo, statusFilter]);
+
+  const reservations = allReservations;
 
   // Group reservations by date
   // API returns reservation_date as a separate field (YYYY-MM-DD)
   const reservationsByDate = new Map<string, ReservationRead[]>();
-  reservations?.forEach((reservation: ReservationRead) => {
-    if (!reservation.reservation_date) return;
+  if (Array.isArray(reservations)) {
+    reservations.forEach((reservation: ReservationRead) => {
+      if (!reservation.reservation_date) return;
 
-    const dateStr = reservation.reservation_date;
-    if (!reservationsByDate.has(dateStr)) {
-      reservationsByDate.set(dateStr, []);
-    }
-    reservationsByDate.get(dateStr)!.push(reservation);
-  });
+      const dateStr = reservation.reservation_date;
+      if (!reservationsByDate.has(dateStr)) {
+        reservationsByDate.set(dateStr, []);
+      }
+      reservationsByDate.get(dateStr)!.push(reservation);
+    });
+  }
 
   // Get reservations for selected date
   const selectedDateKey = selectedDate;
@@ -67,21 +160,6 @@ export function ReservationCalendar({ onReservationClick }: ReservationCalendarP
     return timeA.localeCompare(timeB);
   });
 
-  const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'pending':
-        return 'orange';
-      case 'accepted':
-        return 'green';
-      case 'refused':
-        return 'red';
-      case 'canceled':
-        return 'gray';
-      default:
-        return 'blue';
-    }
-  };
-
   const getStatusLabel = (status?: string) => {
     switch (status) {
       case 'pending':
@@ -97,11 +175,11 @@ export function ReservationCalendar({ onReservationClick }: ReservationCalendarP
     }
   };
 
-  const renderDay = (date: string) => {
-    const dateKey = date;
+  const renderDay = (date: Date | string) => {
+    const dateValue = typeof date === 'string' ? new Date(date) : date;
+    const dateKey = typeof date === 'string' ? date : date.toISOString().split('T')[0];
     const dayReservations = reservationsByDate.get(dateKey) || [];
     const hasReservations = dayReservations.length > 0;
-    const dateObj = new Date(date);
 
     return (
       <Tooltip
@@ -120,7 +198,7 @@ export function ReservationCalendar({ onReservationClick }: ReservationCalendarP
           }}
         >
           {/* Day number */}
-          <span>{dateObj.getDate()}</span>
+          <span>{dateValue.getDate()}</span>
           {/* Indicator dot for reservations */}
           {hasReservations && (
             <Box
@@ -147,19 +225,58 @@ export function ReservationCalendar({ onReservationClick }: ReservationCalendarP
     setGuestsFilter('');
   };
 
+  const handlePreviousMonth = () => {
+    setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1));
+  };
+
+  const currentMonthYear = calendarMonth.toLocaleDateString('fr-FR', {
+    month: 'long',
+    year: 'numeric'
+  });
+
   return (
     <Grid>
       {/* Calendar View */}
       <Grid.Col span={{ base: 12, md: 5 }}>
         <Paper p="md" withBorder>
           <Stack gap="md">
-            <Title order={4}>Calendrier</Title>
+            <Group justify="space-between">
+              <Title order={4}>Calendrier</Title>
+              <Group gap={4}>
+                <ActionIcon
+                  variant="light"
+                  onClick={handlePreviousMonth}
+                  aria-label="Mois précédent"
+                  size="sm"
+                >
+                  <IconChevronLeft size={16} />
+                </ActionIcon>
+                <Text fw={500} size="sm" style={{ minWidth: 140, textAlign: 'center' }}>
+                  {currentMonthYear}
+                </Text>
+                <ActionIcon
+                  variant="light"
+                  onClick={handleNextMonth}
+                  aria-label="Mois suivant"
+                  size="sm"
+                >
+                  <IconChevronRight size={16} />
+                </ActionIcon>
+              </Group>
+            </Group>
             <Calendar
               defaultDate={selectedDate ? new Date(selectedDate) : undefined}
-              getDayProps={(date: string) => ({
-                onClick: () => setSelectedDate(date),
-                selected: selectedDate === date,
-              })}
+              getDayProps={(date: Date | string) => {
+                const dateKey = typeof date === 'string' ? date : date.toISOString().split('T')[0];
+                return {
+                  onClick: () => setSelectedDate(dateKey),
+                  selected: selectedDate === dateKey,
+                };
+              }}
               renderDay={renderDay}
               size="md"
               style={{ width: '100%' }}
@@ -213,7 +330,7 @@ export function ReservationCalendar({ onReservationClick }: ReservationCalendarP
                   style={{ flex: 1 }}
                 />
                 <NumberInput
-                  placeholder="Nb. convives"
+                  placeholder="Nb. invités"
                   min={1}
                   value={guestsFilter}
                   onChange={setGuestsFilter}
@@ -229,9 +346,10 @@ export function ReservationCalendar({ onReservationClick }: ReservationCalendarP
             </Card>
 
             {/* Reservations List */}
-            {isLoading ? (
+            {isLoading || isFetchingAll ? (
               <Text ta="center" c="dimmed">
                 {t('common.loading')}
+                {isFetchingAll && ' (chargement de toutes les pages...)'}
               </Text>
             ) : sortedReservations.length === 0 ? (
               <Paper p="xl" withBorder>
@@ -256,9 +374,9 @@ export function ReservationCalendar({ onReservationClick }: ReservationCalendarP
                             ? reservation.reservation_time.substring(0, 5)
                             : '--:--'}
                         </Text>
-                        <Badge color={getStatusColor(reservation.status)} variant="light" size="sm">
+                        <StatusBadge status={reservation.status} size="sm">
                           {getStatusLabel(reservation.status)}
-                        </Badge>
+                        </StatusBadge>
                       </Group>
                       <Badge variant="outline" size="sm">
                         {reservation.number_of_guests} {t('reservations.guests')}

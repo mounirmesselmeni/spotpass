@@ -47,6 +47,14 @@ yarn generate:api
 
 ### Backend Setup
 
+### Generate OpenAPI Schema
+
+```bash
+uv run python extract_openapi.py main:app --out ../frontend/openapi.yml
+```
+
+### Install Backend Dependencies
+
 ```bash
 cd spotpass_backend
 # Create virtual environment
@@ -247,7 +255,7 @@ No separate build step required. For production:
 
 ```bash
 cd spotpass_backend
-uv run uvicorn spotpass_backend.main:app --host 0.0.0.0 --port 5001
+uv run uvicorn main:app --host 0.0.0.0 --port 5001
 ```
 
 ### Database

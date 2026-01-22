@@ -109,12 +109,17 @@ def create_table(table_data: TableCreate, session: DatabaseSession, token_payloa
             detail="min_capacity cannot be greater than max_capacity",
         )
 
-    # Check if establishment exists
-    statement = select(Establishment).where(Establishment.uuid == table_data.establishment_id)
+    # Get establishment from user's account
+    account_id = token_payload.get("account")
+    statement = select(Establishment).where(Establishment.account_id == account_id)
     establishment = session.exec(statement).first()
 
     if not establishment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Establishment not found")
+
+    # If establishment_id is provided, validate it matches the user's establishment
+    if table_data.establishment_id and table_data.establishment_id != establishment.uuid:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid establishment")
 
     # Check if zone exists (if provided)
     zone_id = None
@@ -290,12 +295,17 @@ def list_zones(session: DatabaseSession, token_payload: StaffUser):
 def create_zone(zone_data: ZoneCreate, session: DatabaseSession, token_payload: StaffUser):
     """Create a new zone (staff only)"""
 
-    # Check if establishment exists
-    statement = select(Establishment).where(Establishment.uuid == zone_data.establishment_id)
+    # Get establishment from user's account
+    account_id = token_payload.get("account")
+    statement = select(Establishment).where(Establishment.account_id == account_id)
     establishment = session.exec(statement).first()
 
     if not establishment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Establishment not found")
+
+    # If establishment_id is provided, validate it matches the user's establishment
+    if zone_data.establishment_id and zone_data.establishment_id != establishment.uuid:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid establishment")
 
     # Check for duplicate zone name in establishment
     statement = select(Zone).where(

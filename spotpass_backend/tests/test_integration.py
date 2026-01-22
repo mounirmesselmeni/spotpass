@@ -14,6 +14,13 @@ from tests.factories import (
 )
 
 
+def extract_items(response_json):
+    """Helper to extract items from paginated response"""
+    if isinstance(response_json, dict) and "items" in response_json:
+        return response_json["items"]
+    return response_json
+
+
 class TestReservationFlowIntegration:
     """Integration tests for complete reservation management flow"""
 
@@ -49,9 +56,13 @@ class TestReservationFlowIntegration:
         session.commit()
 
         # Step 1: List reservations with filter
-        response = client.get("/api/staff/reservations/?status=pending", headers=auth_headers_staff)
+        response = client.get(
+            "/api/staff/reservations/?status_filter=pending", headers=auth_headers_staff
+        )
         assert response.status_code == 200
-        reservations = response.json()
+        paginated_data = response.json()
+        assert "items" in paginated_data
+        reservations = paginated_data["items"]
         assert len(reservations) >= 1
         found_reservation = next(
             (r for r in reservations if r["reference"] == reservation.reference), None
@@ -422,21 +433,21 @@ class TestSearchAndFilterIntegration:
         # Search by name
         response = client.get("/api/staff/reservations/?keyword=Alice", headers=auth_headers_staff)
         assert response.status_code == 200
-        assert len(response.json()) >= 1
+        assert len(extract_items(response.json())) >= 1
 
         # Search by email
         response = client.get(
             "/api/staff/reservations/?keyword=alice.johnson", headers=auth_headers_staff
         )
         assert response.status_code == 200
-        assert len(response.json()) >= 1
+        assert len(extract_items(response.json())) >= 1
 
         # Search by phone
         response = client.get(
             "/api/staff/reservations/?keyword=612345678", headers=auth_headers_staff
         )
         assert response.status_code == 200
-        assert len(response.json()) >= 1
+        assert len(extract_items(response.json())) >= 1
 
         # Search by reference
         response = client.get(
@@ -444,7 +455,7 @@ class TestSearchAndFilterIntegration:
             headers=auth_headers_staff,
         )
         assert response.status_code == 200
-        results = response.json()
+        results = extract_items(response.json())
         assert len(results) >= 1
         assert any(r["reference"] == reservation.reference for r in results)
 
@@ -491,11 +502,11 @@ class TestSearchAndFilterIntegration:
 
         # Query: Pending reservations for today with keyword "John"
         response = client.get(
-            f"/api/staff/reservations/?status=pending&date_from={today.isoformat()}&date_to={today.isoformat()}&keyword=John",
+            f"/api/staff/reservations/?status_filter=pending&date_from={today.isoformat()}&date_to={today.isoformat()}&keyword=John",
             headers=auth_headers_staff,
         )
         assert response.status_code == 200
-        results = response.json()
+        results = extract_items(response.json())
 
         # Due to database constraints, at minimum we should get valid results
         # The important thing is that all returned results match the filters

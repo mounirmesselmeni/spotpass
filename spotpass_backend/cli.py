@@ -431,6 +431,381 @@ def list_users():
 
 
 @app.command()
+def seed_data(
+    clients: int = typer.Option(170, "--clients", "-c", help="Number of clients to create"),
+    reservations: int = typer.Option(
+        200, "--reservations", "-r", help="Number of reservations to create"
+    ),
+):
+    """Generate bulk test data (clients and reservations)"""
+    import random
+    from datetime import timedelta
+
+    with Session(engine) as session:
+        # Check if basic data exists
+        account = session.exec(select(Account)).first()
+        establishment = session.exec(select(Establishment)).first()
+
+        if not account or not establishment:
+            console.print("[red]❌ Please run 'spotpass init-db' first to create base data[/red]")
+            raise typer.Abort()
+
+        console.print("[blue]🌱 Generating test data...[/blue]\n")
+
+        # Generate clients
+        console.print(f"[cyan]📝 Creating {clients} clients...[/cyan]")
+
+        first_names = [
+            "Emma",
+            "Liam",
+            "Olivia",
+            "Noah",
+            "Ava",
+            "Ethan",
+            "Sophia",
+            "Mason",
+            "Isabella",
+            "William",
+            "Mia",
+            "James",
+            "Charlotte",
+            "Benjamin",
+            "Amelia",
+            "Lucas",
+            "Harper",
+            "Henry",
+            "Evelyn",
+            "Alexander",
+            "Abigail",
+            "Sebastian",
+            "Emily",
+            "Jack",
+            "Elizabeth",
+            "Aiden",
+            "Sofia",
+            "Matthew",
+            "Avery",
+            "Samuel",
+            "Ella",
+            "David",
+            "Scarlett",
+            "Joseph",
+            "Grace",
+            "Carter",
+            "Chloe",
+            "Owen",
+            "Victoria",
+            "Wyatt",
+            "Riley",
+            "John",
+            "Aria",
+            "Dylan",
+            "Lily",
+            "Luke",
+            "Aubrey",
+            "Gabriel",
+            "Zoey",
+            "Anthony",
+            "Penelope",
+            "Isaac",
+            "Lillian",
+            "Grayson",
+            "Addison",
+            "Julian",
+            "Layla",
+            "Levi",
+            "Natalie",
+            "Christopher",
+            "Camila",
+            "Joshua",
+            "Hannah",
+            "Andrew",
+            "Brooklyn",
+            "Lincoln",
+            "Zoe",
+            "Mateo",
+            "Nora",
+            "Ryan",
+            "Leah",
+            "Jaxon",
+            "Savannah",
+            "Nathan",
+            "Audrey",
+            "Aaron",
+            "Claire",
+            "Isaiah",
+            "Eleanor",
+            "Thomas",
+            "Skylar",
+            "Charles",
+            "Ellie",
+            "Caleb",
+            "Samantha",
+            "Josiah",
+            "Stella",
+            "Christian",
+            "Paisley",
+            "Hunter",
+            "Violet",
+            "Eli",
+            "Mila",
+            "Jonathan",
+            "Allison",
+            "Connor",
+            "Madelyn",
+            "Landon",
+            "Cora",
+            "Adrian",
+        ]
+
+        last_names = [
+            "Smith",
+            "Johnson",
+            "Williams",
+            "Brown",
+            "Jones",
+            "Garcia",
+            "Miller",
+            "Davis",
+            "Rodriguez",
+            "Martinez",
+            "Hernandez",
+            "Lopez",
+            "Gonzalez",
+            "Wilson",
+            "Anderson",
+            "Thomas",
+            "Taylor",
+            "Moore",
+            "Jackson",
+            "Martin",
+            "Lee",
+            "Perez",
+            "Thompson",
+            "White",
+            "Harris",
+            "Sanchez",
+            "Clark",
+            "Ramirez",
+            "Lewis",
+            "Robinson",
+            "Walker",
+            "Young",
+            "Allen",
+            "King",
+            "Wright",
+            "Scott",
+            "Torres",
+            "Nguyen",
+            "Hill",
+            "Flores",
+            "Green",
+            "Adams",
+            "Nelson",
+            "Baker",
+            "Hall",
+            "Rivera",
+            "Campbell",
+            "Mitchell",
+            "Carter",
+            "Roberts",
+            "Gomez",
+            "Phillips",
+            "Evans",
+            "Turner",
+            "Diaz",
+            "Parker",
+            "Cruz",
+            "Edwards",
+            "Collins",
+            "Reyes",
+            "Stewart",
+            "Morris",
+            "Morales",
+            "Murphy",
+            "Cook",
+            "Rogers",
+            "Gutierrez",
+            "Ortiz",
+            "Morgan",
+            "Cooper",
+            "Peterson",
+            "Bailey",
+            "Reed",
+            "Kelly",
+            "Howard",
+            "Ramos",
+            "Kim",
+            "Cox",
+            "Ward",
+            "Richardson",
+            "Watson",
+            "Brooks",
+            "Chavez",
+            "Wood",
+            "James",
+            "Bennett",
+            "Gray",
+            "Mendoza",
+            "Ruiz",
+            "Hughes",
+            "Price",
+            "Alvarez",
+            "Castillo",
+            "Sanders",
+            "Patel",
+            "Myers",
+            "Long",
+            "Ross",
+            "Foster",
+            "Jimenez",
+        ]
+
+        created_clients = []
+        for i in range(clients):
+            first_name = random.choice(first_names)
+            last_name = random.choice(last_names)
+            full_name = f"{first_name} {last_name}"
+            email = f"{first_name.lower()}.{last_name.lower()}{i}@example.com"
+            phone = f"+1-555-{random.randint(1000, 9999)}"
+            is_vip = random.random() < 0.15  # 15% VIP clients
+            is_blacklisted = random.random() < 0.05  # 5% blacklisted
+
+            client = Client(
+                full_name=full_name,
+                email=email,
+                phone_number=phone,
+                is_vip=is_vip,
+                is_blacklisted=is_blacklisted,
+                establishment_id=establishment.id,
+                account_id=account.id,
+            )
+            session.add(client)
+            created_clients.append(client)
+
+            if (i + 1) % 50 == 0:
+                session.flush()
+                console.print(f"  [green]✓[/green] Created {i + 1}/{clients} clients...")
+
+        session.flush()
+        console.print(f"[green]✅ Created {clients} clients[/green]\n")
+
+        # Generate reservations
+        console.print(f"[cyan]📅 Creating {reservations} reservations...[/cyan]")
+
+        # Get available tables
+        tables = session.exec(select(TableModel)).all()
+        if not tables:
+            console.print("[red]❌ No tables found. Please run 'spotpass init-db' first[/red]")
+            raise typer.Abort()
+
+        statuses = ["pending", "accepted", "refused", "canceled"]
+        status_weights = [
+            0.20,
+            0.60,
+            0.10,
+            0.10,
+        ]  # 60% accepted, 20% pending, 10% refused, 10% canceled
+
+        special_requests = [
+            "Window seat please",
+            "Birthday celebration",
+            "Anniversary dinner",
+            "Business meeting",
+            "Quiet area preferred",
+            "High chair needed",
+            "Wheelchair accessible",
+            "Allergy: nuts",
+            "Vegetarian options",
+            "Near the kitchen",
+            None,
+            None,
+            None,  # Many reservations won't have special requests
+        ]
+
+        today = date.today()
+
+        for i in range(reservations):
+            # Random date between 30 days ago and 30 days in the future
+            days_offset = random.randint(-30, 30)
+            res_date = today + timedelta(days=days_offset)
+
+            # Random time between 17:00 and 22:00 (5 PM to 10 PM)
+            hour = random.randint(17, 22)
+            minute = random.choice([0, 15, 30, 45])
+            res_time = time(hour, minute)
+
+            # Random number of guests (1-8, weighted towards 2-4)
+            guests = random.choices([1, 2, 3, 4, 5, 6, 7, 8], weights=[5, 30, 25, 25, 8, 4, 2, 1])[
+                0
+            ]
+
+            # Random status
+            status = random.choices(statuses, weights=status_weights)[0]
+
+            # Random client
+            client = random.choice(created_clients)
+
+            # Random table
+            table = random.choice(tables)
+
+            reservation = Reservation(
+                reference=f"REF{10000 + i}",
+                number_of_guests=guests,
+                reservation_date=res_date,
+                reservation_time=res_time,
+                special_request=random.choice(special_requests),
+                status=status,
+                client_id=client.id,
+                table_id=table.id,
+                establishment_id=establishment.id,
+                account_id=account.id,
+            )
+            session.add(reservation)
+
+            if (i + 1) % 50 == 0:
+                session.flush()
+                console.print(f"  [green]✓[/green] Created {i + 1}/{reservations} reservations...")
+
+        session.commit()
+        console.print(f"[green]✅ Created {reservations} reservations[/green]\n")
+
+        # Display summary
+        summary_table = Table(
+            title="📊 Generated Data Summary", show_header=True, header_style="bold cyan"
+        )
+        summary_table.add_column("Entity", style="cyan")
+        summary_table.add_column("Count", justify="right", style="green")
+
+        summary_table.add_row("New Clients", str(clients))
+        summary_table.add_row("New Reservations", str(reservations))
+
+        # Count by status
+        status_counts = {}
+        for status in statuses:
+            count = session.exec(select(Reservation).where(Reservation.status == status)).all()
+            status_counts[status] = len(count)
+
+        summary_table.add_row("", "")
+        summary_table.add_row("Reservation Status Breakdown", "")
+        for status, count in status_counts.items():
+            summary_table.add_row(f"  {status.capitalize()}", str(count))
+
+        console.print(summary_table)
+        console.print()
+
+        console.print(
+            Panel.fit(
+                "[bold green]✨ Test data generated successfully![/bold green]\n\n"
+                f"You now have {clients} clients and {reservations} reservations\n"
+                "in your database for testing pagination and filters.",
+                title="🎉 Success!",
+                border_style="green",
+            )
+        )
+
+
+@app.command()
 def version():
     """Show version information"""
     console.print("[bold cyan]SpotPass Backend[/bold cyan] version [green]0.1.0[/green]")

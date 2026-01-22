@@ -1,17 +1,16 @@
-import { AppShell, Burger, Group, Title, ActionIcon, Avatar, Menu, Text, Box } from '@mantine/core';
+import { useAuthStore } from '@/stores/auth.store';
+import { AppShell, Avatar, Box, Burger, Group, Menu, Text, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
-  IconLogout,
   IconCalendar,
-  IconUsers,
-  IconTable,
-  IconLayoutGrid,
-  IconUser,
-  IconDashboard,
   IconChevronDown,
+  IconDashboard,
+  IconLayoutGrid,
+  IconLogout,
+  IconTable,
+  IconUsers,
 } from '@tabler/icons-react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useAuthStore } from '@/stores/auth.store';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 const navigation = [
   { label: 'Dashboard', icon: IconDashboard, path: '/' },
@@ -19,7 +18,6 @@ const navigation = [
   { label: 'Clients', icon: IconUsers, path: '/clients' },
   { label: 'Tables', icon: IconTable, path: '/tables' },
   { label: 'Zones', icon: IconLayoutGrid, path: '/zones' },
-  { label: 'Users', icon: IconUser, path: '/users' },
 ];
 
 export function DashboardLayout() {

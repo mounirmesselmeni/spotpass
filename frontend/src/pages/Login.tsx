@@ -30,14 +30,17 @@ export function LoginPage() {
 
   const loginMutation = useStaffLoginApiStaffAuthLoginPost({
     mutation: {
-      onSuccess: (data) => {
-        setAuth(data.access_token, data.refresh_token, data.user, data.expires_at);
-        notifications.show({
-          title: t('common.success'),
-          message: t('auth.loginSuccess'),
-          color: 'blue',
-        });
-        navigate('/');
+      onSuccess: (response) => {
+        const { data } = response;
+        if ('access_token' in data) {
+          setAuth(data.access_token, data.refresh_token, data.user, data.expires_at);
+          notifications.show({
+            title: t('common.success'),
+            message: t('auth.loginSuccess'),
+            color: 'blue',
+          });
+          navigate('/');
+        }
       },
       onError: (error: any) => {
         const errorMessage = error?.response?.data?.detail || t('auth.loginError');

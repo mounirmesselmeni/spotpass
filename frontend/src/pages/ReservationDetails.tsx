@@ -33,6 +33,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { StatusBadge } from '@/components/StatusBadge';
 
 interface ReservationDetails {
   reservation: any;
@@ -302,21 +303,6 @@ export function ReservationDetailsPage() {
     });
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'yellow';
-      case 'accepted':
-        return 'green';
-      case 'refused':
-        return 'red';
-      case 'canceled':
-        return 'gray';
-      default:
-        return 'blue';
-    }
-  };
-
   const getDurationOptions = () => {
     const options = [];
     // 30min to 6 hours in 30min increments
@@ -375,13 +361,11 @@ export function ReservationDetailsPage() {
             >
               {t('common.back', 'Back')}
             </Button>
-            <Title order={2}>
-              {t('reservations.details', 'Reservation Details')} - {reservation.reference}
-            </Title>
+            <Title order={2}>{t('reservations.details', 'Reservation Details')}</Title>
           </Group>
-          <Badge size="lg" color={getStatusColor(reservation.status)}>
+          <StatusBadge status={reservation.status} size="lg">
             {String(t(`reservations.${reservation.status}`, reservation.status))}
-          </Badge>
+          </StatusBadge>
         </Group>
 
         <Grid>

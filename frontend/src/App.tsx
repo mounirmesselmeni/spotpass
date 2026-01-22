@@ -8,7 +8,6 @@ import { ReservationDetailsPage } from './pages/ReservationDetails';
 import { ClientsPage } from './pages/Clients';
 import { TablesPage } from './pages/Tables';
 import { ZonesPage } from './pages/Zones';
-import { UsersPage } from './pages/Users';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -34,7 +33,6 @@ function App() {
         <Route path="clients" element={<ClientsPage />} />
         <Route path="tables" element={<TablesPage />} />
         <Route path="zones" element={<ZonesPage />} />
-        <Route path="users" element={<UsersPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

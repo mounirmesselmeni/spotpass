@@ -70,8 +70,10 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
     },
   });
 
-  const { data: clients, isLoading: loadingClients } = useListClientsApiStaffClientsGet();
-
+  const { data: clientsResponse, isLoading: loadingClients } = useListClientsApiStaffClientsGet();
+  const clientsPaginatedData =
+    clientsResponse?.data && 'items' in clientsResponse.data ? clientsResponse.data : null;
+  const clients = clientsPaginatedData?.items || [];
   const createClientMutation = useCreateClientApiStaffClientsPost();
 
   const reservationDateTime =
@@ -83,7 +85,7 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
 
   // Trigger mutation when needed
   const loadingTables = availableTablesMutation.isPending;
-  const availableTables = availableTablesMutation.data;
+  const availableTables = availableTablesMutation.data?.data;
 
   // Effect to load tables when step 2 is complete
   if (
@@ -141,7 +143,7 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
 
       // Create new client if needed
       if (showNewClientForm) {
-        const newClient = await createClientMutation.mutateAsync({
+        const newClientResponse = await createClientMutation.mutateAsync({
           data: {
             full_name: form.values.full_name,
             phone_number: form.values.phone_number,
@@ -150,7 +152,9 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
             is_blacklisted: false,
           },
         });
-        clientId = newClient.id;
+        if ('id' in newClientResponse.data) {
+          clientId = newClientResponse.data.id;
+        }
         // Invalidate client queries to refresh the list
         queryClient.invalidateQueries({ queryKey: ['/api/staff/clients/'] });
       }
@@ -203,11 +207,10 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
     onClose();
   };
 
-  const clientOptions =
-    clients?.map((client: any) => ({
-      value: client.uuid || String(client.id),
-      label: `${client.full_name} - ${client.phone_number}`,
-    })) || [];
+  const clientOptions = clients.map((client: any) => ({
+    value: client.uuid || String(client.id),
+    label: `${client.full_name} - ${client.phone_number}`,
+  }));
 
   return (
     <Modal
@@ -315,7 +318,7 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
         >
           <Stack gap="md" mt="xl">
             <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
-              Sélectionnez la date, l'heure et le nombre de convives
+              Sélectionnez la date, l'heure et le nombre d'invités
             </Alert>
 
             <Grid>
@@ -373,7 +376,7 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
                   </Text>
                   <Text size="sm" c="dimmed">
                     {form.values.number_of_guests}{' '}
-                    {form.values.number_of_guests > 1 ? 'convives' : 'convive'}
+                    {form.values.number_of_guests > 1 ? 'invités' : 'invité'}
                   </Text>
                 </Stack>
               </Card>
@@ -397,7 +400,7 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
               <Text ta="center" c="dimmed">
                 {t('common.loading')}
               </Text>
-            ) : availableTables && availableTables.length > 0 ? (
+            ) : availableTables && Array.isArray(availableTables) && availableTables.length > 0 ? (
               <Grid>
                 {availableTables.map((table: any) => (
                   <Grid.Col key={table.id} span={{ base: 12, sm: 6, md: 4 }}>

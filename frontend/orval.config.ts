@@ -3,7 +3,7 @@ import { defineConfig } from 'orval';
 export default defineConfig({
   spotpass: {
     input: {
-      target: './openapi.json',  // New FastAPI OpenAPI spec
+      target: './openapi.yml', // New FastAPI OpenAPI spec
     },
     output: {
       mode: 'tags-split',
@@ -14,13 +14,16 @@ export default defineConfig({
       override: {
         mutator: {
           path: 'src/api/mutator/custom-instance.ts',
-          name: 'customInstance',
+          name: 'customInstanceWithUrl',
         },
         query: {
           useQuery: true,
           useInfinite: false,
           useInfiniteQueryParam: 'page',
         },
+        // Only use success response types (200/201), ignore error types (422)
+        // This matches our custom instance behavior which throws on errors
+        useTypeOverInterfaces: true,
       },
     },
     hooks: {

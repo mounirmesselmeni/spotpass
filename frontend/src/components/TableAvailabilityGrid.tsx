@@ -37,10 +37,11 @@ export function TableAvailabilityGrid({ onTableSelect }: TableAvailabilityGridPr
   const reservationDateTime = `${selectedDate}T${selectedTime}:00`;
 
   const availableTablesMutation = useGetAvailableTablesApiStaffReservationsAvailableTablesPost();
-  const { data: allTables, isLoading: loadingAll } = useListTablesApiStaffTablesGet();
+  const { data: allTablesResponse, isLoading: loadingAll } = useListTablesApiStaffTablesGet();
+  const allTables = allTablesResponse?.data;
 
   const loadingAvailable = availableTablesMutation.isPending;
-  const availableTables = availableTablesMutation.data;
+  const availableTables = availableTablesMutation.data?.data;
 
   // Auto-load on mount and when filters change
   const refetchAvailable = () => {
@@ -140,8 +141,13 @@ export function TableAvailabilityGrid({ onTableSelect }: TableAvailabilityGridPr
               <DatePickerInput
                 label={t('reservations.date')}
                 placeholder={t('common.selectDate')}
-                value={selectedDate}
-                onChange={(date) => date && setSelectedDate(date)}
+                value={selectedDate ? new Date(selectedDate) : null}
+                onChange={(date) => {
+                  const dateValue = date as Date | null;
+                  if (dateValue) {
+                    setSelectedDate(dateValue.toISOString().split('T')[0]);
+                  }
+                }}
                 minDate={new Date()}
                 size="sm"
               />
@@ -157,10 +163,10 @@ export function TableAvailabilityGrid({ onTableSelect }: TableAvailabilityGridPr
             <Grid.Col span={{ base: 12, sm: 4 }}>
               <Select
                 label={t('reservations.guests')}
-                placeholder="Nombre de convives"
+                placeholder="Nombre d'invités"
                 data={Array.from({ length: 20 }, (_, i) => ({
                   value: String(i + 1),
-                  label: `${i + 1} ${i + 1 === 1 ? 'convive' : 'convives'}`,
+                  label: `${i + 1} ${i + 1 === 1 ? 'invité' : 'invités'}`,
                 }))}
                 value={String(guestsCount)}
                 onChange={(value) => value && setGuestsCount(value)}
@@ -211,7 +217,7 @@ export function TableAvailabilityGrid({ onTableSelect }: TableAvailabilityGridPr
       <Box pos="relative">
         <LoadingOverlay visible={isLoading} />
 
-        {tables && tables.length === 0 ? (
+        {tables && Array.isArray(tables) && tables.length === 0 ? (
           <Paper p="xl" withBorder>
             <Text ta="center" c="dimmed">
               {viewMode === 'available' ? t('tables.noAvailable') : t('tables.noTables')}

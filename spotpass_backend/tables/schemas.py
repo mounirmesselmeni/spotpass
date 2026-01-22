@@ -18,14 +18,14 @@ class ZoneBase(BaseModel):
 class ZoneCreate(ZoneBase):
     """Schema for creating zones"""
 
-    establishment_id: UUID
+    # establishment_id is now optional and will be inferred from the user's account
+    establishment_id: UUID | None = None
 
     model_config = {
         "json_schema_extra": {
             "examples": [
                 {
                     "name": "Terrace",
-                    "establishment_id": "123e4567-e89b-12d3-a456-426614174000",
                 }
             ]
         }
@@ -69,7 +69,8 @@ class TableBase(BaseModel):
 class TableCreate(TableBase):
     """Schema for creating tables"""
 
-    establishment_id: UUID
+    # establishment_id is now optional and will be inferred from the user's account
+    establishment_id: UUID | None = None
     zone_id: UUID | None = None
 
     model_config = {
@@ -82,7 +83,6 @@ class TableCreate(TableBase):
                     "is_available": True,
                     "min_capacity": 2,
                     "max_capacity": 4,
-                    "establishment_id": "123e4567-e89b-12d3-a456-426614174000",
                     "zone_id": "123e4567-e89b-12d3-a456-426614174001",
                 }
             ]
@@ -93,11 +93,13 @@ class TableCreate(TableBase):
 class TableUpdate(BaseModel):
     """Schema for updating tables"""
 
-    is_available: bool | None = None
     name: str | None = Field(None, min_length=1, max_length=64)
     description: str | None = Field(None, max_length=256)
+    type: TableType | None = None
+    is_available: bool | None = None
     min_capacity: int | None = Field(None, ge=1, le=100)
     max_capacity: int | None = Field(None, ge=1, le=100)
+    zone_id: UUID | None = None
 
     model_config = {
         "json_schema_extra": {

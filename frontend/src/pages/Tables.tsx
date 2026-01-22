@@ -62,7 +62,6 @@ interface TableFormValues {
   min_capacity: number;
   max_capacity: number;
   zone_id?: string;
-  establishment_id: string;
 }
 
 interface TimeSlot {
@@ -81,8 +80,8 @@ export function TablesPage() {
   // Filter states
   const [zoneFilter, setZoneFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [dateFrom, setDateFrom] = useState<string | null>(null);
-  const [dateTo, setDateTo] = useState<string | null>(null);
+  const [dateFrom, setDateFrom] = useState<Date | null>(null);
+  const [dateTo, setDateTo] = useState<Date | null>(null);
   const [nameSearch, setNameSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -91,25 +90,27 @@ export function TablesPage() {
   const [editingTable, setEditingTable] = useState<any | null>(null);
   const [timeSlotsModalOpen, setTimeSlotsModalOpen] = useState(false);
   const [selectedTableForSlots, setSelectedTableForSlots] = useState<any | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
   // API hooks
   const {
-    data: tables,
+    data: tablesResponse,
     isLoading,
     refetch,
   } = useListTablesApiStaffTablesGet({
     zone_id: zoneFilter || undefined,
     is_available:
       statusFilter === 'available' ? true : statusFilter === 'unavailable' ? false : undefined,
-    date_from: dateFrom || undefined,
-    date_to: dateTo || undefined,
+    date_from: dateFrom?.toISOString().split('T')[0] || undefined,
+    date_to: dateTo?.toISOString().split('T')[0] || undefined,
     name: nameSearch || undefined,
   });
+  const tables = Array.isArray(tablesResponse?.data) ? tablesResponse?.data : [];
 
-  const { data: zones } = useListZonesApiStaffZonesGet();
+  const { data: zonesResponse } = useListZonesApiStaffZonesGet();
+  const zones = Array.isArray(zonesResponse?.data) ? zonesResponse.data : [];
 
   const createMutation = useCreateTableApiStaffTablesPost();
   const updateMutation = useUpdateTableApiStaffTablesTableIdPatch();
@@ -124,7 +125,6 @@ export function TablesPage() {
       min_capacity: 2,
       max_capacity: 4,
       zone_id: '',
-      establishment_id: '',
     },
     validate: {
       name: (value) => (!value ? t('common.required', 'Required') : null),
@@ -148,7 +148,6 @@ export function TablesPage() {
         min_capacity: table.min_capacity,
         max_capacity: table.max_capacity,
         zone_id: table.zone?.id || '',
-        establishment_id: table.establishment?.id || '',
       });
     } else {
       setEditingTable(null);
@@ -165,9 +164,11 @@ export function TablesPage() {
           data: {
             name: values.name,
             description: values.description,
+            type: values.type,
             min_capacity: values.min_capacity,
             max_capacity: values.max_capacity,
             is_available: values.is_available,
+            zone_id: values.zone_id,
           },
         },
         {
@@ -254,15 +255,16 @@ export function TablesPage() {
     });
   };
 
-  const fetchTimeSlots = async (tableId: string, date: string) => {
+  const fetchTimeSlots = async (tableId: string, date: Date | null) => {
+    if (!date) return;
     setLoadingSlots(true);
     try {
       const response = await axios.get(`/api/staff/tables/${tableId}/time-slots`, {
         params: {
-          date: date,
+          date: date.toISOString().split('T')[0],
         },
       });
-      setTimeSlots(response.data);
+      setTimeSlots(response.data.data);
     } catch (error) {
       notifications.show({
         title: t('common.error'),
@@ -305,7 +307,7 @@ export function TablesPage() {
 
   // Group tables by zone for better UX
   const tablesByZone = tables?.reduce(
-    (acc, table) => {
+    (acc: Record<string, any[]>, table: any) => {
       const zoneName = table.zone?.name || t('tables.noZone', 'No Zone');
       if (!acc[zoneName]) {
         acc[zoneName] = [];
@@ -382,12 +384,12 @@ export function TablesPage() {
                   value={zoneFilter}
                   onChange={setZoneFilter}
                   clearable
-                  data={[
-                    ...(zones?.map((z: any) => ({
+                  data={
+                    zones?.map((z: any) => ({
                       value: z.id,
                       label: z.name,
-                    })) || []),
-                  ]}
+                    })) || []
+                  }
                 />
               </Grid.Col>
               <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
@@ -408,7 +410,7 @@ export function TablesPage() {
                   label={t('common.from', 'From')}
                   placeholder={t('common.selectDate', 'Select date')}
                   value={dateFrom}
-                  onChange={setDateFrom}
+                  onChange={(value) => setDateFrom(value as Date | null)}
                   clearable
                 />
               </Grid.Col>
@@ -417,7 +419,7 @@ export function TablesPage() {
                   label={t('common.to', 'To')}
                   placeholder={t('common.selectDate', 'Select date')}
                   value={dateTo}
-                  onChange={setDateTo}
+                  onChange={(value) => setDateTo(value as Date | null)}
                   clearable
                 />
               </Grid.Col>
@@ -459,7 +461,7 @@ export function TablesPage() {
                 </Group>
 
                 <Grid>
-                  {zoneTables.map((table) => (
+                  {zoneTables.map((table: any) => (
                     <Grid.Col key={table.id} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
                       <Card
                         withBorder
@@ -554,7 +556,7 @@ export function TablesPage() {
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {tables.map((table) => (
+                {tables.map((table: any) => (
                   <Table.Tr
                     key={table.id}
                     style={{ cursor: 'pointer' }}
@@ -692,7 +694,6 @@ export function TablesPage() {
               }
               clearable
               {...form.getInputProps('zone_id')}
-              disabled={!editingTable}
             />
 
             <Select
@@ -703,7 +704,6 @@ export function TablesPage() {
               ]}
               value={form.values.is_available.toString()}
               onChange={(value) => form.setFieldValue('is_available', value === 'true')}
-              disabled={!editingTable}
             />
 
             <Group justify="flex-end" mt="md">
@@ -737,10 +737,11 @@ export function TablesPage() {
             label={t('common.selectDate', 'Select Date')}
             value={selectedDate}
             onChange={(date) => {
-              if (date) {
-                setSelectedDate(date);
+              const dateValue = date as Date | null;
+              if (dateValue) {
+                setSelectedDate(dateValue);
                 if (selectedTableForSlots) {
-                  fetchTimeSlots(selectedTableForSlots.id, date);
+                  fetchTimeSlots(selectedTableForSlots.id, dateValue);
                 }
               }
             }}

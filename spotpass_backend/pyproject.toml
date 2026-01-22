@@ -8,7 +8,7 @@ readme = "README.md"
 dependencies = [
     "typer[all]>=0.12.0",
     "rich>=13.7.0",
-    "fastapi>=0.115.0",
+    "fastapi[standard]>=0.115.0",
     "uvicorn[standard]>=0.32.0",
     "sqlmodel>=0.0.22",
     "pydantic[email]>=2.9.0",
@@ -82,7 +82,10 @@ known-first-party = ["spotpass_backend"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "S105", "S106"] # Allow assert and test passwords in tests
-"cli.py" = ["T201"]                  # Allow print in CLI
+"cli.py" = [
+    "T201",
+    "S311",
+] # Allow print in CLI and random for fake data generation
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

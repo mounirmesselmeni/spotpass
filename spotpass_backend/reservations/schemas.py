@@ -3,7 +3,7 @@
 from datetime import date, datetime, time
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from reservations.models import ReservationSource, ReservationStatus
 
@@ -371,3 +371,17 @@ class ReservationUrlResponse(BaseModel):
     model_config = {
         "json_schema_extra": {"examples": [{"url": "https://example.com/reservation/token123"}]}
     }
+
+
+class PaginatedReservationResponse(BaseModel):
+    """Paginated response for reservations list"""
+
+    items: list[ReservationWithClientRead]
+    total: int = Field(..., description="Total number of items across all pages")
+    page: int = Field(..., description="Current page number (1-indexed)")
+    page_size: int = Field(..., description="Number of items per page")
+    total_pages: int = Field(..., description="Total number of pages")
+    next: str | None = Field(None, description="URL for the next page, if available")
+    previous: str | None = Field(None, description="URL for the previous page, if available")
+
+    model_config = ConfigDict(from_attributes=True)

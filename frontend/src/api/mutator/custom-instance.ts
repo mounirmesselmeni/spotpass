@@ -101,4 +101,45 @@ export const customInstance = <T>(config: AxiosRequestConfig): Promise<T> => {
   return promise;
 };
 
+export const customInstanceWithUrl = async <T>(url: string, config?: RequestInit): Promise<T> => {
+  // Clean URL to remove null/undefined params
+  let cleanUrl = url;
+  if (url.includes('?')) {
+    const [path, queryString] = url.split('?');
+    const params = new URLSearchParams(queryString);
+    const cleanParams = new URLSearchParams();
+
+    params.forEach((value, key) => {
+      if (value !== 'null' && value !== 'undefined' && value !== '') {
+        cleanParams.append(key, value);
+      }
+    });
+
+    cleanUrl = path + (cleanParams.toString() ? '?' + cleanParams.toString() : '');
+  }
+
+  // Convert RequestInit to AxiosRequestConfig
+  const axiosConfig: AxiosRequestConfig = {
+    url: cleanUrl,
+    method: config?.method as any,
+    headers: config?.headers as any,
+    data: config?.body,
+    signal: config?.signal as any, // Cast to any to handle AbortSignal vs GenericAbortSignal
+  };
+
+  // Call axios directly to get the full response
+  const source = Axios.CancelToken.source();
+  const response = await axios({
+    ...axiosConfig,
+    cancelToken: source.token,
+  });
+
+  // Return the response in the format Orval expects: { data, status, headers }
+  return {
+    data: response.data,
+    status: response.status,
+    headers: response.headers,
+  } as T;
+};
+
 export default customInstance;

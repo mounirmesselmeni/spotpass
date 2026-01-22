@@ -26,8 +26,53 @@ const slateGray: MantineColorsTuple = [
   '#0F172A',
 ];
 
+const successGreen: MantineColorsTuple = [
+  '#F0FDF4',
+  '#DCFCE7',
+  '#BBF7D0',
+  '#86EFAC',
+  '#4ADE80',
+  '#22C55E',
+  '#16A34A',
+  '#15803D',
+  '#166534',
+  '#14532D',
+];
+
+const dangerRed: MantineColorsTuple = [
+  '#FEF2F2',
+  '#FEE2E2',
+  '#FECACA',
+  '#FCA5A5',
+  '#F87171',
+  '#EF4444',
+  '#DC2626',
+  '#B91C1C',
+  '#991B1B',
+  '#7F1D1D',
+];
+
+const warningYellow: MantineColorsTuple = [
+  '#FEFCE8',
+  '#FEF9C3',
+  '#FEF08A',
+  '#FDE047',
+  '#FACC15',
+  '#EAB308',
+  '#CA8A04',
+  '#A16207',
+  '#854D0E',
+  '#713F12',
+];
+
 export const theme = createTheme({
-  colors: { blue: electricBlue, gray: slateGray },
+  colors: {
+    blue: electricBlue,
+    gray: slateGray,
+    green: successGreen,
+    red: dangerRed,
+    yellow: warningYellow,
+  },
   primaryColor: 'blue',
   fontFamily: '"Inter", system-ui, sans-serif',
   fontFamilyMonospace: '"Inter", system-ui, sans-serif',

@@ -3,22 +3,116 @@
 import uuid as uuid_lib
 
 from fastapi import APIRouter, HTTPException, status
+from sqlalchemy import not_
 from sqlmodel import select
 
 from clients.models import Client
-from clients.schemas import ClientCreate, ClientRead, ClientUpdate
+from clients.schemas import ClientCreate, ClientRead, ClientUpdate, PaginatedClientResponse
 from core.dependencies import DatabaseSession, StaffUser
 from establishments.models import Establishment
 
 router = APIRouter(prefix="/api/staff/clients", tags=["Staff - Clients"])
 
 
-@router.get("/", response_model=list[ClientRead])
-def list_clients(session: DatabaseSession, token_payload: StaffUser):
-    """List all clients (staff only)"""
+@router.get("/", response_model=PaginatedClientResponse)
+def list_clients(
+    session: DatabaseSession,
+    token_payload: StaffUser,
+    page: int = 1,
+    page_size: int = 20,
+    sort_by: str = "name",
+    sort_order: str = "asc",
+    label_filter: str | None = None,
+):
+    """
+    List all clients with pagination, sorting, and filtering (staff only)
+
+    - **page**: Page number (1-indexed), default: 1
+    - **page_size**: Number of items per page (max 100), default: 20
+    - **sort_by**: Sort field (name, email, phone, created_at), default: name
+    - **sort_order**: Sort order (asc, desc), default: asc
+    - **label_filter**: Filter by client label (vip, blacklisted, regular, all)
+    """
+    from sqlmodel import asc, desc, func
+
+    # Validate pagination parameters
+    if page < 1:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Page must be >= 1")
+    if page_size < 1 or page_size > 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Page size must be between 1 and 100"
+        )
+
+    # Validate sorting parameters
+    valid_sort_fields = ["name", "email", "phone", "created_at", "status"]
+    if sort_by not in valid_sort_fields:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid sort_by field. Must be one of: {', '.join(valid_sort_fields)}",
+        )
+
+    if sort_order not in ["asc", "desc"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="sort_order must be 'asc' or 'desc'"
+        )
+
+    # Validate label filter
+    if label_filter and label_filter not in ["vip", "blacklisted", "regular", "all"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="label_filter must be one of: vip, blacklisted, regular, all",
+        )
+
     statement = select(Client)
+
+    # Apply label filter
+    if label_filter == "vip":
+        statement = statement.where(Client.is_vip)
+    elif label_filter == "blacklisted":
+        statement = statement.where(Client.is_blacklisted)
+    elif label_filter == "regular":
+        statement = statement.where(not_(Client.is_vip) & not_(Client.is_blacklisted))
+
+    # Get total count (with filters applied)
+    count_statement = select(func.count()).select_from(statement.subquery())
+    total = session.exec(count_statement).one()
+
+    # Apply sorting
+    order_func = desc if sort_order == "desc" else asc
+
+    if sort_by == "name":
+        statement = statement.order_by(order_func(Client.full_name))
+    elif sort_by == "email":
+        statement = statement.order_by(order_func(Client.email))
+    elif sort_by == "phone":
+        statement = statement.order_by(order_func(Client.phone_number))
+    elif sort_by == "created_at":
+        statement = statement.order_by(order_func(Client.created_at))
+    elif sort_by == "status":
+        # Sort by status: VIP first, then regular, then blacklisted
+        # Using case statement to define order: vip=1, regular=2, blacklisted=3
+        from sqlalchemy import case
+
+        status_order = case((Client.is_vip, 1), (Client.is_blacklisted, 3), else_=2)
+        statement = statement.order_by(order_func(status_order))
+
+    # Apply pagination
+    offset = (page - 1) * page_size
+    statement = statement.offset(offset).limit(page_size)
+
     clients = session.exec(statement).all()
-    return [ClientRead.model_validate(client) for client in clients]
+    items = [ClientRead.model_validate(client) for client in clients]
+
+    # Calculate total pages
+    total_pages = (total + page_size - 1) // page_size
+
+    return PaginatedClientResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+    )
 
 
 @router.post("/", response_model=ClientRead, status_code=status.HTTP_201_CREATED)
