@@ -235,7 +235,7 @@ export function ReservationCalendar({ onReservationClick }: ReservationCalendarP
 
   const currentMonthYear = calendarMonth.toLocaleDateString('fr-FR', {
     month: 'long',
-    year: 'numeric'
+    year: 'numeric',
   });
 
   return (
