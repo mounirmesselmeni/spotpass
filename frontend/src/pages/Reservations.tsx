@@ -75,6 +75,7 @@ export function ReservationsPage() {
 
   // Client search state
   const [clientSearch, setClientSearch] = useState('');
+  const [debouncedClientSearch] = useDebouncedValue(clientSearch, 300);
   const [showNewClientForm, setShowNewClientForm] = useState(false);
 
   // API hooks with filters
@@ -111,7 +112,10 @@ export function ReservationsPage() {
   const pageSize = paginatedData?.page_size || 20;
   const totalPages = paginatedData?.total_pages || 0;
 
-  const { data: clientsResponse } = useListClientsApiStaffClientsGet();
+  const { data: clientsResponse } = useListClientsApiStaffClientsGet({
+    page_size: 100,
+    search: debouncedClientSearch || undefined,
+  });
   const clientsPaginatedData =
     clientsResponse?.data && 'items' in clientsResponse.data ? clientsResponse.data : null;
   const clients = clientsPaginatedData?.items || [];
@@ -161,13 +165,7 @@ export function ReservationsPage() {
     }
   };
 
-  const filteredClients =
-    clients?.filter(
-      (client: any) =>
-        client.full_name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-        client.phone_number.includes(clientSearch) ||
-        (client.email && client.email.toLowerCase().includes(clientSearch.toLowerCase()))
-    ) || [];
+  const filteredClients = clients || [];
 
   const handleClientSelect = (clientId: string) => {
     if (clientId === 'new') {

@@ -12,4 +12,5 @@ export type ListClientsApiStaffClientsGetParams = {
   sort_by?: string;
   sort_order?: string;
   label_filter?: string | null;
+  search?: string | null;
 };

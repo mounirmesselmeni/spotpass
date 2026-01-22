@@ -319,3 +319,139 @@ class TestClientLabelFiltering:
             "/api/staff/clients/?label_filter=invalid", headers=auth_headers_staff
         )
         assert response.status_code == 400
+
+
+class TestClientSearch:
+    """Tests for client search functionality"""
+
+    def test_search_by_name(self, client: TestClient, session: Session, auth_headers_staff):
+        """Test searching clients by name"""
+        establishment = EstablishmentFactory(session=session)
+
+        ClientFactory(
+            session=session,
+            establishment=establishment,
+            full_name="John Doe",
+            phone_number="123456789",
+        )
+        ClientFactory(
+            session=session,
+            establishment=establishment,
+            full_name="Jane Smith",
+            phone_number="987654321",
+        )
+        ClientFactory(
+            session=session,
+            establishment=establishment,
+            full_name="Bob Johnson",
+            phone_number="555666777",
+        )
+        session.commit()
+
+        # Search for "John"
+        response = client.get("/api/staff/clients/?search=John", headers=auth_headers_staff)
+        assert response.status_code == 200
+        items = response.json()["items"]
+        assert len(items) == 2  # John Doe and Bob Johnson
+        assert all("John" in item["full_name"] for item in items)
+
+    def test_search_by_phone(self, client: TestClient, session: Session, auth_headers_staff):
+        """Test searching clients by phone number"""
+        establishment = EstablishmentFactory(session=session)
+
+        ClientFactory(
+            session=session,
+            establishment=establishment,
+            full_name="Client 1",
+            phone_number="123456789",
+        )
+        ClientFactory(
+            session=session,
+            establishment=establishment,
+            full_name="Client 2",
+            phone_number="987654321",
+        )
+        ClientFactory(
+            session=session,
+            establishment=establishment,
+            full_name="Client 3",
+            phone_number="555666777",
+        )
+        session.commit()
+
+        # Search for "123"
+        response = client.get("/api/staff/clients/?search=123", headers=auth_headers_staff)
+        assert response.status_code == 200
+        items = response.json()["items"]
+        assert len(items) == 1
+        assert items[0]["phone_number"] == "123456789"
+
+    def test_search_by_email(self, client: TestClient, session: Session, auth_headers_staff):
+        """Test searching clients by email"""
+        establishment = EstablishmentFactory(session=session)
+
+        ClientFactory(
+            session=session,
+            establishment=establishment,
+            full_name="Client 1",
+            email="john@example.com",
+        )
+        ClientFactory(
+            session=session,
+            establishment=establishment,
+            full_name="Client 2",
+            email="jane@test.com",
+        )
+        ClientFactory(
+            session=session,
+            establishment=establishment,
+            full_name="Client 3",
+            email="bob@domain.com",
+        )
+        session.commit()
+
+        # Search for "example"
+        response = client.get("/api/staff/clients/?search=example", headers=auth_headers_staff)
+        assert response.status_code == 200
+        items = response.json()["items"]
+        assert len(items) == 1
+        assert items[0]["email"] == "john@example.com"
+
+    def test_search_case_insensitive(
+        self, client: TestClient, session: Session, auth_headers_staff
+    ):
+        """Test that search is case insensitive"""
+        establishment = EstablishmentFactory(session=session)
+
+        ClientFactory(
+            session=session,
+            establishment=establishment,
+            full_name="John Doe",
+            phone_number="123456789",
+        )
+        session.commit()
+
+        # Search for "john" (lowercase)
+        response = client.get("/api/staff/clients/?search=john", headers=auth_headers_staff)
+        assert response.status_code == 200
+        items = response.json()["items"]
+        assert len(items) == 1
+        assert items[0]["full_name"] == "John Doe"
+
+    def test_search_no_results(self, client: TestClient, session: Session, auth_headers_staff):
+        """Test search with no matching results"""
+        establishment = EstablishmentFactory(session=session)
+
+        ClientFactory(
+            session=session,
+            establishment=establishment,
+            full_name="John Doe",
+            phone_number="123456789",
+        )
+        session.commit()
+
+        # Search for non-existent term
+        response = client.get("/api/staff/clients/?search=xyz", headers=auth_headers_staff)
+        assert response.status_code == 200
+        items = response.json()["items"]
+        assert len(items) == 0

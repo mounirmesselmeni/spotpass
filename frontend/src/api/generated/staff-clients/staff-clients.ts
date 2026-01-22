@@ -38,10 +38,11 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
  * List all clients with pagination, sorting, and filtering (staff only)
 
 - **page**: Page number (1-indexed), default: 1
-- **page_size**: Number of items per page (max 100), default: 20
+- **page_size**: Number of items per page (max 1000), default: 20
 - **sort_by**: Sort field (name, email, phone, created_at), default: name
 - **sort_order**: Sort order (asc, desc), default: asc
 - **label_filter**: Filter by client label (vip, blacklisted, regular, all)
+- **search**: Search query to filter clients by name, phone, or email
  * @summary List Clients
  */
 export type listClientsApiStaffClientsGetResponse200 = {

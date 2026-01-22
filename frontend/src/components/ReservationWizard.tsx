@@ -27,6 +27,7 @@ import {
 } from '@mantine/core';
 import { DatePickerInput, TimeInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
+import { useDebouncedValue } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconCalendar, IconCheck, IconClock, IconInfoCircle, IconUsers } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -45,6 +46,8 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
   const [active, setActive] = useState(0);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [showNewClientForm, setShowNewClientForm] = useState(false);
+  const [clientSearchValue, setClientSearchValue] = useState('');
+  const [debouncedClientSearch] = useDebouncedValue(clientSearchValue, 300);
 
   const form = useForm({
     initialValues: {
@@ -70,7 +73,10 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
     },
   });
 
-  const { data: clientsResponse, isLoading: loadingClients } = useListClientsApiStaffClientsGet();
+  const { data: clientsResponse, isLoading: loadingClients } = useListClientsApiStaffClientsGet({
+    page_size: 100,
+    search: debouncedClientSearch || undefined,
+  });
   const clientsPaginatedData =
     clientsResponse?.data && 'items' in clientsResponse.data ? clientsResponse.data : null;
   const clients = clientsPaginatedData?.items || [];
@@ -251,6 +257,8 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
               data={clientOptions}
               searchable
               nothingFoundMessage={t('clients.noClients')}
+              searchValue={clientSearchValue}
+              onSearchChange={setClientSearchValue}
               {...form.getInputProps('client_id')}
               disabled={loadingClients}
               size="md"

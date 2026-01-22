@@ -23,24 +23,26 @@ def list_clients(
     sort_by: str = "name",
     sort_order: str = "asc",
     label_filter: str | None = None,
+    search: str | None = None,
 ):
     """
     List all clients with pagination, sorting, and filtering (staff only)
 
     - **page**: Page number (1-indexed), default: 1
-    - **page_size**: Number of items per page (max 100), default: 20
+    - **page_size**: Number of items per page (max 1000), default: 20
     - **sort_by**: Sort field (name, email, phone, created_at), default: name
     - **sort_order**: Sort order (asc, desc), default: asc
     - **label_filter**: Filter by client label (vip, blacklisted, regular, all)
+    - **search**: Search query to filter clients by name, phone, or email
     """
     from sqlmodel import asc, desc, func
 
     # Validate pagination parameters
     if page < 1:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Page must be >= 1")
-    if page_size < 1 or page_size > 100:
+    if page_size < 1 or page_size > 1000:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Page size must be between 1 and 100"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Page size must be between 1 and 1000"
         )
 
     # Validate sorting parameters
@@ -72,6 +74,15 @@ def list_clients(
         statement = statement.where(Client.is_blacklisted)
     elif label_filter == "regular":
         statement = statement.where(not_(Client.is_vip) & not_(Client.is_blacklisted))
+
+    # Apply search filter
+    if search:
+        search_term = f"%{search}%"
+        statement = statement.where(
+            Client.full_name.ilike(search_term)
+            | Client.phone_number.ilike(search_term)
+            | (Client.email.ilike(search_term) if Client.email is not None else False)
+        )
 
     # Get total count (with filters applied)
     count_statement = select(func.count()).select_from(statement.subquery())

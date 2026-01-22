@@ -25,11 +25,11 @@ import {
   Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useDisclosure } from '@mantine/hooks';
+import { useDisclosure, useDebouncedValue } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconPencil, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SortableTableHeader } from '@/components/SortableTableHeader';
 
@@ -39,6 +39,7 @@ export function ClientsPage() {
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
   const [editingClient, setEditingClient] = useState<ClientRead | null>(null);
   const [search, setSearch] = useState('');
+  const [debouncedSearch] = useDebouncedValue(search, 300);
 
   const [page, setPage] = useState(1);
   const [labelFilter, setLabelFilter] = useState<string | null>(null);
@@ -55,6 +56,7 @@ export function ClientsPage() {
     sort_by: sortBy,
     sort_order: sortOrder,
     label_filter: labelFilter || undefined,
+    search: debouncedSearch || undefined,
   });
 
   const clientsPaginatedData =
@@ -66,6 +68,11 @@ export function ClientsPage() {
   const createClientMutation = useCreateClientApiStaffClientsPost();
   const updateClientMutation = useUpdateClientApiStaffClientsClientIdPatch();
   const deleteClientMutation = useDeleteClientApiStaffClientsClientIdDelete();
+
+  // Reset page to 1 when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
 
   const form = useForm({
     initialValues: {
@@ -184,11 +191,7 @@ export function ClientsPage() {
     }
   };
 
-  const filteredClients = clients.filter(
-    (c: ClientRead) =>
-      c.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filteredClients = clients;
 
   return (
     <Box p={{ base: 'md', sm: 'xl' }}>
