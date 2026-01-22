@@ -296,17 +296,29 @@ export function ClientsPage() {
                       <Table.Td>
                         <Group gap="xs">
                           {client.is_vip && (
-                            <Badge size="sm" variant="filled" color="yellow">
+                            <Badge
+                              size="sm"
+                              variant="filled"
+                              style={{ backgroundColor: '#FFF4E5', color: '#FF8C00' }}
+                            >
                               {t('clients.vip')}
                             </Badge>
                           )}
                           {client.is_blacklisted && (
-                            <Badge size="sm" variant="filled" color="red">
+                            <Badge
+                              size="sm"
+                              variant="filled"
+                              style={{ backgroundColor: '#FFE5E5', color: '#FF0000' }}
+                            >
                               {t('clients.blacklisted')}
                             </Badge>
                           )}
                           {!client.is_vip && !client.is_blacklisted && (
-                            <Badge size="sm" variant="filled" color="gray">
+                            <Badge
+                              size="sm"
+                              variant="filled"
+                              style={{ backgroundColor: '#F0F0F0', color: '#6B7280' }}
+                            >
                               {t('clients.regular')}
                             </Badge>
                           )}

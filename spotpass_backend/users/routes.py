@@ -39,6 +39,7 @@ def staff_login(login_data: UserLogin, session: DatabaseSession):
     user = session.exec(statement).first()
 
     if user is None or not user.check_password(login_data.password):
+        print(f"{user=}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Email or password invalid"
         )
