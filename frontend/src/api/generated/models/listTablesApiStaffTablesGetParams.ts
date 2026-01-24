@@ -8,7 +8,7 @@
 
 export type ListTablesApiStaffTablesGetParams = {
   zone_id?: string | null;
-  is_available?: boolean | null;
+  is_on_service?: boolean | null;
   date_from?: string | null;
   date_to?: string | null;
   name?: string | null;

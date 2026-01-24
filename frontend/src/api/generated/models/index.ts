@@ -24,6 +24,7 @@ export * from './hTTPValidationError';
 export * from './listClientsApiStaffClientsGetParams';
 export * from './listReservationsApiStaffReservationsGetParams';
 export * from './listTablesApiStaffTablesGetParams';
+export * from './listZonesApiStaffZonesGetParams';
 export * from './loginResponse';
 export * from './messageResponse';
 export * from './newReservationTokenRequest';

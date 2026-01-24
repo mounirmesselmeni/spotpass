@@ -26,6 +26,7 @@ import { IconPencil, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatDateTimeParts } from '@/utils/dateUtils';
 
 export function ZonesPage() {
   const { t } = useTranslation();
@@ -34,7 +35,10 @@ export function ZonesPage() {
   const [editingZone, setEditingZone] = useState<ZoneRead | null>(null);
   const [search, setSearch] = useState('');
 
-  const { data: zonesResponse, isLoading } = useListZonesApiStaffZonesGet();
+  const { data: zonesResponse, isLoading } = useListZonesApiStaffZonesGet({
+    sort_by: 'created_at',
+    sort_order: 'asc',
+  });
   const zones = zonesResponse?.data;
   const createZoneMutation = useCreateZoneApiStaffZonesPost();
   const updateZoneMutation = useUpdateZoneApiStaffZonesZoneIdPatch();
@@ -117,9 +121,9 @@ export function ZonesPage() {
     }
   };
 
-  const filteredZones = zonesResponse?.data?.filter((z) =>
-    z.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredZones = Array.isArray(zonesResponse?.data)
+    ? zonesResponse.data.filter((z) => z.name.toLowerCase().includes(search.toLowerCase()))
+    : [];
 
   if (isLoading) {
     return (
@@ -154,6 +158,7 @@ export function ZonesPage() {
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>{t('zones.name')}</Table.Th>
+                  <Table.Th>{t('zones.createdAt')}</Table.Th>
                   <Table.Th>{t('zones.actions')}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
@@ -162,6 +167,14 @@ export function ZonesPage() {
                   filteredZones.map((zone) => (
                     <Table.Tr key={zone.id}>
                       <Table.Td>{zone.name}</Table.Td>
+                      <Table.Td>
+                        <div>
+                          <Text size="sm">{formatDateTimeParts(zone.created_at).date}</Text>
+                          <Text size="xs" c="dimmed">
+                            {formatDateTimeParts(zone.created_at).time}
+                          </Text>
+                        </div>
+                      </Table.Td>
                       <Table.Td>
                         <Group gap="xs">
                           <ActionIcon
@@ -184,7 +197,7 @@ export function ZonesPage() {
                   ))
                 ) : (
                   <Table.Tr>
-                    <Table.Td colSpan={2}>
+                    <Table.Td colSpan={3}>
                       <Text ta="center" c="dimmed" py="xl">
                         {t('zones.noZones')}
                       </Text>
@@ -219,6 +232,10 @@ export function ZonesPage() {
                         </ActionIcon>
                       </Group>
                     </Group>
+                    <Text size="sm" c="dimmed" mt="xs">
+                      {t('zones.createdAt')}: {formatDateTimeParts(zone.created_at).date}{' '}
+                      {formatDateTimeParts(zone.created_at).time}
+                    </Text>
                   </Card>
                 ))
               ) : (

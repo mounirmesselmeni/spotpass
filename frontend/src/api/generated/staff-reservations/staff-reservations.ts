@@ -43,7 +43,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 - **status_filter**: Filter by reservation status
 - **page**: Page number (1-indexed), default: 1
 - **page_size**: Number of items per page (max 100), default: 20
-- **sort_by**: Sort field (datetime, client_name, guests, status), default: datetime
+- **sort_by**: Sort field (datetime, client_name, guests, status, created_at), default: datetime
 - **sort_order**: Sort order (asc, desc), default: desc
  * @summary List Reservations
  */

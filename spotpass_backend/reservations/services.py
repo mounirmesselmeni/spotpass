@@ -214,7 +214,7 @@ class TableAvailabilityService:
         # Get all tables that match capacity and are enabled
         statement = select(Table).where(
             Table.establishment_id == establishment_id,
-            Table.is_available == True,  # noqa: E712
+            Table.is_on_service == True,  # noqa: E712
             Table.min_capacity <= number_of_guests,
             Table.max_capacity >= number_of_guests,
         )
@@ -261,7 +261,7 @@ class TableAvailabilityService:
         if not table:
             return False, "Table not found"
 
-        if not table.is_available:
+        if not table.is_on_service:
             return False, f"Table '{table.name}' is not currently available"
 
         # Check for conflicts

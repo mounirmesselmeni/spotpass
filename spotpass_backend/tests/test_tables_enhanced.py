@@ -41,21 +41,21 @@ class TestTableFilters:
         establishment = EstablishmentFactory(session=session)
 
         TableFactory(
-            session=session, establishment=establishment, name="Available Table", is_available=True
+            session=session, establishment=establishment, name="Available Table", is_on_service=True
         )
         TableFactory(
             session=session,
             establishment=establishment,
             name="Unavailable Table",
-            is_available=False,
+            is_on_service=False,
         )
         session.commit()
 
         # Filter by available
-        response = client.get("/api/staff/tables/?is_available=true", headers=auth_headers_staff)
+        response = client.get("/api/staff/tables/?is_on_service=true", headers=auth_headers_staff)
         assert response.status_code == 200
         data = response.json()
-        assert all(t["is_available"] for t in data)
+        assert all(t["is_on_service"] for t in data)
 
     def test_filter_by_name_search(self, client: TestClient, session: Session, auth_headers_staff):
         """Test filtering tables by name search"""

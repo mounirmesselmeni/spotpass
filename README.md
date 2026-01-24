@@ -77,7 +77,7 @@ uv pip install -e ".[dev]"
 uv run python -m cli init-db
 
 # Start development server
-uv run uvicorn spotpass_backend.main:app --reload --port 5001
+uv run uvicorn main:app --reload --port 5001
 ```
 
 ### 3. Frontend Setup
@@ -227,6 +227,7 @@ uv run pytest --cov=.           # With coverage
 #### Production Setup
 
 1. **Clone and configure:**
+
 ```bash
 git clone <your-repo-url>
 cd serveme-be
@@ -237,6 +238,7 @@ cp .env.example .env
 ```
 
 2. **Start production services:**
+
 ```bash
 # Start all services
 docker-compose up -d
@@ -246,6 +248,7 @@ docker-compose logs -f
 ```
 
 3. **Initialize database (first time only):**
+
 ```bash
 docker-compose exec backend uv run python -m cli init-db
 ```
@@ -285,11 +288,13 @@ make clean
 #### Nginx Reverse Proxy Configuration
 
 1. **Install nginx on your server:**
+
 ```bash
 sudo apt update && sudo apt install nginx
 ```
 
 2. **Copy nginx configuration:**
+
 ```bash
 sudo cp nginx.conf /etc/nginx/sites-available/spotpass
 sudo ln -s /etc/nginx/sites-available/spotpass /etc/nginx/sites-enabled/
@@ -298,6 +303,7 @@ sudo systemctl reload nginx
 ```
 
 3. **SSL Configuration (Let's Encrypt):**
+
 ```bash
 # Install certbot
 sudo apt install certbot python3-certbot-nginx
@@ -352,6 +358,7 @@ yarn build
 ### Environment Variables
 
 **Production (.env):**
+
 ```bash
 # Database
 DB_PASSWORD=your-secure-password
@@ -365,6 +372,7 @@ REDIS_PORT=6379
 ```
 
 **Frontend (.env):**
+
 ```bash
 VITE_API_URL=https://spotpass-backend.mounirmesselmeni.de
 ```

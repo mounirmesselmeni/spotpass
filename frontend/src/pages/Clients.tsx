@@ -31,6 +31,7 @@ import { IconPencil, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react
 import { useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatDateTimeParts } from '@/utils/dateUtils';
 import { SortableTableHeader } from '@/components/SortableTableHeader';
 
 export function ClientsPage() {
@@ -46,7 +47,7 @@ export function ClientsPage() {
 
   // Sorting state
   const [sortBy, setSortBy] = useState<'name' | 'email' | 'phone' | 'created_at' | 'status'>(
-    'name'
+    'created_at'
   );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
@@ -69,10 +70,10 @@ export function ClientsPage() {
   const updateClientMutation = useUpdateClientApiStaffClientsClientIdPatch();
   const deleteClientMutation = useDeleteClientApiStaffClientsClientIdDelete();
 
-  // Reset page to 1 when search changes
+  // Reset page to 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, labelFilter]);
 
   const form = useForm({
     initialValues: {
@@ -251,6 +252,13 @@ export function ClientsPage() {
                     onSort={handleSort}
                   />
                   <SortableTableHeader
+                    label={t('clients.createdAt')}
+                    sortKey="created_at"
+                    currentSortBy={sortBy}
+                    currentSortOrder={sortOrder}
+                    onSort={handleSort}
+                  />
+                  <SortableTableHeader
                     label={t('common.status')}
                     sortKey="status"
                     currentSortBy={sortBy}
@@ -275,6 +283,9 @@ export function ClientsPage() {
                         <Skeleton height={20} />
                       </Table.Td>
                       <Table.Td>
+                        <Skeleton height={20} />
+                      </Table.Td>
+                      <Table.Td>
                         <Skeleton height={20} width={80} />
                       </Table.Td>
                       <Table.Td>
@@ -284,7 +295,7 @@ export function ClientsPage() {
                   ))
                 ) : filteredClients.length === 0 ? (
                   <Table.Tr>
-                    <Table.Td colSpan={5}>
+                    <Table.Td colSpan={6}>
                       <Text ta="center" c="dimmed" py="xl">
                         {t('clients.noClients')}
                       </Text>
@@ -296,6 +307,14 @@ export function ClientsPage() {
                       <Table.Td>{client.full_name}</Table.Td>
                       <Table.Td>{client.email || '-'}</Table.Td>
                       <Table.Td>{client.phone_number}</Table.Td>
+                      <Table.Td>
+                        <div>
+                          <Text size="sm">{formatDateTimeParts(client.created_at).date}</Text>
+                          <Text size="xs" c="dimmed">
+                            {formatDateTimeParts(client.created_at).time}
+                          </Text>
+                        </div>
+                      </Table.Td>
                       <Table.Td>
                         <Group gap="xs">
                           {client.is_vip && (
@@ -401,6 +420,10 @@ export function ClientsPage() {
                       </Text>
                       <Text size="sm">
                         {t('clients.phone')}: {client.phone_number}
+                      </Text>
+                      <Text size="sm">
+                        {t('clients.createdAt')}: {formatDateTimeParts(client.created_at).date}{' '}
+                        {formatDateTimeParts(client.created_at).time}
                       </Text>
                       <Group gap="xs">
                         {client.is_vip && <Badge color="yellow">{t('clients.vip')}</Badge>}

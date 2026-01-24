@@ -18,7 +18,7 @@ export type TableCreate = {
   name: string;
   description?: string | null;
   type?: TableType;
-  is_available?: boolean;
+  is_on_service?: boolean;
   /**
    * @minimum 1
    * @maximum 100

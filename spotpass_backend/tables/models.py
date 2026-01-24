@@ -38,7 +38,7 @@ class Table(SQLModel, table=True):
     name: str
     type: TableType = Field(default=TableType.TABLE)
     description: str | None = None
-    is_available: bool = Field(default=True)
+    is_on_service: bool = Field(default=True)
     min_capacity: int = Field(default=1, ge=1)
     max_capacity: int = Field(ge=1)
     created_at: datetime = Field(default_factory=datetime.utcnow)

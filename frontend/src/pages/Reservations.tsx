@@ -44,6 +44,7 @@ import { IconEye, IconFilter, IconPlus, IconSearch } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatDateTimeParts } from '@/utils/dateUtils';
 import { useNavigate } from 'react-router-dom';
 import { StatusBadge } from '@/components/StatusBadge';
 import { SortableTableHeader } from '@/components/SortableTableHeader';
@@ -52,9 +53,8 @@ export function ReservationsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [opened, { open, close }] = useDisclosure(false);
   const [wizardOpened, { open: openWizard, close: closeWizard }] = useDisclosure(false);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'tables'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -68,10 +68,10 @@ export function ReservationsPage() {
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // Sorting state
-  const [sortBy, setSortBy] = useState<'datetime' | 'client_name' | 'guests' | 'status'>(
-    'datetime'
-  );
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortBy, setSortBy] = useState<
+    'datetime' | 'client_name' | 'guests' | 'status' | 'created_at'
+  >('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Client search state
   const [clientSearch, setClientSearch] = useState('');
@@ -289,9 +289,7 @@ export function ReservationsPage() {
             <Title order={1} mb="xs">
               {t('reservations.title')}
             </Title>
-            <Text c="dimmed" size="sm" mb="md">
-              {t('reservations.subtitle', 'Manage and track all restaurant reservations')}
-            </Text>
+            <Text c="dimmed" size="sm" mb="md"></Text>
             <SegmentedControl
               value={viewMode}
               onChange={(value: any) => setViewMode(value)}
@@ -305,19 +303,11 @@ export function ReservationsPage() {
           </div>
           <Group gap="xs" wrap="wrap">
             <Button
-              variant="light"
-              leftSection={<IconPlus size={16} />}
-              onClick={open}
-              aria-label={t('reservations.newReservation')}
-            >
-              {t('reservations.newReservation')}
-            </Button>
-            <Button
               leftSection={<IconPlus size={16} />}
               onClick={openWizard}
-              aria-label="Nouvelle réservation avec assistant"
+              aria-label="Nouvelle Réservation"
             >
-              Nouvelle (Assistant)
+              Nouvelle Réservation
             </Button>
           </Group>
         </Group>
@@ -400,7 +390,6 @@ export function ReservationsPage() {
         )}
 
         {/* Table Availability View */}
-        {viewMode === 'tables' && <TableAvailabilityGrid />}
 
         {/* Reservations Table */}
         {viewMode === 'list' && (
@@ -428,6 +417,13 @@ export function ReservationsPage() {
                           <SortableTableHeader
                             label={t('reservations.datetime', 'Date & Time')}
                             sortKey="datetime"
+                            currentSortBy={sortBy}
+                            currentSortOrder={sortOrder}
+                            onSort={handleSort}
+                          />
+                          <SortableTableHeader
+                            label={t('reservations.createdAt', 'Created At')}
+                            sortKey="created_at"
                             currentSortBy={sortBy}
                             currentSortOrder={sortOrder}
                             onSort={handleSort}
@@ -515,6 +511,16 @@ export function ReservationsPage() {
                                       {reservation.reservation_time
                                         ? reservation.reservation_time.slice(0, 5)
                                         : '-'}
+                                    </Text>
+                                  </div>
+                                </Table.Td>
+                                <Table.Td>
+                                  <div>
+                                    <Text size="sm">
+                                      {formatDateTimeParts(reservation.created_at).date}
+                                    </Text>
+                                    <Text size="xs" c="dimmed">
+                                      {formatDateTimeParts(reservation.created_at).time}
                                     </Text>
                                   </div>
                                 </Table.Td>
@@ -610,6 +616,16 @@ export function ReservationsPage() {
                                 <Text size="sm">{reservation.reservation_time || '-'}</Text>
                               </Group>
 
+                              <Group gap="xs" wrap="wrap">
+                                <Text size="sm" c="dimmed">
+                                  {t('reservations.createdAt', 'Created At')}:
+                                </Text>
+                                <Text size="sm">
+                                  {formatDateTimeParts(reservation.created_at).date}{' '}
+                                  {formatDateTimeParts(reservation.created_at).time}
+                                </Text>
+                              </Group>
+
                               <Group justify="space-between" align="center">
                                 <Group gap="xs">
                                   <Text size="sm" c="dimmed">
@@ -661,147 +677,6 @@ export function ReservationsPage() {
 
       {/* Reservation Wizard */}
       <ReservationWizard opened={wizardOpened} onClose={closeWizard} onSuccess={refetch} />
-
-      {/* New Reservation Modal */}
-      <Modal
-        opened={opened}
-        onClose={close}
-        title={t('reservations.newReservation', 'Nouvelle Réservation')}
-        size="lg"
-      >
-        <form onSubmit={form.onSubmit(handleSubmit)}>
-          <Stack gap="md">
-            {/* Client Selection */}
-            <div>
-              <Text size="sm" fw={600} mb="xs">
-                {t('reservations.client', 'Client')}
-              </Text>
-              {!showNewClientForm ? (
-                <Combobox store={combobox} onOptionSubmit={handleClientSelect}>
-                  <Combobox.Target>
-                    <TextInput
-                      placeholder={t('reservations.searchClient', 'Rechercher un client...')}
-                      value={clientSearch}
-                      onChange={(event) => {
-                        setClientSearch(event.currentTarget.value);
-                        combobox.openDropdown();
-                      }}
-                      onClick={() => combobox.openDropdown()}
-                      onFocus={() => combobox.openDropdown()}
-                      onBlur={() => combobox.closeDropdown()}
-                      rightSection={<IconSearch size={16} />}
-                    />
-                  </Combobox.Target>
-
-                  <Combobox.Dropdown>
-                    <Combobox.Options>
-                      {filteredClients.map((client: any) => (
-                        <Combobox.Option value={client.id} key={client.id}>
-                          <div>
-                            <Text fw={600}>{client.full_name}</Text>
-                            <Text size="xs" c="dimmed">
-                              {client.phone_number} {client.email && `• ${client.email}`}
-                            </Text>
-                          </div>
-                        </Combobox.Option>
-                      ))}
-                      <Combobox.Option value="new">
-                        <Group>
-                          <IconPlus size={16} />
-                          <Text>{t('clients.addNew', 'Ajouter un nouveau client')}</Text>
-                        </Group>
-                      </Combobox.Option>
-                    </Combobox.Options>
-                  </Combobox.Dropdown>
-                </Combobox>
-              ) : (
-                <Stack gap="sm">
-                  <TextInput
-                    label={t('clients.name', 'Nom')}
-                    placeholder={t('clients.namePlaceholder', 'Nom complet')}
-                    {...form.getInputProps('full_name')}
-                    required
-                  />
-                  <TextInput
-                    label={t('clients.phone', 'Téléphone')}
-                    placeholder={t('clients.phonePlaceholder', '+33 6 12 34 56 78')}
-                    {...form.getInputProps('phone_number')}
-                    required
-                  />
-                  <TextInput
-                    label={t('clients.email', 'Email')}
-                    placeholder={t('clients.emailPlaceholder', 'email@example.com')}
-                    {...form.getInputProps('email')}
-                  />
-                  <Group justify="space-between">
-                    <Button variant="light" onClick={() => setShowNewClientForm(false)}>
-                      {t('common.cancel')}
-                    </Button>
-                    <Button onClick={handleCreateClient} loading={createClientMutation.isPending}>
-                      {t('clients.create', 'Créer client')}
-                    </Button>
-                  </Group>
-                </Stack>
-              )}
-            </div>
-
-            {/* Date and Time */}
-            <Grid>
-              <Grid.Col span={6}>
-                <DatePickerInput
-                  label={t('reservations.date', 'Date')}
-                  placeholder={t('reservations.selectDate', 'Sélectionner une date')}
-                  {...form.getInputProps('reservation_date')}
-                  required
-                  minDate={new Date()}
-                />
-              </Grid.Col>
-              <Grid.Col span={6}>
-                <TextInput
-                  label={t('reservations.time', 'Heure')}
-                  placeholder={t('common.timeFormat')}
-                  type="time"
-                  {...form.getInputProps('reservation_time')}
-                />
-              </Grid.Col>
-            </Grid>
-
-            {/* Number of Guests */}
-            <NumberInput
-              label={t('reservations.guests', "Nombre d'invités")}
-              placeholder="2"
-              min={1}
-              {...form.getInputProps('number_of_guests')}
-              required
-            />
-
-            {/* Special Request */}
-            <Textarea
-              label={t('reservations.specialRequest', 'Demande spéciale')}
-              placeholder={t(
-                'reservations.specialRequestPlaceholder',
-                'Allergies, préférences, etc.'
-              )}
-              {...form.getInputProps('special_request')}
-              rows={3}
-            />
-
-            {/* Actions */}
-            <Group justify="flex-end" mt="md">
-              <Button variant="light" onClick={close}>
-                {t('common.cancel')}
-              </Button>
-              <Button
-                type="submit"
-                loading={createReservationMutation.isPending}
-                disabled={showNewClientForm}
-              >
-                {t('reservations.createReservation', 'Créer la réservation')}
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      </Modal>
     </Box>
   );
 }

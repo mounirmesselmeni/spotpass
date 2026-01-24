@@ -53,12 +53,13 @@ import {
 } from '@/api/generated/staff-tables/staff-tables';
 import { useListZonesApiStaffZonesGet } from '@/api/generated/staff-zones/staff-zones';
 import { axios } from '@/api/mutator/custom-instance';
+import { TableAvailabilityGrid } from '@/components/TableAvailabilityGrid';
 
 interface TableFormValues {
   name: string;
   description?: string;
   type: 'table' | 'parasol' | 'hut';
-  is_available: boolean;
+  is_on_service: boolean;
   min_capacity: number;
   max_capacity: number;
   zone_id?: string;
@@ -80,10 +81,8 @@ export function TablesPage() {
   // Filter states
   const [zoneFilter, setZoneFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [dateFrom, setDateFrom] = useState<Date | null>(null);
-  const [dateTo, setDateTo] = useState<Date | null>(null);
   const [nameSearch, setNameSearch] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'list' | 'availability'>('list');
 
   // Modal states
   const [opened, { open, close }] = useDisclosure(false);
@@ -101,16 +100,17 @@ export function TablesPage() {
     refetch,
   } = useListTablesApiStaffTablesGet({
     zone_id: zoneFilter || undefined,
-    is_available:
+    is_on_service:
       statusFilter === 'available' ? true : statusFilter === 'unavailable' ? false : undefined,
-    date_from: dateFrom?.toISOString().split('T')[0] || undefined,
-    date_to: dateTo?.toISOString().split('T')[0] || undefined,
     name: nameSearch || undefined,
   });
   const tables = Array.isArray(tablesResponse?.data) ? tablesResponse?.data : [];
 
-  const { data: zonesResponse } = useListZonesApiStaffZonesGet();
-  const zones = Array.isArray(zonesResponse?.data) ? zonesResponse.data : [];
+  const { data: zonesResponse } = useListZonesApiStaffZonesGet({
+    sort_by: 'created_at',
+    sort_order: 'asc',
+  });
+  const zones = Array.isArray(zonesResponse?.data) ? zonesResponse?.data : [];
 
   const createMutation = useCreateTableApiStaffTablesPost();
   const updateMutation = useUpdateTableApiStaffTablesTableIdPatch();
@@ -121,7 +121,7 @@ export function TablesPage() {
       name: '',
       description: '',
       type: 'table',
-      is_available: true,
+      is_on_service: true,
       min_capacity: 2,
       max_capacity: 4,
       zone_id: '',
@@ -144,7 +144,7 @@ export function TablesPage() {
         name: table.name,
         description: table.description || '',
         type: table.type,
-        is_available: table.is_available,
+        is_on_service: table.is_on_service,
         min_capacity: table.min_capacity,
         max_capacity: table.max_capacity,
         zone_id: table.zone?.id || '',
@@ -167,7 +167,7 @@ export function TablesPage() {
             type: values.type,
             min_capacity: values.min_capacity,
             max_capacity: values.max_capacity,
-            is_available: values.is_available,
+            is_on_service: values.is_on_service,
             zone_id: values.zone_id,
           },
         },
@@ -321,12 +321,10 @@ export function TablesPage() {
   const clearFilters = () => {
     setZoneFilter(null);
     setStatusFilter(null);
-    setDateFrom(null);
-    setDateTo(null);
     setNameSearch('');
   };
 
-  const hasActiveFilters = zoneFilter || statusFilter || dateFrom || dateTo || nameSearch;
+  const hasActiveFilters = zoneFilter || statusFilter || nameSearch;
 
   if (isLoading) {
     return (
@@ -349,10 +347,10 @@ export function TablesPage() {
           <Group>
             <SegmentedControl
               value={viewMode}
-              onChange={(value) => setViewMode(value as 'grid' | 'list')}
+              onChange={(value) => setViewMode(value as 'list' | 'availability')}
               data={[
-                { label: t('common.grid', 'Grid'), value: 'grid' },
-                { label: t('common.list', 'List'), value: 'list' },
+                { label: 'Liste', value: 'list' },
+                { label: 'Disponibilité', value: 'availability' },
               ]}
             />
             <Button leftSection={<IconPlus size={16} />} onClick={() => handleOpenModal()}>
@@ -405,24 +403,6 @@ export function TablesPage() {
                   ]}
                 />
               </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                <DatePickerInput
-                  label={t('common.from', 'From')}
-                  placeholder={t('common.selectDate', 'Select date')}
-                  value={dateFrom}
-                  onChange={(value) => setDateFrom(value as Date | null)}
-                  clearable
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                <DatePickerInput
-                  label={t('common.to', 'To')}
-                  placeholder={t('common.selectDate', 'Select date')}
-                  value={dateTo}
-                  onChange={(value) => setDateTo(value as Date | null)}
-                  clearable
-                />
-              </Grid.Col>
               <Grid.Col span={12}>
                 <TextInput
                   placeholder={t('tables.searchByName', 'Search by table name...')}
@@ -442,7 +422,9 @@ export function TablesPage() {
               {t('tables.noTables', 'No tables found')}
             </Text>
           </Card>
-        ) : viewMode === 'grid' ? (
+        ) : viewMode === 'availability' ? (
+          <TableAvailabilityGrid />
+        ) : (
           <Stack gap="xl">
             {Object.entries(tablesByZone || {}).map(([zoneName, zoneTables]) => (
               <div key={zoneName}>
@@ -485,8 +467,8 @@ export function TablesPage() {
                             <ThemeIcon size="lg" color={getTypeColor(table.type)} variant="light">
                               {getTypeIcon(table.type)}
                             </ThemeIcon>
-                            <Badge color={table.is_available ? 'green' : 'red'}>
-                              {table.is_available
+                            <Badge color={table.is_on_service ? 'green' : 'red'}>
+                              {table.is_on_service
                                 ? t('tables.available', 'Available')
                                 : t('tables.unavailable', 'Unavailable')}
                             </Badge>
@@ -542,7 +524,9 @@ export function TablesPage() {
               </div>
             ))}
           </Stack>
-        ) : (
+        )}
+
+        {viewMode === 'list' && (
           <Card withBorder>
             <Table striped highlightOnHover>
               <Table.Thead>
@@ -591,8 +575,8 @@ export function TablesPage() {
                     </Table.Td>
                     <Table.Td>{table.zone?.name || '-'}</Table.Td>
                     <Table.Td>
-                      <Badge color={table.is_available ? 'green' : 'red'}>
-                        {table.is_available
+                      <Badge color={table.is_on_service ? 'green' : 'red'}>
+                        {table.is_on_service
                           ? t('tables.available', 'Available')
                           : t('tables.unavailable', 'Unavailable')}
                       </Badge>
@@ -702,8 +686,8 @@ export function TablesPage() {
                 { value: 'true', label: t('tables.available', 'Available') },
                 { value: 'false', label: t('tables.unavailable', 'Unavailable') },
               ]}
-              value={form.values.is_available.toString()}
-              onChange={(value) => form.setFieldValue('is_available', value === 'true')}
+              value={form.values.is_on_service.toString()}
+              onChange={(value) => form.setFieldValue('is_on_service', value === 'true')}
             />
 
             <Group justify="flex-end" mt="md">

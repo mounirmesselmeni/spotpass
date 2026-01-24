@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from datetime import date, time
 
 import typer
+from faker import Faker
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -67,9 +68,12 @@ def init_db(
         # Create initial data
         console.print("[blue]🌱 Creating initial data...[/blue]\n")
 
+        # Initialize Faker with French locale
+        fake = Faker("fr_FR")
+
         # 1. Create Account
         account = Account(
-            name="Demo Restaurant", country_code="US", currency="USD", timezone="America/New_York"
+            name="Le Bistrot Parisien", country_code="FR", currency="EUR", timezone="Europe/Paris"
         )
         session.add(account)
         session.flush()
@@ -78,8 +82,8 @@ def init_db(
 
         # 2. Create Establishment
         establishment = Establishment(
-            name="Main Restaurant",
-            address="123 Main Street, New York, NY 10001",
+            name="Le Bistrot Parisien",
+            address=fake.address().replace("\n", ", "),
             account_id=account.id,
         )
         session.add(establishment)
@@ -221,35 +225,15 @@ def init_db(
 
         session.flush()
 
-        # 7. Create Sample Clients
-        clients_data = [
-            {
-                "full_name": "John Doe",
-                "email": "john@example.com",
-                "phone_number": "+1-555-0101",
-                "is_vip": True,
-            },
-            {
-                "full_name": "Jane Smith",
-                "email": "jane@example.com",
-                "phone_number": "+1-555-0102",
-                "is_vip": False,
-            },
-            {
-                "full_name": "Bob Johnson",
-                "email": "bob@example.com",
-                "phone_number": "+1-555-0103",
-                "is_vip": False,
-            },
-        ]
-
+        # 7. Create Sample Clients with Faker
         created_clients = []
-        for client_data in clients_data:
+        for i in range(10):
+            is_vip = i < 2  # First 2 are VIP
             client = Client(
-                full_name=client_data["full_name"],
-                email=client_data["email"],
-                phone_number=client_data["phone_number"],
-                is_vip=client_data["is_vip"],
+                full_name=fake.name(),
+                email=fake.email(),
+                phone_number=fake.phone_number(),
+                is_vip=is_vip,
                 establishment_id=establishment.id,
                 account_id=account.id,
             )
@@ -338,7 +322,7 @@ def init_db(
         summary_table.add_row("Staff Users", "2")
         summary_table.add_row("Zones", "3")
         summary_table.add_row("Tables", "7")
-        summary_table.add_row("Clients", "3")
+        summary_table.add_row("Clients", "10")
         summary_table.add_row("Reservations", "2")
 
         console.print(summary_table)
@@ -441,6 +425,9 @@ def seed_data(
     import random
     from datetime import timedelta
 
+    # Initialize Faker with French locale
+    fake = Faker("fr_FR")
+
     with Session(engine) as session:
         # Check if basic data exists
         account = session.exec(select(Account)).first()
@@ -452,222 +439,14 @@ def seed_data(
 
         console.print("[blue]🌱 Generating test data...[/blue]\n")
 
-        # Generate clients
-        console.print(f"[cyan]📝 Creating {clients} clients...[/cyan]")
-
-        first_names = [
-            "Emma",
-            "Liam",
-            "Olivia",
-            "Noah",
-            "Ava",
-            "Ethan",
-            "Sophia",
-            "Mason",
-            "Isabella",
-            "William",
-            "Mia",
-            "James",
-            "Charlotte",
-            "Benjamin",
-            "Amelia",
-            "Lucas",
-            "Harper",
-            "Henry",
-            "Evelyn",
-            "Alexander",
-            "Abigail",
-            "Sebastian",
-            "Emily",
-            "Jack",
-            "Elizabeth",
-            "Aiden",
-            "Sofia",
-            "Matthew",
-            "Avery",
-            "Samuel",
-            "Ella",
-            "David",
-            "Scarlett",
-            "Joseph",
-            "Grace",
-            "Carter",
-            "Chloe",
-            "Owen",
-            "Victoria",
-            "Wyatt",
-            "Riley",
-            "John",
-            "Aria",
-            "Dylan",
-            "Lily",
-            "Luke",
-            "Aubrey",
-            "Gabriel",
-            "Zoey",
-            "Anthony",
-            "Penelope",
-            "Isaac",
-            "Lillian",
-            "Grayson",
-            "Addison",
-            "Julian",
-            "Layla",
-            "Levi",
-            "Natalie",
-            "Christopher",
-            "Camila",
-            "Joshua",
-            "Hannah",
-            "Andrew",
-            "Brooklyn",
-            "Lincoln",
-            "Zoe",
-            "Mateo",
-            "Nora",
-            "Ryan",
-            "Leah",
-            "Jaxon",
-            "Savannah",
-            "Nathan",
-            "Audrey",
-            "Aaron",
-            "Claire",
-            "Isaiah",
-            "Eleanor",
-            "Thomas",
-            "Skylar",
-            "Charles",
-            "Ellie",
-            "Caleb",
-            "Samantha",
-            "Josiah",
-            "Stella",
-            "Christian",
-            "Paisley",
-            "Hunter",
-            "Violet",
-            "Eli",
-            "Mila",
-            "Jonathan",
-            "Allison",
-            "Connor",
-            "Madelyn",
-            "Landon",
-            "Cora",
-            "Adrian",
-        ]
-
-        last_names = [
-            "Smith",
-            "Johnson",
-            "Williams",
-            "Brown",
-            "Jones",
-            "Garcia",
-            "Miller",
-            "Davis",
-            "Rodriguez",
-            "Martinez",
-            "Hernandez",
-            "Lopez",
-            "Gonzalez",
-            "Wilson",
-            "Anderson",
-            "Thomas",
-            "Taylor",
-            "Moore",
-            "Jackson",
-            "Martin",
-            "Lee",
-            "Perez",
-            "Thompson",
-            "White",
-            "Harris",
-            "Sanchez",
-            "Clark",
-            "Ramirez",
-            "Lewis",
-            "Robinson",
-            "Walker",
-            "Young",
-            "Allen",
-            "King",
-            "Wright",
-            "Scott",
-            "Torres",
-            "Nguyen",
-            "Hill",
-            "Flores",
-            "Green",
-            "Adams",
-            "Nelson",
-            "Baker",
-            "Hall",
-            "Rivera",
-            "Campbell",
-            "Mitchell",
-            "Carter",
-            "Roberts",
-            "Gomez",
-            "Phillips",
-            "Evans",
-            "Turner",
-            "Diaz",
-            "Parker",
-            "Cruz",
-            "Edwards",
-            "Collins",
-            "Reyes",
-            "Stewart",
-            "Morris",
-            "Morales",
-            "Murphy",
-            "Cook",
-            "Rogers",
-            "Gutierrez",
-            "Ortiz",
-            "Morgan",
-            "Cooper",
-            "Peterson",
-            "Bailey",
-            "Reed",
-            "Kelly",
-            "Howard",
-            "Ramos",
-            "Kim",
-            "Cox",
-            "Ward",
-            "Richardson",
-            "Watson",
-            "Brooks",
-            "Chavez",
-            "Wood",
-            "James",
-            "Bennett",
-            "Gray",
-            "Mendoza",
-            "Ruiz",
-            "Hughes",
-            "Price",
-            "Alvarez",
-            "Castillo",
-            "Sanders",
-            "Patel",
-            "Myers",
-            "Long",
-            "Ross",
-            "Foster",
-            "Jimenez",
-        ]
+        # Generate clients with Faker
+        console.print(f"[cyan]📝 Creating {clients} clients with French names...[/cyan]")
 
         created_clients = []
         for i in range(clients):
-            first_name = random.choice(first_names)
-            last_name = random.choice(last_names)
-            full_name = f"{first_name} {last_name}"
-            email = f"{first_name.lower()}.{last_name.lower()}{i}@example.com"
-            phone = f"+1-555-{random.randint(1000, 9999)}"
+            full_name = fake.name()
+            email = fake.email()
+            phone = fake.phone_number()
             is_vip = random.random() < 0.15  # 15% VIP clients
             is_blacklisted = random.random() < 0.05  # 5% blacklisted
 
@@ -688,7 +467,7 @@ def seed_data(
                 console.print(f"  [green]✓[/green] Created {i + 1}/{clients} clients...")
 
         session.flush()
-        console.print(f"[green]✅ Created {clients} clients[/green]\n")
+        console.print(f"[green]✅ Created {clients} French clients[/green]\n")
 
         # Generate reservations
         console.print(f"[cyan]📅 Creating {reservations} reservations...[/cyan]")
@@ -708,16 +487,16 @@ def seed_data(
         ]  # 60% accepted, 20% pending, 10% refused, 10% canceled
 
         special_requests = [
-            "Window seat please",
-            "Birthday celebration",
-            "Anniversary dinner",
-            "Business meeting",
-            "Quiet area preferred",
-            "High chair needed",
-            "Wheelchair accessible",
-            "Allergy: nuts",
-            "Vegetarian options",
-            "Near the kitchen",
+            "Près de la fenêtre",
+            "Célèbreation d'anniversaire",
+            "Dîner d'anniversaire",
+            "Réunion de travail",
+            "Zone calme préférée",
+            "Chaise haute nécessaire",
+            "Accessible en fauteuil roulant",
+            "Allergie : noix",
+            "Options végétariennes",
+            "Près de la cuisine",
             None,
             None,
             None,  # Many reservations won't have special requests

@@ -214,6 +214,43 @@ class TestClientSorting:
         assert items[1]["email"] == "michael@example.com"
         assert items[2]["email"] == "zoe@example.com"
 
+    def test_sort_by_created_at(self, client: TestClient, session: Session, auth_headers_staff):
+        """Test sorting by created_at"""
+        establishment = EstablishmentFactory(session=session)
+
+        # Create clients with a small delay to ensure different created_at times
+        import time
+
+        ClientFactory(session=session, establishment=establishment, full_name="First Client")
+        time.sleep(0.01)  # Small delay
+        ClientFactory(session=session, establishment=establishment, full_name="Second Client")
+        time.sleep(0.01)  # Small delay
+        ClientFactory(session=session, establishment=establishment, full_name="Third Client")
+        session.commit()
+
+        response = client.get(
+            "/api/staff/clients/?sort_by=created_at&sort_order=asc", headers=auth_headers_staff
+        )
+        assert response.status_code == 200
+        items = response.json()["items"]
+
+        # Should be sorted by created_at ascending
+        assert items[0]["full_name"] == "First Client"
+        assert items[1]["full_name"] == "Second Client"
+        assert items[2]["full_name"] == "Third Client"
+
+        # Test descending order
+        response = client.get(
+            "/api/staff/clients/?sort_by=created_at&sort_order=desc", headers=auth_headers_staff
+        )
+        assert response.status_code == 200
+        items = response.json()["items"]
+
+        # Should be sorted by created_at descending
+        assert items[0]["full_name"] == "Third Client"
+        assert items[1]["full_name"] == "Second Client"
+        assert items[2]["full_name"] == "First Client"
+
     def test_invalid_sort_field(self, client: TestClient, session: Session, auth_headers_staff):
         """Test that invalid sort field returns error"""
         response = client.get("/api/staff/clients/?sort_by=invalid", headers=auth_headers_staff)

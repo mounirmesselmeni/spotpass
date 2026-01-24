@@ -41,7 +41,7 @@ class TestTableList:
             "type": "table",  # Lowercase to match enum
             "min_capacity": 2,
             "max_capacity": 4,
-            "is_available": True,
+            "is_on_service": True,
             "establishment_id": str(establishment.uuid),
             "zone_id": str(zone.uuid),
         }
@@ -100,10 +100,10 @@ class TestTableDetail:
         self, client: TestClient, session: Session, auth_headers_staff
     ):
         """Test updating table availability"""
-        table = TableFactory(session=session, is_available=True)
+        table = TableFactory(session=session, is_on_service=True)
         session.commit()
 
-        update_data = {"is_available": False}
+        update_data = {"is_on_service": False}
 
         response = client.patch(
             f"/api/staff/tables/{table.uuid}",
@@ -113,7 +113,7 @@ class TestTableDetail:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["is_available"] is False
+        assert data["is_on_service"] is False
 
     def test_delete_table(self, client: TestClient, session: Session, auth_headers_staff):
         """Test deleting a table"""
@@ -141,6 +141,52 @@ class TestZoneList:
         data = response.json()
         assert isinstance(data, list)
         assert len(data) == 3
+
+        # Check that created_at field is present and is a valid datetime string
+        for zone in data:
+            assert "created_at" in zone
+            assert zone["created_at"] is not None
+            # Should be an ISO datetime string
+            assert isinstance(zone["created_at"], str)
+
+    def test_sort_zones_by_created_at(
+        self, client: TestClient, session: Session, auth_headers_staff
+    ):
+        """Test sorting zones by created_at"""
+        establishment = EstablishmentFactory(session=session)
+
+        # Create zones with a small delay to ensure different created_at times
+        import time
+
+        ZoneFactory(session=session, establishment=establishment, name="First Zone")
+        time.sleep(0.01)  # Small delay
+        ZoneFactory(session=session, establishment=establishment, name="Second Zone")
+        time.sleep(0.01)  # Small delay
+        ZoneFactory(session=session, establishment=establishment, name="Third Zone")
+        session.commit()
+
+        response = client.get(
+            "/api/staff/zones/?sort_by=created_at&sort_order=asc", headers=auth_headers_staff
+        )
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should be sorted by created_at ascending
+        assert data[0]["name"] == "First Zone"
+        assert data[1]["name"] == "Second Zone"
+        assert data[2]["name"] == "Third Zone"
+
+        # Test descending order
+        response = client.get(
+            "/api/staff/zones/?sort_by=created_at&sort_order=desc", headers=auth_headers_staff
+        )
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should be sorted by created_at descending
+        assert data[0]["name"] == "Third Zone"
+        assert data[1]["name"] == "Second Zone"
+        assert data[2]["name"] == "First Zone"
 
     def test_create_zone(self, client: TestClient, session: Session, auth_headers_staff):
         """Test creating a new zone"""

@@ -58,7 +58,7 @@ def list_reservations(
     - **status_filter**: Filter by reservation status
     - **page**: Page number (1-indexed), default: 1
     - **page_size**: Number of items per page (max 100), default: 20
-    - **sort_by**: Sort field (datetime, client_name, guests, status), default: datetime
+    - **sort_by**: Sort field (datetime, client_name, guests, status, created_at), default: datetime
     - **sort_order**: Sort order (asc, desc), default: desc
     """
     from sqlmodel import asc, desc, func, or_
@@ -72,7 +72,7 @@ def list_reservations(
         )
 
     # Validate sorting parameters
-    valid_sort_fields = ["datetime", "client_name", "guests", "status"]
+    valid_sort_fields = ["datetime", "client_name", "guests", "status", "created_at"]
     if sort_by not in valid_sort_fields:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -137,6 +137,8 @@ def list_reservations(
         statement = statement.order_by(order_func(Reservation.number_of_guests))
     elif sort_by == "status":
         statement = statement.order_by(order_func(Reservation.status))
+    elif sort_by == "created_at":
+        statement = statement.order_by(order_func(Reservation.created_at))
 
     # Apply pagination
     offset = (page - 1) * page_size

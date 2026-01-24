@@ -6,15 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-/**
- * Schema for reading zones
- */
-export type ZoneRead = {
-  /**
-   * @minLength 1
-   * @maxLength 64
-   */
-  name: string;
-  id: string;
-  created_at: string;
+export type ListZonesApiStaffZonesGetParams = {
+  sort_by?: string;
+  sort_order?: string;
 };

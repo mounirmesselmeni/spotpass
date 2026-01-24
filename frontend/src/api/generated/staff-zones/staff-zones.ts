@@ -21,14 +21,20 @@ import type {
   UseQueryResult,
 } from '@tanstack/react-query';
 
-import type { HTTPValidationError, ZoneCreate, ZoneRead, ZoneUpdate } from '.././models';
+import type {
+  HTTPValidationError,
+  ListZonesApiStaffZonesGetParams,
+  ZoneCreate,
+  ZoneRead,
+  ZoneUpdate,
+} from '.././models';
 
 import { customInstanceWithUrl } from '../../mutator/custom-instance';
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
- * List all zones (staff only)
+ * List all zones with optional sorting (staff only)
  * @summary List Zones
  */
 export type listZonesApiStaffZonesGetResponse200 = {
@@ -36,20 +42,44 @@ export type listZonesApiStaffZonesGetResponse200 = {
   status: 200;
 };
 
+export type listZonesApiStaffZonesGetResponse422 = {
+  data: HTTPValidationError;
+  status: 422;
+};
+
 export type listZonesApiStaffZonesGetResponseSuccess = listZonesApiStaffZonesGetResponse200 & {
   headers: Headers;
 };
-export type listZonesApiStaffZonesGetResponse = listZonesApiStaffZonesGetResponseSuccess;
+export type listZonesApiStaffZonesGetResponseError = listZonesApiStaffZonesGetResponse422 & {
+  headers: Headers;
+};
 
-export const getListZonesApiStaffZonesGetUrl = () => {
-  return `/api/staff/zones/`;
+export type listZonesApiStaffZonesGetResponse =
+  | listZonesApiStaffZonesGetResponseSuccess
+  | listZonesApiStaffZonesGetResponseError;
+
+export const getListZonesApiStaffZonesGetUrl = (params?: ListZonesApiStaffZonesGetParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/staff/zones/?${stringifiedParams}`
+    : `/api/staff/zones/`;
 };
 
 export const listZonesApiStaffZonesGet = async (
+  params?: ListZonesApiStaffZonesGetParams,
   options?: RequestInit
 ): Promise<listZonesApiStaffZonesGetResponse> => {
   return customInstanceWithUrl<listZonesApiStaffZonesGetResponse>(
-    getListZonesApiStaffZonesGetUrl(),
+    getListZonesApiStaffZonesGetUrl(params),
     {
       ...options,
       method: 'GET',
@@ -57,26 +87,29 @@ export const listZonesApiStaffZonesGet = async (
   );
 };
 
-export const getListZonesApiStaffZonesGetQueryKey = () => {
-  return [`/api/staff/zones/`] as const;
+export const getListZonesApiStaffZonesGetQueryKey = (params?: ListZonesApiStaffZonesGetParams) => {
+  return [`/api/staff/zones/`, ...(params ? [params] : [])] as const;
 };
 
 export const getListZonesApiStaffZonesGetQueryOptions = <
   TData = Awaited<ReturnType<typeof listZonesApiStaffZonesGet>>,
-  TError = unknown,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof listZonesApiStaffZonesGet>>, TError, TData>
-  >;
-  request?: SecondParameter<typeof customInstanceWithUrl>;
-}) => {
+  TError = HTTPValidationError,
+>(
+  params?: ListZonesApiStaffZonesGetParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listZonesApiStaffZonesGet>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstanceWithUrl>;
+  }
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListZonesApiStaffZonesGetQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getListZonesApiStaffZonesGetQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof listZonesApiStaffZonesGet>>> = ({
     signal,
-  }) => listZonesApiStaffZonesGet({ signal, ...requestOptions });
+  }) => listZonesApiStaffZonesGet(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listZonesApiStaffZonesGet>>,
@@ -88,12 +121,13 @@ export const getListZonesApiStaffZonesGetQueryOptions = <
 export type ListZonesApiStaffZonesGetQueryResult = NonNullable<
   Awaited<ReturnType<typeof listZonesApiStaffZonesGet>>
 >;
-export type ListZonesApiStaffZonesGetQueryError = unknown;
+export type ListZonesApiStaffZonesGetQueryError = HTTPValidationError;
 
 export function useListZonesApiStaffZonesGet<
   TData = Awaited<ReturnType<typeof listZonesApiStaffZonesGet>>,
-  TError = unknown,
+  TError = HTTPValidationError,
 >(
+  params: undefined | ListZonesApiStaffZonesGetParams,
   options: {
     query: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof listZonesApiStaffZonesGet>>, TError, TData>
@@ -112,8 +146,9 @@ export function useListZonesApiStaffZonesGet<
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useListZonesApiStaffZonesGet<
   TData = Awaited<ReturnType<typeof listZonesApiStaffZonesGet>>,
-  TError = unknown,
+  TError = HTTPValidationError,
 >(
+  params?: ListZonesApiStaffZonesGetParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof listZonesApiStaffZonesGet>>, TError, TData>
@@ -132,8 +167,9 @@ export function useListZonesApiStaffZonesGet<
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useListZonesApiStaffZonesGet<
   TData = Awaited<ReturnType<typeof listZonesApiStaffZonesGet>>,
-  TError = unknown,
+  TError = HTTPValidationError,
 >(
+  params?: ListZonesApiStaffZonesGetParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof listZonesApiStaffZonesGet>>, TError, TData>
@@ -148,8 +184,9 @@ export function useListZonesApiStaffZonesGet<
 
 export function useListZonesApiStaffZonesGet<
   TData = Awaited<ReturnType<typeof listZonesApiStaffZonesGet>>,
-  TError = unknown,
+  TError = HTTPValidationError,
 >(
+  params?: ListZonesApiStaffZonesGetParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof listZonesApiStaffZonesGet>>, TError, TData>
@@ -158,7 +195,7 @@ export function useListZonesApiStaffZonesGet<
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getListZonesApiStaffZonesGetQueryOptions(options);
+  const queryOptions = getListZonesApiStaffZonesGetQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;

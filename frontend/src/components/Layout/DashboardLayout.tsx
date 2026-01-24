@@ -1,5 +1,5 @@
 import { useAuthStore } from '@/stores/auth.store';
-import { AppShell, Avatar, Box, Burger, Group, Menu, Text, Title } from '@mantine/core';
+import { AppShell, Avatar, Box, Burger, Group, Image, Menu, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
   IconCalendar,
@@ -10,7 +10,7 @@ import {
   IconTable,
   IconUsers,
 } from '@tabler/icons-react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 const navigation = [
   { label: 'Dashboard', icon: IconDashboard, path: '/' },
@@ -57,9 +57,9 @@ export function DashboardLayout() {
         <Group h="100%" px="xl" justify="space-between" wrap="nowrap">
           <Group gap="md" style={{ flexShrink: 0 }}>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" color="#0052FF" />
-            <Title order={2} size="h1" fw={600} className="appTitle">
-              SpotPass
-            </Title>
+            <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <Image src="/spotpass.png" alt="SpotPass" h={155} />
+            </Link>
           </Group>
 
           <Group gap="sm" style={{ flexShrink: 0 }}>

@@ -84,7 +84,7 @@ class TestReservationCreationCoverage:
         """Test creating reservation with disabled table"""
         establishment = EstablishmentFactory(session=session)
         test_client = ClientFactory(session=session, establishment=establishment)
-        table = TableFactory(session=session, establishment=establishment, is_available=False)
+        table = TableFactory(session=session, establishment=establishment, is_on_service=False)
         session.commit()
 
         response = client.post(

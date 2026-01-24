@@ -113,7 +113,7 @@ class TableFactory(BaseFactory):
     description = factory.Faker("text", max_nb_chars=100)
     min_capacity = 2
     max_capacity = 4
-    is_available = True
+    is_on_service = True
     establishment_id = 1  # Default
     account_id = 1  # Default
     zone_id = None

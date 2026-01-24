@@ -29,7 +29,7 @@ def list_tables(
     session: DatabaseSession,
     token_payload: StaffUser,
     zone_id: uuid_lib.UUID | None = None,
-    is_available: bool | None = None,
+    is_on_service: bool | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
     name: str | None = None,
@@ -49,8 +49,8 @@ def list_tables(
         if zone:
             conditions.append(Table.zone_id == zone.id)
 
-    if is_available is not None:
-        conditions.append(Table.is_available == is_available)
+    if is_on_service is not None:
+        conditions.append(Table.is_on_service == is_on_service)
 
     if name:
         conditions.append(Table.name.ilike(f"%{name}%"))
@@ -78,7 +78,7 @@ def list_tables(
             reservations = session.exec(res_statement).all()
 
             # Only include tables without reservations in range OR include all if showing unavailable
-            if not reservations or is_available is False:
+            if not reservations or is_on_service is False:
                 available_tables.append(table)
 
         tables = available_tables
@@ -137,7 +137,7 @@ def create_table(table_data: TableCreate, session: DatabaseSession, token_payloa
         name=table_data.name,
         description=table_data.description,
         type=table_data.type,
-        is_available=table_data.is_available,
+        is_on_service=table_data.is_on_service,
         min_capacity=table_data.min_capacity,
         max_capacity=table_data.max_capacity,
         establishment_id=establishment.id,
@@ -284,9 +284,37 @@ zones_router = APIRouter(prefix="/api/staff/zones", tags=["Staff - Zones"])
 
 
 @zones_router.get("/", response_model=list[ZoneRead])
-def list_zones(session: DatabaseSession, token_payload: StaffUser):
-    """List all zones (staff only)"""
+def list_zones(
+    session: DatabaseSession,
+    token_payload: StaffUser,
+    sort_by: str = "created_at",
+    sort_order: str = "asc",
+):
+    """List all zones with optional sorting (staff only)"""
+    from sqlmodel import asc, desc
+
+    # Validate sorting parameters
+    valid_sort_fields = ["name", "created_at"]
+    if sort_by not in valid_sort_fields:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid sort_by field. Must be one of: {', '.join(valid_sort_fields)}",
+        )
+
+    if sort_order not in ["asc", "desc"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="sort_order must be 'asc' or 'desc'"
+        )
+
     statement = select(Zone)
+
+    # Apply sorting
+    order_func = desc if sort_order == "desc" else asc
+    if sort_by == "name":
+        statement = statement.order_by(order_func(Zone.name))
+    elif sort_by == "created_at":
+        statement = statement.order_by(order_func(Zone.created_at))
+
     zones = session.exec(statement).all()
     return [ZoneRead.model_validate(zone) for zone in zones]
 

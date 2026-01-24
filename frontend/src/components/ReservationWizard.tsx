@@ -11,8 +11,10 @@ import {
   Badge,
   Button,
   Card,
+  Combobox,
   Grid,
   Group,
+  Loader,
   LoadingOverlay,
   Modal,
   NumberInput,
@@ -25,14 +27,16 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
+import { useCombobox } from '@mantine/core';
 import { DatePickerInput, TimeInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { useDebouncedValue } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconCalendar, IconCheck, IconClock, IconInfoCircle, IconUsers } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatDate } from '@/utils/dateUtils';
 
 interface ReservationWizardProps {
   opened: boolean;
@@ -48,6 +52,13 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [clientSearchValue, setClientSearchValue] = useState('');
   const [debouncedClientSearch] = useDebouncedValue(clientSearchValue, 300);
+  const [selectedClientLabel, setSelectedClientLabel] = useState('');
+  const abortController = useRef<AbortController | undefined>(undefined);
+  const combobox = useCombobox({
+    onDropdownClose: () => {
+      // Reset on close
+    },
+  });
 
   const form = useForm({
     initialValues: {
@@ -73,17 +84,24 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
     },
   });
 
-  const { data: clientsResponse, isLoading: loadingClients } = useListClientsApiStaffClientsGet({
-    page_size: 100,
-    search: debouncedClientSearch || undefined,
-  });
+  const { data: clientsResponse, isLoading: loadingClients } = useListClientsApiStaffClientsGet(
+    {
+      page_size: 100,
+      search: debouncedClientSearch || undefined,
+    },
+    {
+      query: {
+        enabled: !!debouncedClientSearch || clientSearchValue === '',
+      },
+    }
+  );
   const clientsPaginatedData =
     clientsResponse?.data && 'items' in clientsResponse.data ? clientsResponse.data : null;
   const clients = clientsPaginatedData?.items || [];
   const createClientMutation = useCreateClientApiStaffClientsPost();
 
   const reservationDateTime =
-    form.values.reservation_date && form.values.reservation_time
+    form.values.reservation_date instanceof Date && form.values.reservation_time
       ? `${form.values.reservation_date.toISOString().split('T')[0]}T${form.values.reservation_time}:00`
       : undefined;
 
@@ -98,13 +116,14 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
     active === 2 &&
     reservationDateTime &&
     form.values.reservation_date &&
+    form.values.reservation_date instanceof Date &&
     !availableTablesMutation.isPending &&
     !availableTablesMutation.data
   ) {
     availableTablesMutation.mutate({
       data: {
         reservation_date: form.values.reservation_date.toISOString().split('T')[0],
-        reservation_time: reservationDateTime,
+        reservation_time: form.values.reservation_time,
         number_of_guests: form.values.number_of_guests,
       },
     });
@@ -175,7 +194,10 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
       await createReservationMutation.mutateAsync({
         data: {
           client_id: clientId,
-          reservation_date: form.values.reservation_date.toISOString().split('T')[0],
+          reservation_date:
+            form.values.reservation_date instanceof Date
+              ? form.values.reservation_date.toISOString().split('T')[0]
+              : String(form.values.reservation_date),
           reservation_time: timeValue, // Format: HH:MM:SS
           number_of_guests: form.values.number_of_guests,
           special_request: form.values.special_request || undefined,
@@ -251,19 +273,70 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
               {t('reservations.selectClientRequired')}
             </Alert>
 
-            <Select
-              label={t('clients.client')}
-              placeholder={t('reservations.searchClient')}
-              data={clientOptions}
-              searchable
-              nothingFoundMessage={t('clients.noClients')}
-              searchValue={clientSearchValue}
-              onSearchChange={setClientSearchValue}
-              {...form.getInputProps('client_id')}
-              disabled={loadingClients}
-              size="md"
-              required
-            />
+            <Combobox
+              store={combobox}
+              onOptionSubmit={(value) => {
+                const client = clients.find((c: any) => (c.uuid || String(c.id)) === value);
+                if (client) {
+                  const label = `${client.full_name} - ${client.phone_number}`;
+                  form.setFieldValue('client_id', value);
+                  setSelectedClientLabel(label);
+                  setClientSearchValue(label);
+                }
+                combobox.closeDropdown();
+              }}
+              withinPortal={false}
+            >
+              <Combobox.Target>
+                <TextInput
+                  label={t('clients.client')}
+                  placeholder={t('reservations.searchClient')}
+                  value={clientSearchValue}
+                  onChange={(event) => {
+                    const newValue = event.currentTarget.value;
+                    setClientSearchValue(newValue);
+                    combobox.openDropdown();
+                    combobox.resetSelectedOption();
+
+                    // Clear selection if user is typing
+                    if (form.values.client_id && newValue !== selectedClientLabel) {
+                      form.setFieldValue('client_id', '');
+                      setSelectedClientLabel('');
+                    }
+                  }}
+                  onClick={() => combobox.openDropdown()}
+                  onFocus={() => combobox.openDropdown()}
+                  onBlur={() => {
+                    combobox.closeDropdown();
+                    // Restore selected label if a client is selected
+                    if (form.values.client_id && selectedClientLabel) {
+                      setClientSearchValue(selectedClientLabel);
+                    }
+                  }}
+                  rightSection={loadingClients ? <Loader size={18} /> : null}
+                  size="md"
+                  required
+                  error={form.errors.client_id}
+                />
+              </Combobox.Target>
+
+              <Combobox.Dropdown>
+                <Combobox.Options>
+                  {clients.length === 0 ? (
+                    <Combobox.Empty>{t('clients.noClients')}</Combobox.Empty>
+                  ) : (
+                    clients.map((client: any) => (
+                      <Combobox.Option
+                        key={client.uuid || client.id}
+                        value={client.uuid || String(client.id)}
+                      >
+                        {client.full_name} - {client.phone_number}
+                      </Combobox.Option>
+                    ))
+                  )}
+                </Combobox.Options>
+              </Combobox.Dropdown>
+            </Combobox>
 
             <Button
               variant="light"
@@ -304,12 +377,12 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
               </Card>
             )}
 
-            {form.values.client_id && (
+            {form.values.client_id && selectedClientLabel && (
               <Card withBorder bg="blue.0">
                 <Group>
                   <IconCheck size={20} color="green" />
                   <Text size="sm" c="dimmed">
-                    {clientOptions.find((c: any) => c.value === form.values.client_id)?.label}
+                    {selectedClientLabel}
                   </Text>
                 </Group>
               </Card>
@@ -325,10 +398,6 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
           aria-label="Étape 2: Sélectionner la date et l'heure"
         >
           <Stack gap="md" mt="xl">
-            <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
-              Sélectionnez la date, l'heure et le nombre d'invités
-            </Alert>
-
             <Grid>
               <Grid.Col span={{ base: 12, sm: 6 }}>
                 <DatePickerInput
@@ -346,6 +415,7 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
                   {...form.getInputProps('reservation_time')}
                   size="md"
                   required
+                  withSeconds={false}
                 />
               </Grid.Col>
             </Grid>
@@ -379,8 +449,10 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
                     </Text>
                   </Group>
                   <Text size="sm" c="dimmed">
-                    {form.values.reservation_date.toLocaleDateString('fr-FR')} à{' '}
-                    {form.values.reservation_time}
+                    {form.values.reservation_date instanceof Date
+                      ? formatDate(form.values.reservation_date)
+                      : String(form.values.reservation_date)}{' '}
+                    à {form.values.reservation_time}
                   </Text>
                   <Text size="sm" c="dimmed">
                     {form.values.number_of_guests}{' '}

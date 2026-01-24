@@ -42,6 +42,7 @@ class ZoneRead(ZoneBase):
     """Schema for reading zones"""
 
     id: UUID
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -50,7 +51,7 @@ class ZoneRead(ZoneBase):
         """Custom validation to map uuid to id"""
         if hasattr(obj, "uuid") and hasattr(obj, "name"):
             # This is a Zone model instance
-            data = {"id": obj.uuid, "name": obj.name}
+            data = {"id": obj.uuid, "name": obj.name, "created_at": obj.created_at}
             return cls.model_construct(**data)
         return super().model_validate(obj, *args, **kwargs)
 
@@ -61,7 +62,7 @@ class TableBase(BaseModel):
     name: str = Field(min_length=1, max_length=64)
     description: str | None = Field(None, max_length=256)
     type: TableType = TableType.TABLE
-    is_available: bool = True
+    is_on_service: bool = True
     min_capacity: int = Field(ge=1, le=100)
     max_capacity: int = Field(ge=1, le=100)
 
@@ -80,7 +81,7 @@ class TableCreate(TableBase):
                     "name": "Table 5",
                     "description": "Window table with city view",
                     "type": "table",
-                    "is_available": True,
+                    "is_on_service": True,
                     "min_capacity": 2,
                     "max_capacity": 4,
                     "zone_id": "123e4567-e89b-12d3-a456-426614174001",
@@ -96,7 +97,7 @@ class TableUpdate(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=64)
     description: str | None = Field(None, max_length=256)
     type: TableType | None = None
-    is_available: bool | None = None
+    is_on_service: bool | None = None
     min_capacity: int | None = Field(None, ge=1, le=100)
     max_capacity: int | None = Field(None, ge=1, le=100)
     zone_id: UUID | None = None
@@ -105,7 +106,7 @@ class TableUpdate(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "is_available": True,
+                    "is_on_service": True,
                     "name": "Table 5A",
                     "description": "Premium window table",
                     "min_capacity": 2,
@@ -133,7 +134,7 @@ class TableRead(TableBase):
                     "name": "Table 5",
                     "description": "Window table with city view",
                     "type": "table",
-                    "is_available": True,
+                    "is_on_service": True,
                     "min_capacity": 2,
                     "max_capacity": 4,
                     "created_at": "2024-01-01T10:00:00",
@@ -152,7 +153,7 @@ class TableRead(TableBase):
                 "name": obj.name,
                 "description": obj.description,
                 "type": obj.type,
-                "is_available": obj.is_available,
+                "is_on_service": obj.is_on_service,
                 "min_capacity": obj.min_capacity,
                 "max_capacity": obj.max_capacity,
                 "created_at": obj.created_at,

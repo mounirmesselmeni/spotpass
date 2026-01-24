@@ -47,7 +47,7 @@ class TestTableAvailabilityService:
             name="Test Table",
             min_capacity=2,
             max_capacity=4,
-            is_available=True,
+            is_on_service=True,
         )
         session.commit()
         return {
@@ -65,14 +65,14 @@ class TestTableAvailabilityService:
         test_date = date.today()
         test_time = time(19, 0)
 
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=test_date,
             reservation_time=test_time,
             duration_minutes=120,
         )
 
-        assert is_available is True
+        assert is_on_service is True
 
     def test_is_table_available_different_date(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -96,14 +96,14 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Check availability for tomorrow
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today() + timedelta(days=1),
             reservation_time=time(19, 0),
             duration_minutes=120,
         )
 
-        assert is_available is True
+        assert is_on_service is True
 
     def test_is_table_available_different_time_no_overlap(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -127,14 +127,14 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Check availability 20:00-22:00 (exact boundary, should be available)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(20, 0),
             duration_minutes=120,
         )
 
-        assert is_available is True, (
+        assert is_on_service is True, (
             "Reservation ending at 20:00 should not conflict with one starting at 20:00"
         )
 
@@ -160,14 +160,14 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Try to book the same time
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(19, 0),
             duration_minutes=120,
         )
 
-        assert is_available is False
+        assert is_on_service is False
 
     def test_is_table_unavailable_partial_overlap_start(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -191,14 +191,14 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Try to book 18:00-20:00 (overlaps with existing 19:00-21:00)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(18, 0),
             duration_minutes=120,
         )
 
-        assert is_available is False
+        assert is_on_service is False
 
     def test_is_table_unavailable_partial_overlap_end(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -222,14 +222,14 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Try to book 19:00-21:00 (overlaps with existing 18:00-20:00)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(19, 0),
             duration_minutes=120,
         )
 
-        assert is_available is False
+        assert is_on_service is False
 
     def test_is_table_unavailable_encompasses_existing(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -253,14 +253,14 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Try to book 18:00-21:00 (encompasses existing 19:00-20:00)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(18, 0),
             duration_minutes=180,
         )
 
-        assert is_available is False
+        assert is_on_service is False
 
     def test_is_table_unavailable_within_existing(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -284,14 +284,14 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Try to book 19:00-20:00 (within existing 18:00-22:00)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(19, 0),
             duration_minutes=60,
         )
 
-        assert is_available is False
+        assert is_on_service is False
 
     def test_overnight_reservation_conflicts_with_late_night(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -315,14 +315,14 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Try to book 23:00-01:00 (conflicts with existing 22:00-02:00)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(23, 0),
             duration_minutes=120,
         )
 
-        assert is_available is False
+        assert is_on_service is False
 
     def test_overnight_reservation_conflicts_with_early_morning_next_day(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -346,14 +346,14 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Try to book 01:00-03:00 NEXT DAY (conflicts with existing overnight 22:00-02:00)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today() + timedelta(days=1),
             reservation_time=time(1, 0),
             duration_minutes=120,
         )
 
-        assert is_available is False
+        assert is_on_service is False
 
     def test_early_morning_reservation_next_day_no_conflict(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -377,14 +377,14 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Try to book 02:00-04:00 NEXT DAY (should be available, exact boundary)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today() + timedelta(days=1),
             reservation_time=time(2, 0),
             duration_minutes=120,
         )
 
-        assert is_available is True
+        assert is_on_service is True
 
     def test_canceled_reservation_does_not_block(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -408,14 +408,14 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Try to book the same time (should be available)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(19, 0),
             duration_minutes=120,
         )
 
-        assert is_available is True
+        assert is_on_service is True
 
     def test_refused_reservation_does_not_block(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -439,14 +439,14 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Try to book the same time (should be available)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(19, 0),
             duration_minutes=120,
         )
 
-        assert is_available is True
+        assert is_on_service is True
 
     def test_pending_reservation_blocks_availability(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -470,14 +470,14 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Try to book the same time (should be unavailable)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(19, 0),
             duration_minutes=120,
         )
 
-        assert is_available is False
+        assert is_on_service is False
 
     def test_exclude_reservation_id_allows_update(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -501,7 +501,7 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Check if we can "update" to 19:30-21:30 (should be available when excluding itself)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(19, 30),
@@ -509,7 +509,7 @@ class TestTableAvailabilityService:
             exclude_reservation_id=reservation.id,
         )
 
-        assert is_available is True
+        assert is_on_service is True
 
     def test_get_conflicting_reservations_finds_one(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -602,7 +602,7 @@ class TestTableAvailabilityService:
             name="Small",
             min_capacity=1,
             max_capacity=2,
-            is_available=True,
+            is_on_service=True,
         )
         large_table = TableFactory(
             session=session,
@@ -610,7 +610,7 @@ class TestTableAvailabilityService:
             name="Large",
             min_capacity=4,
             max_capacity=8,
-            is_available=True,
+            is_on_service=True,
         )
         session.commit()
 
@@ -642,7 +642,7 @@ class TestTableAvailabilityService:
             name="Table 1",
             min_capacity=2,
             max_capacity=4,
-            is_available=True,
+            is_on_service=True,
         )
         table2 = TableFactory(
             session=session,
@@ -650,7 +650,7 @@ class TestTableAvailabilityService:
             name="Table 2",
             min_capacity=2,
             max_capacity=4,
-            is_available=True,
+            is_on_service=True,
         )
 
         # Book table1
@@ -693,7 +693,7 @@ class TestTableAvailabilityService:
             name="Enabled",
             min_capacity=2,
             max_capacity=4,
-            is_available=True,
+            is_on_service=True,
         )
         TableFactory(
             session=session,
@@ -701,7 +701,7 @@ class TestTableAvailabilityService:
             name="Disabled",
             min_capacity=2,
             max_capacity=4,
-            is_available=False,
+            is_on_service=False,
         )
         session.commit()
 
@@ -760,7 +760,7 @@ class TestTableAvailabilityService:
             name="Disabled",
             min_capacity=2,
             max_capacity=4,
-            is_available=False,
+            is_on_service=False,
         )
         session.commit()
 
@@ -828,22 +828,22 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Should be available at 19:30 (exact boundary)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(19, 30),
             duration_minutes=120,
         )
-        assert is_available is True
+        assert is_on_service is True
 
         # Should NOT be available at 19:15 (conflicts with 19:00-19:30)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(19, 15),
             duration_minutes=120,
         )
-        assert is_available is False
+        assert is_on_service is False
 
     def test_long_duration_reservation(
         self, service: TableAvailabilityService, setup_data, session: Session
@@ -867,19 +867,19 @@ class TestTableAvailabilityService:
         session.commit()
 
         # Should NOT be available at 18:00 (within 15:00-21:00)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(18, 0),
             duration_minutes=120,
         )
-        assert is_available is False
+        assert is_on_service is False
 
         # Should be available at 21:00 (exact boundary)
-        is_available = service.is_table_available(
+        is_on_service = service.is_table_available(
             table_id=table.id,
             reservation_date=date.today(),
             reservation_time=time(21, 0),
             duration_minutes=120,
         )
-        assert is_available is True
+        assert is_on_service is True

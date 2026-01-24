@@ -7,8 +7,6 @@ import {
   Button,
   Card,
   Center,
-  Divider,
-  Grid,
   Group,
   Loader,
   Paper,
@@ -31,6 +29,7 @@ import {
 } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatDate } from '@/utils/dateUtils';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -97,37 +96,26 @@ export function ReservationDetailsPage() {
   const fetchAvailableTables = async (reservationDetails: ReservationDetails) => {
     setLoadingTables(true);
     try {
-      // Ensure reservation_time is in proper HH:MM format
-      let reservationTime = '12:00'; // default
-      if (reservationDetails.reservation.reservation_time) {
-        const timeStr = reservationDetails.reservation.reservation_time.toString();
-        // Handle various time formats
-        if (timeStr.includes('T')) {
-          // Extract time from datetime string like '2026-01-20T12'
-          const timePart = timeStr.split('T')[1];
-          if (timePart && timePart.length >= 2) {
-            reservationTime = timePart.length === 2 ? `${timePart}:00` : timePart;
-          }
-        } else if (timeStr.includes(':')) {
-          // Already in HH:MM or HH:MM:SS format
-          reservationTime = timeStr.split(':').slice(0, 2).join(':');
-        } else if (timeStr.length === 2) {
-          // Just hours like '12'
-          reservationTime = `${timeStr}:00`;
-        }
-      }
+      const reservation = reservationDetails.reservation;
+      const reservationTime = reservation.reservation_time || '19:00';
+      const reservationDate = reservation.reservation_date;
 
       const response = await axios.post('/api/staff/reservations/available-tables', {
-        establishment_id: reservationDetails.reservation.establishment_id,
-        reservation_date: reservationDetails.reservation.reservation_date,
+        reservation_date: reservationDate,
         reservation_time: reservationTime,
-        number_of_guests: reservationDetails.reservation.number_of_guests,
+        number_of_guests: reservation.number_of_guests,
+        duration_minutes: reservation.duration_minutes || 120,
       });
+
       setAvailableTables(response.data);
+
+      if (response.data.length > 0) {
+        setSelectedTableId(response.data[0].id);
+      }
     } catch (error) {
       notifications.show({
         title: t('common.error'),
-        message: t('tables.loadAvailableError'),
+        message: t('reservations.errorLoadingTables'),
         color: 'red',
       });
     } finally {
@@ -139,58 +127,47 @@ export function ReservationDetailsPage() {
     if (!selectedTableId) {
       notifications.show({
         title: t('common.error'),
-        message: t('reservations.selectTableRequired'),
+        message: t('reservations.selectTableError'),
         color: 'red',
       });
       return;
     }
 
-    modals.openConfirmModal({
-      title: t('reservations.accept', 'Accept Reservation'),
-      children: <Text size="sm">{t('reservations.acceptConfirm', { duration })}</Text>,
-      labels: {
-        confirm: t('common.confirm'),
-        cancel: t('common.cancel'),
+    updateMutation.mutate(
+      {
+        reservationId: id!,
+        data: {
+          status: 'accepted',
+          table_id: selectedTableId,
+          duration_minutes: duration,
+          note: note || undefined,
+        },
       },
-      confirmProps: { color: 'green' },
-      onConfirm: () => {
-        updateMutation.mutate(
-          {
-            reservationId: id!,
-            data: {
-              status: 'accepted',
-              table_id: selectedTableId,
-              note: note || undefined,
-              duration_minutes: duration,
-            },
-          },
-          {
-            onSuccess: () => {
-              notifications.show({
-                title: t('common.success'),
-                message: t('reservations.acceptedSuccessfully', 'Reservation accepted'),
-                color: 'green',
-              });
-              queryClient.invalidateQueries({ queryKey: ['reservations'] });
-              fetchDetails(); // Refresh
-            },
-            onError: () => {
-              notifications.show({
-                title: t('common.error'),
-                message: t('reservations.acceptError'),
-                color: 'red',
-              });
-            },
-          }
-        );
-      },
-    });
+      {
+        onSuccess: () => {
+          notifications.show({
+            title: t('common.success'),
+            message: t('reservations.acceptedSuccessfully'),
+            color: 'green',
+          });
+          queryClient.invalidateQueries({ queryKey: ['reservations'] });
+          fetchDetails();
+        },
+        onError: () => {
+          notifications.show({
+            title: t('common.error'),
+            message: t('reservations.acceptError'),
+            color: 'red',
+          });
+        },
+      }
+    );
   };
 
   const handleReject = () => {
     let rejectNote = '';
     modals.open({
-      title: t('reservations.reject', 'Reject Reservation'),
+      title: t('reservations.reject', 'Reject'),
       children: (
         <Stack>
           <Text size="sm">
@@ -305,7 +282,6 @@ export function ReservationDetailsPage() {
 
   const getDurationOptions = () => {
     const options = [];
-    // 30min to 6 hours in 30min increments
     for (let minutes = 30; minutes <= 360; minutes += 30) {
       const hours = Math.floor(minutes / 60);
       const mins = minutes % 60;
@@ -317,7 +293,6 @@ export function ReservationDetailsPage() {
     return options;
   };
 
-  // Group tables by zone
   const tablesByZone = availableTables.reduce(
     (acc, table) => {
       const zone = table.zone_name || t('tables.noZone', 'No Zone');
@@ -361,381 +336,231 @@ export function ReservationDetailsPage() {
             >
               {t('common.back', 'Back')}
             </Button>
-            <Title order={2}>{t('reservations.details', 'Reservation Details')}</Title>
+            <Title order={2}>{t('reservations.reservation', 'Réservation')}</Title>
           </Group>
           <StatusBadge status={reservation.status} size="lg">
             {String(t(`reservations.${reservation.status}`, reservation.status))}
           </StatusBadge>
         </Group>
 
-        <Grid>
-          {/* Left Column - Reservation & Client Info */}
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Stack gap="md">
-              {/* Reservation Information */}
-              <Card withBorder>
-                <Stack gap="md">
-                  <Text size="lg" fw={700}>
-                    {t('reservations.reservationInfo', 'Reservation Information')}
+        {/* Main Content - Horizontal Layout */}
+        <Group align="flex-start" gap="md">
+          {/* Reservation Information */}
+          <Card withBorder style={{ flex: 1 }}>
+            <Stack gap="sm">
+              <Text fw={700}>
+                {t('reservations.reservationInfo', 'Informations de la réservation')}
+              </Text>
+
+              <Text size="sm">
+                <Text component="span" fw={600}>
+                  {t('reservations.date', 'Date')}:{' '}
+                </Text>
+                {new Date(reservation.reservation_date).toLocaleDateString('fr-FR', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </Text>
+
+              <Text size="sm">
+                <Text component="span" fw={600}>
+                  {t('reservations.time', 'Heure')}:{' '}
+                </Text>
+                {reservation.reservation_time || '-'}
+              </Text>
+
+              <Text size="sm">
+                <Text component="span" fw={600}>
+                  {t('reservations.guests', 'Invités')}:{' '}
+                </Text>
+                {reservation.number_of_guests}
+              </Text>
+
+              {reservation.duration_minutes && (
+                <Text size="sm">
+                  <Text component="span" fw={600}>
+                    {t('reservations.duration', 'Durée')}:{' '}
                   </Text>
-                  <Divider />
-
-                  <Group>
-                    <IconCalendar size={20} />
-                    <div>
-                      <Text size="sm" c="dimmed">
-                        {t('reservations.date', 'Date')}
-                      </Text>
-                      <Text fw={600}>
-                        {new Date(reservation.reservation_date).toLocaleDateString('fr-FR', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </Text>
-                    </div>
-                  </Group>
-
-                  <Group>
-                    <IconClock size={20} />
-                    <div>
-                      <Text size="sm" c="dimmed">
-                        {t('reservations.time', 'Time')}
-                      </Text>
-                      <Text fw={600}>{reservation.reservation_time || '-'}</Text>
-                    </div>
-                  </Group>
-
-                  <Group>
-                    <IconUsers size={20} />
-                    <div>
-                      <Text size="sm" c="dimmed">
-                        {t('reservations.guests', 'Guests')}
-                      </Text>
-                      <Badge size="lg">{reservation.number_of_guests}</Badge>
-                    </div>
-                  </Group>
-
-                  {reservation.duration_minutes && (
-                    <Group>
-                      <IconClock size={20} />
-                      <div>
-                        <Text size="sm" c="dimmed">
-                          {t('reservations.duration', 'Duration')}
-                        </Text>
-                        <Text fw={600}>
-                          {Math.floor((reservation.duration_minutes || 120) / 60)}h{' '}
-                          {(reservation.duration_minutes || 120) % 60 > 0
-                            ? `${(reservation.duration_minutes || 120) % 60}min`
-                            : ''}
-                        </Text>
-                      </div>
-                    </Group>
-                  )}
-
-                  {table && (
-                    <>
-                      <Divider />
-                      <div>
-                        <Text size="sm" c="dimmed" mb={4}>
-                          {t('reservations.table', 'Table')}
-                        </Text>
-                        <Badge size="lg" color="blue">
-                          {table.name}
-                        </Badge>
-                      </div>
-                    </>
-                  )}
-
-                  {reservation.special_request && (
-                    <>
-                      <Divider />
-                      <div>
-                        <Text size="sm" c="dimmed" mb={4}>
-                          {t('reservations.specialRequest', 'Special Request')}
-                        </Text>
-                        <Paper p="sm" withBorder>
-                          <Text size="sm">{reservation.special_request}</Text>
-                        </Paper>
-                      </div>
-                    </>
-                  )}
-
-                  {reservation.note && (
-                    <>
-                      <Divider />
-                      <div>
-                        <Text size="sm" c="dimmed" mb={4}>
-                          {t('reservations.note', 'Note')}
-                        </Text>
-                        <Paper p="sm" withBorder>
-                          <Text size="sm">{reservation.note}</Text>
-                        </Paper>
-                      </div>
-                    </>
-                  )}
-
-                  {reservation.accepted_at && (
-                    <>
-                      <Divider />
-                      <Text size="xs" c="dimmed">
-                        {t('reservations.acceptedAt', 'Accepted at')}:{' '}
-                        {new Date(reservation.accepted_at).toLocaleString('fr-FR')}
-                      </Text>
-                    </>
-                  )}
-                </Stack>
-              </Card>
-
-              {/* Client Information */}
-              <Card withBorder>
-                <Stack gap="md">
-                  <Text size="lg" fw={700}>
-                    {t('clients.clientInfo', 'Client Information')}
-                  </Text>
-                  <Divider />
-
-                  <div>
-                    <Text size="sm" c="dimmed">
-                      {String(t('clients.name', 'Name'))}
-                    </Text>
-                    <Text fw={600} size="lg">
-                      {client.full_name}
-                    </Text>
-                  </div>
-
-                  <Group grow>
-                    <div>
-                      <Text size="sm" c="dimmed">
-                        {t('clients.phone', 'Phone')}
-                      </Text>
-                      <Text>{client.phone_number}</Text>
-                    </div>
-                    {client.email && (
-                      <div>
-                        <Text size="sm" c="dimmed">
-                          {t('clients.email', 'Email')}
-                        </Text>
-                        <Text>{client.email}</Text>
-                      </div>
-                    )}
-                  </Group>
-
-                  <Divider />
-
-                  <Text size="sm" fw={600}>
-                    {t('clients.history', 'Client History')}
-                  </Text>
-
-                  <Group grow>
-                    <div>
-                      <Text size="xs" c="dimmed">
-                        {t('clients.totalAccepted', 'Accepted')}
-                      </Text>
-                      <Badge color="green" size="lg">
-                        {client.total_accepted}
-                      </Badge>
-                    </div>
-                    <div>
-                      <Text size="xs" c="dimmed">
-                        {t('clients.totalCanceled', 'Canceled')}
-                      </Text>
-                      <Badge color="gray" size="lg">
-                        {client.total_canceled}
-                      </Badge>
-                    </div>
-                    <div>
-                      <Text size="xs" c="dimmed">
-                        {t('clients.totalRefused', 'Refused')}
-                      </Text>
-                      <Badge color="red" size="lg">
-                        {client.total_refused}
-                      </Badge>
-                    </div>
-                  </Group>
-
-                  {client.last_reservation_date && (
-                    <div>
-                      <Text size="xs" c="dimmed">
-                        {t('clients.lastReservation', 'Last reservation')}
-                      </Text>
-                      <Text size="sm">
-                        {new Date(client.last_reservation_date).toLocaleDateString('fr-FR')}
-                      </Text>
-                    </div>
-                  )}
-                </Stack>
-              </Card>
-            </Stack>
-          </Grid.Col>
-
-          {/* Right Column - Actions & Table Selection */}
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Stack gap="md">
-              {/* Pending - Accept Section */}
-              {isPending && (
-                <Card withBorder>
-                  <Stack gap="md">
-                    <Alert icon={<IconAlertCircle size={16} />} color="yellow">
-                      {t(
-                        'reservations.pendingAction',
-                        'This reservation is pending. Please accept or reject it.'
-                      )}
-                    </Alert>
-
-                    <Text size="lg" fw={700}>
-                      {t('reservations.acceptReservation', 'Accept Reservation')}
-                    </Text>
-                    <Divider />
-
-                    {/* Duration Selection */}
-                    <Select
-                      label={t('reservations.expectedDuration', 'Expected Duration')}
-                      description={t(
-                        'reservations.durationDescription',
-                        'How long will the table be occupied?'
-                      )}
-                      data={getDurationOptions()}
-                      value={duration.toString()}
-                      onChange={(value) => setDuration(parseInt(value || '120'))}
-                      required
-                    />
-
-                    {/* Table Selection */}
-                    <div>
-                      <Text size="sm" fw={600} mb="xs">
-                        {t('reservations.selectTable', 'Select Table')}
-                      </Text>
-
-                      {loadingTables ? (
-                        <Center p="xl">
-                          <Loader size="md" />
-                        </Center>
-                      ) : availableTables.length === 0 ? (
-                        <Alert color="red" icon={<IconAlertCircle size={16} />}>
-                          {t('tables.noAvailable', 'No available tables for this time slot')}
-                        </Alert>
-                      ) : (
-                        <Stack gap="sm">
-                          {Object.entries(tablesByZone).map(([zone, zoneTables]) => (
-                            <div key={zone}>
-                              <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb={4}>
-                                {zone}
-                              </Text>
-                              <Stack gap="xs">
-                                {zoneTables.map((tbl) => (
-                                  <Card
-                                    key={tbl.id}
-                                    withBorder
-                                    padding="sm"
-                                    style={{
-                                      cursor: tbl.is_currently_available
-                                        ? 'pointer'
-                                        : 'not-allowed',
-                                      backgroundColor:
-                                        selectedTableId === tbl.id
-                                          ? 'var(--mantine-color-blue-light)'
-                                          : undefined,
-                                      opacity: tbl.is_currently_available ? 1 : 0.6,
-                                    }}
-                                    onClick={() => {
-                                      if (tbl.is_currently_available) {
-                                        setSelectedTableId(tbl.id);
-                                      }
-                                    }}
-                                  >
-                                    <Group justify="space-between">
-                                      <div>
-                                        <Text fw={600}>{tbl.name}</Text>
-                                        <Text size="xs" c="dimmed">
-                                          {tbl.min_capacity}-{tbl.max_capacity}{' '}
-                                          {t('reservations.guests', 'guests')}
-                                        </Text>
-                                      </div>
-                                      {!tbl.is_currently_available && (
-                                        <Badge color="red" size="sm">
-                                          {t('tables.occupied', 'Occupied')}
-                                        </Badge>
-                                      )}
-                                      {selectedTableId === tbl.id && (
-                                        <Badge color="blue" size="sm">
-                                          {t('common.selected', 'Selected')}
-                                        </Badge>
-                                      )}
-                                    </Group>
-                                  </Card>
-                                ))}
-                              </Stack>
-                            </div>
-                          ))}
-                        </Stack>
-                      )}
-                    </div>
-
-                    {/* Note */}
-                    <Textarea
-                      label={t('reservations.note', 'Note (optional)')}
-                      placeholder={t('reservations.addNote', 'Add a note...')}
-                      value={note}
-                      onChange={(e) => setNote(e.currentTarget.value)}
-                      rows={3}
-                    />
-
-                    {/* Actions */}
-                    <Group justify="flex-end" mt="md">
-                      <Button
-                        color="red"
-                        variant="light"
-                        leftSection={<IconX size={16} />}
-                        onClick={handleReject}
-                        loading={updateMutation.isPending}
-                      >
-                        {t('reservations.reject', 'Reject')}
-                      </Button>
-                      <Button
-                        color="green"
-                        leftSection={<IconCheck size={16} />}
-                        onClick={handleAccept}
-                        loading={updateMutation.isPending}
-                        disabled={!selectedTableId}
-                      >
-                        {t('reservations.accept', 'Accept')}
-                      </Button>
-                    </Group>
-                  </Stack>
-                </Card>
+                  {Math.floor((reservation.duration_minutes || 120) / 60)}h{' '}
+                  {(reservation.duration_minutes || 120) % 60 > 0
+                    ? `${(reservation.duration_minutes || 120) % 60}min`
+                    : ''}
+                </Text>
               )}
 
-              {/* Cancel Option */}
-              {canCancel && !isPending && (
-                <Card withBorder>
-                  <Stack gap="md">
-                    <Text size="lg" fw={700}>
-                      {t('reservations.cancelReservation', 'Cancel Reservation')}
-                    </Text>
-                    <Divider />
-                    <Text size="sm" c="dimmed">
-                      {t(
-                        'reservations.cancelDescription',
-                        'Cancel this reservation if the client requested it or if there are issues.'
-                      )}
-                    </Text>
-                    <Button
-                      color="gray"
-                      variant="light"
-                      fullWidth
-                      onClick={handleCancel}
-                      loading={updateMutation.isPending}
-                    >
-                      {t('reservations.cancel', 'Cancel Reservation')}
-                    </Button>
-                  </Stack>
-                </Card>
+              {table && (
+                <Text size="sm">
+                  <Text component="span" fw={600}>
+                    {t('reservations.table', 'Table')}:{' '}
+                  </Text>
+                  {table.name}
+                </Text>
+              )}
+
+              {reservation.created_at && (
+                <Text size="sm">
+                  <Text component="span" fw={600}>
+                    {t('reservations.createdAt', 'Effectuée le')}:{' '}
+                  </Text>
+                  {new Date(reservation.created_at).toLocaleString('fr-FR')}
+                </Text>
+              )}
+
+              {reservation.special_request && (
+                <>
+                  <Text size="sm" fw={600} mt="xs">
+                    {t('reservations.specialRequest', 'Demande spéciale')}:
+                  </Text>
+                  <Paper p="sm" withBorder bg="gray.0">
+                    <Text size="sm">{reservation.special_request}</Text>
+                  </Paper>
+                </>
+              )}
+
+              {reservation.note && (
+                <>
+                  <Text size="sm" fw={600} mt="xs">
+                    {t('reservations.note', 'Note')}:
+                  </Text>
+                  <Paper p="sm" withBorder bg="gray.0">
+                    <Text size="sm">{reservation.note}</Text>
+                  </Paper>
+                </>
               )}
             </Stack>
-          </Grid.Col>
-        </Grid>
+          </Card>
+
+          {/* Client Information */}
+          <Card withBorder style={{ flex: 1 }}>
+            <Stack gap="sm">
+              <Text fw={700}>{t('clients.clientInfo', 'Informations du client')}</Text>
+
+              <Text size="sm">
+                <Text component="span" fw={600}>
+                  {t('clients.name', 'Nom')}:{' '}
+                </Text>
+                {client.full_name}
+              </Text>
+
+              <Text size="sm">
+                <Text component="span" fw={600}>
+                  {t('clients.phone', 'Téléphone')}:{' '}
+                </Text>
+                {client.phone_number}
+              </Text>
+
+              {client.email && (
+                <Text size="sm">
+                  <Text component="span" fw={600}>
+                    {t('clients.email', 'Email')}:{' '}
+                  </Text>
+                  {client.email}
+                </Text>
+              )}
+
+              <Group gap="xs" mt="xs">
+                <Badge color="green" size="sm">
+                  {client.total_accepted} acceptées
+                </Badge>
+                <Badge color="gray" size="sm">
+                  {client.total_canceled} annulées
+                </Badge>
+                <Badge color="red" size="sm">
+                  {client.total_refused} refusées
+                </Badge>
+              </Group>
+
+              {client.last_reservation_date && (
+                <Text size="sm">
+                  <Text component="span" fw={600}>
+                    {t('clients.lastReservation', 'Dernière réservation')}:{' '}
+                  </Text>
+                  {formatDate(client.last_reservation_date)}
+                </Text>
+              )}
+            </Stack>
+          </Card>
+        </Group>
+
+        {/* Actions Section */}
+        {isPending && (
+          <Card withBorder>
+            <Stack gap="md">
+              <Alert icon={<IconAlertCircle size={16} />} color="yellow">
+                {t(
+                  'reservations.pendingAction',
+                  "Cette réservation est en attente. Veuillez l'accepter ou la refuser."
+                )}
+              </Alert>
+
+              <Text fw={700}>{t('reservations.acceptReservation', 'Accepter la réservation')}</Text>
+
+              <Select
+                label={t('reservations.expectedDuration', 'Durée prévue')}
+                data={getDurationOptions()}
+                value={duration.toString()}
+                onChange={(value) => setDuration(Number(value))}
+              />
+
+              <Select
+                label={t('reservations.selectTable', 'Sélectionner une table')}
+                placeholder={loadingTables ? 'Chargement...' : 'Choisir une table'}
+                data={Object.entries(tablesByZone).flatMap(([zone, tables], zoneIndex) => [
+                  { value: `__zone_${zoneIndex}__`, label: zone, disabled: true },
+                  ...tables.map((t) => ({
+                    value: t.id,
+                    label: `${t.name} (${t.min_capacity}-${t.max_capacity} pers.)`,
+                  })),
+                ])}
+                value={selectedTableId}
+                onChange={(value) => setSelectedTableId(value || '')}
+                disabled={loadingTables}
+              />
+
+              <Textarea
+                label={t('reservations.note', 'Note (facultative)')}
+                placeholder={t('reservations.addNote', 'Ajouter une note...')}
+                value={note}
+                onChange={(e) => setNote(e.currentTarget.value)}
+                rows={3}
+              />
+
+              <Group>
+                <Button
+                  leftSection={<IconCheck size={16} />}
+                  color="green"
+                  onClick={handleAccept}
+                  loading={updateMutation.isPending}
+                  disabled={!selectedTableId}
+                >
+                  {t('reservations.accept', 'Accepter')}
+                </Button>
+                <Button
+                  leftSection={<IconX size={16} />}
+                  color="red"
+                  variant="light"
+                  onClick={handleReject}
+                  loading={updateMutation.isPending}
+                >
+                  {t('reservations.reject', 'Refuser')}
+                </Button>
+              </Group>
+            </Stack>
+          </Card>
+        )}
+
+        {canCancel && !isPending && (
+          <Card withBorder>
+            <Group justify="space-between">
+              <Text fw={600}>{t('reservations.actions', 'Actions')}</Text>
+              <Button color="gray" variant="light" onClick={handleCancel}>
+                {t('reservations.cancel', 'Annuler la réservation')}
+              </Button>
+            </Group>
+          </Card>
+        )}
       </Stack>
     </Box>
   );

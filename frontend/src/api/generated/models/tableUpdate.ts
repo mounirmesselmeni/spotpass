@@ -14,7 +14,7 @@ export type TableUpdate = {
   name?: string | null;
   description?: string | null;
   type?: TableType | null;
-  is_available?: boolean | null;
+  is_on_service?: boolean | null;
   min_capacity?: number | null;
   max_capacity?: number | null;
   zone_id?: string | null;

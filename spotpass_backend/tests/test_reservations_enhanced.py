@@ -535,6 +535,44 @@ class TestReservationSorting:
         assert data[1]["status"] == "canceled"
         assert data[2]["status"] == "pending"
 
+    def test_sort_by_created_at(self, client: TestClient, session: Session, auth_headers_staff):
+        """Test sorting by created_at"""
+        establishment = EstablishmentFactory(session=session)
+
+        # Create reservations with a small delay to ensure different created_at times
+        import time
+
+        ReservationFactory(session=session, establishment=establishment, reference="REF001")
+        time.sleep(0.01)  # Small delay
+        ReservationFactory(session=session, establishment=establishment, reference="REF002")
+        time.sleep(0.01)  # Small delay
+        ReservationFactory(session=session, establishment=establishment, reference="REF003")
+        session.commit()
+
+        response = client.get(
+            "/api/staff/reservations/?sort_by=created_at&sort_order=asc", headers=auth_headers_staff
+        )
+        assert response.status_code == 200
+        data = extract_items(response.json())
+
+        # Should be sorted by created_at ascending
+        assert data[0]["reference"] == "REF001"
+        assert data[1]["reference"] == "REF002"
+        assert data[2]["reference"] == "REF003"
+
+        # Test descending order
+        response = client.get(
+            "/api/staff/reservations/?sort_by=created_at&sort_order=desc",
+            headers=auth_headers_staff,
+        )
+        assert response.status_code == 200
+        data = extract_items(response.json())
+
+        # Should be sorted by created_at descending
+        assert data[0]["reference"] == "REF003"
+        assert data[1]["reference"] == "REF002"
+        assert data[2]["reference"] == "REF001"
+
     def test_invalid_sort_field(self, client: TestClient, session: Session, auth_headers_staff):
         """Test that invalid sort field returns error"""
         response = client.get(
