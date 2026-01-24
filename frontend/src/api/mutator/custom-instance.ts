@@ -4,6 +4,10 @@ import { useAuthStore } from '@/stores/auth.store';
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
+// Track consecutive 401 errors to prevent infinite loops
+let consecutive401Count = 0;
+const MAX_CONSECUTIVE_401 = 3;
+
 export const axios = Axios.create({
   baseURL: BACKEND_URL,
 });
@@ -23,51 +27,85 @@ axios.interceptors.request.use(
 
 // Response interceptor to handle errors and token refresh
 axios.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Reset 401 counter on successful response
+    if (consecutive401Count > 0) {
+      consecutive401Count = 0;
+    }
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
     // Handle 401 errors (unauthorized)
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+    if (error.response?.status === 401) {
+      consecutive401Count++;
 
-      // Get auth state from Zustand store (single source of truth)
-      const { refreshToken, user, updateAccessToken, logout } = useAuthStore.getState();
-
-      if (refreshToken) {
-        try {
-          // Determine which refresh endpoint to use based on user type
-          const userType = user?.user_type || 'staff';
-          const refreshEndpoint =
-            userType === 'bo' ? '/api/bo/auth/refresh' : '/api/staff/auth/refresh';
-
-          // Call refresh token endpoint
-          const refreshResponse = await Axios.post(`${BACKEND_URL}${refreshEndpoint}`, {
-            refresh_token: refreshToken,
-          });
-
-          const { access_token, expires_at } = refreshResponse.data;
-
-          // Update Zustand store with new access token
-          updateAccessToken(access_token, expires_at);
-
-          // Update the original request with new token
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${access_token}`;
-          }
-
-          // Retry the original request
-          return axios(originalRequest);
-        } catch (refreshError) {
-          // Refresh failed, logout and redirect to login
-          logout();
-          window.location.href = '/login';
-          return Promise.reject(refreshError);
-        }
-      } else {
-        // No refresh token, logout and redirect to login
+      // If we have too many consecutive 401s, logout immediately
+      if (consecutive401Count >= MAX_CONSECUTIVE_401) {
+        console.log('Too many consecutive 401 errors, logging out');
+        const { logout } = useAuthStore.getState();
         logout();
         window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
+      // Only retry once per request
+      if (!originalRequest._retry) {
+        originalRequest._retry = true;
+
+        // Get auth state from Zustand store (single source of truth)
+        const { refreshToken, user, updateAccessToken, logout, isTokenExpired } =
+          useAuthStore.getState();
+
+        // Check if token is already expired locally
+        if (isTokenExpired()) {
+          console.log('Token expired locally, logging out');
+          logout();
+          window.location.href = '/login';
+          return Promise.reject(error);
+        }
+
+        if (refreshToken) {
+          try {
+            // Determine which refresh endpoint to use based on user type
+            const userType = user?.user_type || 'staff';
+            const refreshEndpoint =
+              userType === 'bo' ? '/api/bo/auth/refresh' : '/api/staff/auth/refresh';
+
+            // Call refresh token endpoint
+            const refreshResponse = await Axios.post(`${BACKEND_URL}${refreshEndpoint}`, {
+              refresh_token: refreshToken,
+            });
+
+            const { access_token, expires_at } = refreshResponse.data;
+
+            // Update Zustand store with new access token
+            updateAccessToken(access_token, expires_at);
+
+            // Reset 401 counter on successful refresh
+            consecutive401Count = 0;
+
+            // Update the original request with new token
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${access_token}`;
+            }
+
+            // Retry the original request
+            return axios(originalRequest);
+          } catch (refreshError) {
+            // Refresh failed, logout and redirect to login
+            console.log('Token refresh failed, logging out');
+            logout();
+            window.location.href = '/login';
+            return Promise.reject(refreshError);
+          }
+        } else {
+          // No refresh token, logout and redirect to login
+          console.log('No refresh token available, logging out');
+          logout();
+          window.location.href = '/login';
+        }
       }
     }
 

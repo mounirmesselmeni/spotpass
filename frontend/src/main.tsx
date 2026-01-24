@@ -8,6 +8,8 @@ import { ModalsProvider } from '@mantine/modals';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { useThemeStore } from './stores/theme.store';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { useLanguageStore } from './stores/language.store';
 import { theme } from './theme';
 import './i18n/config';
 
@@ -30,7 +32,7 @@ const queryClient = new QueryClient({
   },
 });
 
-function Root() {
+export function Root() {
   const { colorScheme } = useThemeStore();
 
   return (

@@ -2,13 +2,9 @@ import {
   useCreateClientApiStaffClientsPost,
   useListClientsApiStaffClientsGet,
 } from '@/api/generated/staff-clients/staff-clients';
-import {
-  useCreateReservationApiStaffReservationsPost,
-  useGetAvailableTablesApiStaffReservationsAvailableTablesPost,
-} from '@/api/generated/staff-reservations/staff-reservations';
+import { useCreateReservationApiStaffReservationsPost } from '@/api/generated/staff-reservations/staff-reservations';
 import {
   Alert,
-  Badge,
   Button,
   Card,
   Combobox,
@@ -18,8 +14,6 @@ import {
   LoadingOverlay,
   Modal,
   NumberInput,
-  Paper,
-  Select,
   Stack,
   Stepper,
   Text,
@@ -36,6 +30,7 @@ import { IconCalendar, IconCheck, IconClock, IconInfoCircle, IconUsers } from '@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { formatDate } from '@/utils/dateUtils';
 
 interface ReservationWizardProps {
@@ -46,9 +41,9 @@ interface ReservationWizardProps {
 
 export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWizardProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [active, setActive] = useState(0);
-  const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [clientSearchValue, setClientSearchValue] = useState('');
   const [debouncedClientSearch] = useDebouncedValue(clientSearchValue, 300);
@@ -67,7 +62,6 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
       reservation_time: '',
       number_of_guests: 2,
       special_request: '',
-      table_id: null as number | null,
       // New client fields
       full_name: '',
       phone_number: '',
@@ -105,30 +99,6 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
       ? `${form.values.reservation_date.toISOString().split('T')[0]}T${form.values.reservation_time}:00`
       : undefined;
 
-  const availableTablesMutation = useGetAvailableTablesApiStaffReservationsAvailableTablesPost();
-
-  // Trigger mutation when needed
-  const loadingTables = availableTablesMutation.isPending;
-  const availableTables = availableTablesMutation.data?.data;
-
-  // Effect to load tables when step 2 is complete
-  if (
-    active === 2 &&
-    reservationDateTime &&
-    form.values.reservation_date &&
-    form.values.reservation_date instanceof Date &&
-    !availableTablesMutation.isPending &&
-    !availableTablesMutation.data
-  ) {
-    availableTablesMutation.mutate({
-      data: {
-        reservation_date: form.values.reservation_date.toISOString().split('T')[0],
-        reservation_time: form.values.reservation_time,
-        number_of_guests: form.values.number_of_guests,
-      },
-    });
-  }
-
   const createReservationMutation = useCreateReservationApiStaffReservationsPost();
 
   const handleNext = () => {
@@ -151,10 +121,8 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
       const timeErrors = form.validateField('reservation_time');
       const guestsErrors = form.validateField('number_of_guests');
       if (!dateErrors.hasError && !timeErrors.hasError && !guestsErrors.hasError) {
-        setActive(2);
+        handleSubmit();
       }
-    } else if (active === 2 && selectedTable) {
-      handleSubmit();
     }
   };
 
@@ -191,7 +159,7 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
         timeValue = timeValue.length === 5 ? `${timeValue}:00` : timeValue;
       }
 
-      await createReservationMutation.mutateAsync({
+      const reservationResponse = await createReservationMutation.mutateAsync({
         data: {
           client_id: clientId,
           reservation_date:
@@ -201,7 +169,6 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
           reservation_time: timeValue, // Format: HH:MM:SS
           number_of_guests: form.values.number_of_guests,
           special_request: form.values.special_request || undefined,
-          table_id: selectedTable!,
         },
       });
 
@@ -214,10 +181,14 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
 
       form.reset();
       setActive(0);
-      setSelectedTable(null);
       setShowNewClientForm(false);
       onClose();
       onSuccess?.();
+
+      // Navigate to the newly created reservation details
+      if (reservationResponse.data && 'id' in reservationResponse.data) {
+        navigate(`/reservations/${reservationResponse.data.id}`);
+      }
     } catch (error) {
       notifications.show({
         title: t('common.error'),
@@ -230,7 +201,6 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
   const handleClose = () => {
     form.reset();
     setActive(0);
-    setSelectedTable(null);
     setShowNewClientForm(false);
     onClose();
   };
@@ -464,79 +434,6 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
           </Stack>
         </Stepper.Step>
 
-        {/* Step 3: Select Table */}
-        <Stepper.Step
-          label={t('reservations.table')}
-          description={t('reservations.selectTable')}
-          icon={<IconCalendar size={18} aria-hidden="true" />}
-          aria-label="Étape 3: Sélectionner une table"
-        >
-          <Stack gap="md" mt="xl">
-            <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
-              Sélectionnez une table disponible pour cette réservation
-            </Alert>
-
-            {loadingTables ? (
-              <Text ta="center" c="dimmed">
-                {t('common.loading')}
-              </Text>
-            ) : availableTables && Array.isArray(availableTables) && availableTables.length > 0 ? (
-              <Grid>
-                {availableTables.map((table: any) => (
-                  <Grid.Col key={table.id} span={{ base: 12, sm: 6, md: 4 }}>
-                    <Card
-                      withBorder
-                      padding="md"
-                      style={{
-                        cursor: 'pointer',
-                        border:
-                          selectedTable === table.id?.toString()
-                            ? '2px solid var(--mantine-color-blue-6)'
-                            : undefined,
-                        backgroundColor:
-                          selectedTable === table.id?.toString()
-                            ? 'var(--mantine-color-blue-0)'
-                            : undefined,
-                      }}
-                      onClick={() => setSelectedTable(table.id?.toString() || null)}
-                    >
-                      <Stack gap="xs">
-                        <Group justify="space-between">
-                          <Text fw={600} size="lg">
-                            {table.name}
-                          </Text>
-                          {selectedTable === table.id?.toString() && (
-                            <Badge color="blue" variant="filled">
-                              {t('common.selected')}
-                            </Badge>
-                          )}
-                        </Group>
-                        <Text size="sm" c="dimmed">
-                          {table.zone?.name || t('tables.noZone')}
-                        </Text>
-                        <Group gap="xs">
-                          <Badge variant="light">
-                            {table.min_capacity}-{table.max_capacity} {t('reservations.guests')}
-                          </Badge>
-                          <Badge color="green" variant="light">
-                            {t('tables.available')}
-                          </Badge>
-                        </Group>
-                      </Stack>
-                    </Card>
-                  </Grid.Col>
-                ))}
-              </Grid>
-            ) : (
-              <Paper p="xl" withBorder>
-                <Text ta="center" c="dimmed">
-                  {t('tables.noAvailable')}
-                </Text>
-              </Paper>
-            )}
-          </Stack>
-        </Stepper.Step>
-
         <Stepper.Completed>
           <Stack gap="md" mt="xl" align="center">
             <IconCheck size={64} color="green" />
@@ -546,23 +443,18 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
       </Stepper>
 
       <Group justify="space-between" mt="xl">
-        {active > 0 && active < 3 && (
+        {active > 0 && active < 2 && (
           <Button variant="default" onClick={handleBack}>
             {t('common.back')}
           </Button>
         )}
-        {active < 2 && (
+        {active < 1 && (
           <Button onClick={handleNext} ml="auto">
-            Suivant
+            {t('common.next')}
           </Button>
         )}
-        {active === 2 && (
-          <Button
-            onClick={handleNext}
-            ml="auto"
-            disabled={!selectedTable}
-            loading={createReservationMutation.isPending}
-          >
+        {active === 1 && (
+          <Button onClick={handleNext} ml="auto" loading={createReservationMutation.isPending}>
             {t('reservations.createReservation')}
           </Button>
         )}

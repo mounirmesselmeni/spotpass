@@ -109,21 +109,21 @@ export function TableAvailabilityGrid({ onTableSelect }: TableAvailabilityGridPr
       <Paper p="md" withBorder>
         <Stack gap="md">
           <Group justify="space-between">
-            <Title order={4}>Disponibilité des tables</Title>
+            <Title order={4}>{t('tables.availabilityTitle')}</Title>
             <Group gap="xs">
               <Button
                 variant={viewMode === 'available' ? 'filled' : 'light'}
                 size="xs"
                 onClick={() => setViewMode('available')}
               >
-                Disponibles
+                {t('tables.availables')}
               </Button>
               <Button
                 variant={viewMode === 'all' ? 'filled' : 'light'}
                 size="xs"
                 onClick={() => setViewMode('all')}
               >
-                Toutes
+                {t('common.all')}
               </Button>
               <ActionIcon
                 variant="light"

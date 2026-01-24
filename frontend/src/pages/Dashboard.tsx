@@ -91,7 +91,7 @@ export function DashboardPage() {
           transition={{ duration: 0.7 }}
         >
           <Stack gap="lg">
-            <SectionBadge pulse>Overview</SectionBadge>
+            <SectionBadge pulse>{t('dashboard.overview')}</SectionBadge>
             <Title
               order={1}
               style={{
@@ -101,7 +101,7 @@ export function DashboardPage() {
                 letterSpacing: '-0.02em',
               }}
             >
-              {t('dashboard.title')}, <GradientText>Welcome Back</GradientText>
+              {t('dashboard.title')}, <GradientText>{t('dashboard.welcomeBack')}</GradientText>
             </Title>
             <Text size="lg" c="dimmed" style={{ maxWidth: 600 }}>
               {t('dashboard.welcome')}

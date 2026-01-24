@@ -82,7 +82,7 @@ export function LoginPage() {
                   marginBottom: 16,
                 }}
               >
-                Bienvenue sur <GradientText>SpotPass</GradientText>
+                {t('dashboard.welcomePrefix')} <GradientText>{t('dashboard.appName')}</GradientText>
               </Title>
               <Text size="lg" c="dimmed">
                 Connectez-vous pour gérer vos réservations de restaurant

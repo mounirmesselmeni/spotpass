@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/stores/auth.store';
+import { useLanguageStore } from '@/stores/language.store';
 import { AppShell, Avatar, Box, Burger, Group, Image, Menu, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
@@ -9,22 +10,26 @@ import {
   IconLogout,
   IconTable,
   IconUsers,
+  IconLanguage,
 } from '@tabler/icons-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-
-const navigation = [
-  { label: 'Dashboard', icon: IconDashboard, path: '/' },
-  { label: 'Reservations', icon: IconCalendar, path: '/reservations' },
-  { label: 'Clients', icon: IconUsers, path: '/clients' },
-  { label: 'Tables', icon: IconTable, path: '/tables' },
-  { label: 'Zones', icon: IconLayoutGrid, path: '/zones' },
-];
+import { useTranslation } from 'react-i18next';
 
 export function DashboardLayout() {
   const [opened, { toggle, close }] = useDisclosure();
   const { user, logout } = useAuthStore();
+  const { setLanguage } = useLanguageStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t, i18n } = useTranslation();
+
+  const navigation = [
+    { label: t('nav.dashboard'), icon: IconDashboard, path: '/' },
+    { label: t('nav.reservations'), icon: IconCalendar, path: '/reservations' },
+    { label: t('nav.clients'), icon: IconUsers, path: '/clients' },
+    { label: t('nav.tables'), icon: IconTable, path: '/tables' },
+    { label: t('nav.zones'), icon: IconLayoutGrid, path: '/zones' },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -34,6 +39,10 @@ export function DashboardLayout() {
   const handleNavClick = (path: string) => {
     navigate(path);
     close();
+  };
+
+  const handleLanguageChange = (language: string) => {
+    setLanguage(language);
   };
 
   return (
@@ -92,6 +101,22 @@ export function DashboardLayout() {
                     {user?.email || ''}
                   </Text>
                 </Menu.Label>
+                <Menu.Divider />
+                <Menu.Label>{t('language.switch')}</Menu.Label>
+                <Menu.Item
+                  leftSection={<IconLanguage size={16} />}
+                  onClick={() => handleLanguageChange('fr')}
+                  disabled={i18n.language === 'fr'}
+                >
+                  {t('language.french')}
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<IconLanguage size={16} />}
+                  onClick={() => handleLanguageChange('en')}
+                  disabled={i18n.language === 'en'}
+                >
+                  {t('language.english')}
+                </Menu.Item>
                 <Menu.Divider />
                 <Menu.Item
                   leftSection={<IconLogout size={16} />}

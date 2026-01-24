@@ -245,7 +245,7 @@ export function ReservationCalendar({ onReservationClick }: ReservationCalendarP
         <Paper p="md" withBorder>
           <Stack gap="md">
             <Group justify="space-between">
-              <Title order={4}>Calendrier</Title>
+              <Title order={4}>{t('reservations.calendar')}</Title>
               <Group gap={4}>
                 <ActionIcon
                   variant="light"
@@ -292,7 +292,7 @@ export function ReservationCalendar({ onReservationClick }: ReservationCalendarP
             <Group justify="space-between" align="flex-start">
               <div>
                 <Title order={4}>
-                  Réservations du{' '}
+                  {t('reservations.reservationsOf')}{' '}
                   {selectedDate
                     ? new Date(selectedDate).toLocaleDateString('fr-FR', {
                         weekday: 'long',

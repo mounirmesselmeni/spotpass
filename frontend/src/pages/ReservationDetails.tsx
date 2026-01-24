@@ -27,7 +27,7 @@ import {
   IconUsers,
   IconX,
 } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDate } from '@/utils/dateUtils';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -67,11 +67,45 @@ export function ReservationDetailsPage() {
 
   const updateMutation = useUpdateReservationApiStaffReservationsReservationIdPatch();
 
-  useEffect(() => {
-    fetchDetails();
-  }, [id]);
+  const fetchAvailableTables = useCallback(
+    async (reservationDetails: ReservationDetails) => {
+      setLoadingTables(true);
+      try {
+        const reservation = reservationDetails.reservation;
+        const reservationTime = reservation.reservation_time || '19:00';
+        const reservationDate = reservation.reservation_date;
 
-  const fetchDetails = async () => {
+        const response = await axios.post('/api/staff/reservations/available-tables', {
+          reservation_date: reservationDate,
+          reservation_time: reservationTime,
+          number_of_guests: reservation.number_of_guests,
+          duration_minutes: reservation.duration_minutes || 120,
+        });
+
+        setAvailableTables(response.data);
+
+        // Pre-select existing table if assigned, otherwise first available
+        if (reservationDetails.table) {
+          // Reservation already has a table assigned
+          setSelectedTableId(reservationDetails.table.id);
+        } else if (response.data.length > 0) {
+          // No existing table, select first available
+          setSelectedTableId(response.data[0].id);
+        }
+      } catch (error) {
+        notifications.show({
+          title: t('common.error'),
+          message: t('reservations.errorLoadingTables'),
+          color: 'red',
+        });
+      } finally {
+        setLoadingTables(false);
+      }
+    },
+    [t]
+  );
+
+  const fetchDetails = useCallback(async () => {
     setLoading(true);
     try {
       const response = await axios.get(`/api/staff/reservations/${id}/details`);
@@ -91,37 +125,11 @@ export function ReservationDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate, t, fetchAvailableTables]);
 
-  const fetchAvailableTables = async (reservationDetails: ReservationDetails) => {
-    setLoadingTables(true);
-    try {
-      const reservation = reservationDetails.reservation;
-      const reservationTime = reservation.reservation_time || '19:00';
-      const reservationDate = reservation.reservation_date;
-
-      const response = await axios.post('/api/staff/reservations/available-tables', {
-        reservation_date: reservationDate,
-        reservation_time: reservationTime,
-        number_of_guests: reservation.number_of_guests,
-        duration_minutes: reservation.duration_minutes || 120,
-      });
-
-      setAvailableTables(response.data);
-
-      if (response.data.length > 0) {
-        setSelectedTableId(response.data[0].id);
-      }
-    } catch (error) {
-      notifications.show({
-        title: t('common.error'),
-        message: t('reservations.errorLoadingTables'),
-        color: 'red',
-      });
-    } finally {
-      setLoadingTables(false);
-    }
-  };
+  useEffect(() => {
+    fetchDetails();
+  }, [fetchDetails]);
 
   const handleAccept = () => {
     if (!selectedTableId) {

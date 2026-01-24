@@ -305,9 +305,9 @@ export function ReservationsPage() {
             <Button
               leftSection={<IconPlus size={16} />}
               onClick={openWizard}
-              aria-label="Nouvelle Réservation"
+              aria-label={t('reservations.newReservation')}
             >
-              Nouvelle Réservation
+              {t('reservations.newReservation')}
             </Button>
           </Group>
         </Group>
