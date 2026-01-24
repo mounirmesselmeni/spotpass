@@ -123,7 +123,7 @@ export function DashboardLayout() {
                   onClick={handleLogout}
                   color="red"
                 >
-                  Logout
+                  {t('common.logout')}
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
