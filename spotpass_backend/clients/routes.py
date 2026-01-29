@@ -2,7 +2,7 @@
 
 import uuid as uuid_lib
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import not_
 from sqlmodel import select
 
@@ -22,7 +22,7 @@ def list_clients(
     page_size: int = 20,
     sort_by: str = "name",
     sort_order: str = "asc",
-    label_filter: str | None = None,
+    label_filter: list[str] | None = Query(None),
     search: str | None = None,
 ):
     """
@@ -32,7 +32,7 @@ def list_clients(
     - **page_size**: Number of items per page (max 1000), default: 20
     - **sort_by**: Sort field (name, email, phone, created_at), default: name
     - **sort_order**: Sort order (asc, desc), default: asc
-    - **label_filter**: Filter by client label (vip, blacklisted, regular, all)
+    - **label_filter**: Filter by client labels (vip, blacklisted, regular). Can be multiple values.
     - **search**: Search query to filter clients by name, phone, or email
     """
     from sqlmodel import asc, desc, func
@@ -59,21 +59,31 @@ def list_clients(
         )
 
     # Validate label filter
-    if label_filter and label_filter not in ["vip", "blacklisted", "regular", "all"]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="label_filter must be one of: vip, blacklisted, regular, all",
-        )
+    valid_labels = ["vip", "blacklisted", "regular"]
+    if label_filter:
+        for label in label_filter:
+            if label not in valid_labels:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"label_filter values must be one of: {', '.join(valid_labels)}",
+                )
 
     statement = select(Client)
 
     # Apply label filter
-    if label_filter == "vip":
-        statement = statement.where(Client.is_vip)
-    elif label_filter == "blacklisted":
-        statement = statement.where(Client.is_blacklisted)
-    elif label_filter == "regular":
-        statement = statement.where(not_(Client.is_vip) & not_(Client.is_blacklisted))
+    if label_filter:
+        from sqlalchemy import or_
+
+        conditions = []
+        for label in label_filter:
+            if label == "vip":
+                conditions.append(Client.is_vip)
+            elif label == "blacklisted":
+                conditions.append(Client.is_blacklisted)
+            elif label == "regular":
+                conditions.append(not_(Client.is_vip) & not_(Client.is_blacklisted))
+        if conditions:
+            statement = statement.where(or_(*conditions))
 
     # Apply search filter
     if search:

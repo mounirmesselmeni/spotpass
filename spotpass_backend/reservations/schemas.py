@@ -193,6 +193,7 @@ class TableAvailabilityRead(BaseModel):
 
     id: UUID
     name: str
+    type: str | None = None
     min_capacity: int
     max_capacity: int
     zone_name: str | None = None

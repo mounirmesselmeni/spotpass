@@ -115,6 +115,25 @@ class TestTableDetail:
         data = response.json()
         assert data["is_on_service"] is False
 
+    def test_update_table_zone(self, client: TestClient, session: Session, auth_headers_staff):
+        """Test updating table zone"""
+        zone1 = ZoneFactory(session=session)
+        zone2 = ZoneFactory(session=session)
+        table = TableFactory(session=session, zone_id=zone1.id)
+        session.commit()
+
+        update_data = {"zone_id": str(zone2.uuid)}
+
+        response = client.patch(
+            f"/api/staff/tables/{table.uuid}",
+            json=update_data,
+            headers=auth_headers_staff,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["zone"]["id"] == str(zone2.uuid)
+
     def test_delete_table(self, client: TestClient, session: Session, auth_headers_staff):
         """Test deleting a table"""
         table = TableFactory(session=session)

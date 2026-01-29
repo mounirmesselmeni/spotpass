@@ -157,6 +157,7 @@ class TableRead(TableBase):
                 "min_capacity": obj.min_capacity,
                 "max_capacity": obj.max_capacity,
                 "created_at": obj.created_at,
+                "zone": ZoneRead.model_validate(obj.zone) if obj.zone else None,
             }
             return cls.model_construct(**data)
         return super().model_validate(obj, *args, **kwargs)

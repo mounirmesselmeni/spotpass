@@ -7,6 +7,7 @@ import { ReservationsPage } from './pages/Reservations';
 import { ReservationDetailsPage } from './pages/ReservationDetails';
 import { ClientsPage } from './pages/Clients';
 import { TablesPage } from './pages/Tables';
+import { TableAvailabilityPage } from './pages/TableAvailability';
 import { ZonesPage } from './pages/Zones';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,7 @@ function App() {
         <Route path="reservations/:id" element={<ReservationDetailsPage />} />
         <Route path="clients" element={<ClientsPage />} />
         <Route path="tables" element={<TablesPage />} />
+        <Route path="tables/availability" element={<TableAvailabilityPage />} />
         <Route path="zones" element={<ZonesPage />} />
       </Route>
 

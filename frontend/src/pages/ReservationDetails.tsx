@@ -1,7 +1,8 @@
 import { useUpdateReservationApiStaffReservationsReservationIdPatch } from '@/api/generated/staff-reservations/staff-reservations';
 import { axios } from '@/api/mutator/custom-instance';
+import { StatusBadge } from '@/components/StatusBadge';
+import { formatDate } from '@/utils/dateUtils';
 import {
-  Alert,
   Badge,
   Box,
   Button,
@@ -18,21 +19,11 @@ import {
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import {
-  IconAlertCircle,
-  IconArrowLeft,
-  IconCalendar,
-  IconCheck,
-  IconClock,
-  IconUsers,
-  IconX,
-} from '@tabler/icons-react';
+import { IconArrowLeft, IconCheck, IconX } from '@tabler/icons-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDate } from '@/utils/dateUtils';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { StatusBadge } from '@/components/StatusBadge';
 
 interface ReservationDetails {
   reservation: any;
@@ -344,11 +335,16 @@ export function ReservationDetailsPage() {
             >
               {t('common.back', 'Back')}
             </Button>
-            <Title order={2}>{t('reservations.reservation', 'Réservation')}</Title>
+            <Group gap="sm" align="center">
+              <Title order={2}>
+                {t('reservations.reservationTitle', 'Reservation #')}
+                {reservation.reference}
+              </Title>
+              <StatusBadge status={reservation.status} size="lg">
+                {String(t(`reservations.${reservation.status}`, reservation.status))}
+              </StatusBadge>
+            </Group>
           </Group>
-          <StatusBadge status={reservation.status} size="lg">
-            {String(t(`reservations.${reservation.status}`, reservation.status))}
-          </StatusBadge>
         </Group>
 
         {/* Main Content - Horizontal Layout */}
@@ -450,6 +446,16 @@ export function ReservationDetailsPage() {
                   {t('clients.name', 'Nom')}:{' '}
                 </Text>
                 {client.full_name}
+                {client.is_vip && (
+                  <Badge color="yellow" size="xs" ml="xs">
+                    {t('clients.vip', 'VIP')}
+                  </Badge>
+                )}
+                {client.is_blacklisted && (
+                  <Badge color="red" size="xs" ml="xs">
+                    {t('clients.blacklisted', 'Blacklisté')}
+                  </Badge>
+                )}
               </Text>
 
               <Text size="sm">
@@ -496,13 +502,6 @@ export function ReservationDetailsPage() {
         {isPending && (
           <Card withBorder>
             <Stack gap="md">
-              <Alert icon={<IconAlertCircle size={16} />} color="yellow">
-                {t(
-                  'reservations.pendingAction',
-                  "Cette réservation est en attente. Veuillez l'accepter ou la refuser."
-                )}
-              </Alert>
-
               <Text fw={700}>{t('reservations.acceptReservation', 'Accepter la réservation')}</Text>
 
               <Select
@@ -561,12 +560,17 @@ export function ReservationDetailsPage() {
 
         {canCancel && !isPending && (
           <Card withBorder>
-            <Group justify="space-between">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <Text fw={600}>{t('reservations.actions', 'Actions')}</Text>
-              <Button color="gray" variant="light" onClick={handleCancel}>
+              <Button
+                color="gray"
+                variant="light"
+                onClick={handleCancel}
+                style={{ alignSelf: 'flex-start' }}
+              >
                 {t('reservations.cancel', 'Annuler la réservation')}
               </Button>
-            </Group>
+            </div>
           </Card>
         )}
       </Stack>

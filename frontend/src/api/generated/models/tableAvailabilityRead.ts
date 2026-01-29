@@ -12,6 +12,7 @@
 export type TableAvailabilityRead = {
   id: string;
   name: string;
+  type?: string | null;
   min_capacity: number;
   max_capacity: number;
   zone_name?: string | null;

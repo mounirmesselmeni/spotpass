@@ -37,7 +37,7 @@ export function ZonesPage() {
 
   const { data: zonesResponse, isLoading } = useListZonesApiStaffZonesGet({
     sort_by: 'created_at',
-    sort_order: 'asc',
+    sort_order: 'desc',
   });
   const zones = zonesResponse?.data;
   const createZoneMutation = useCreateZoneApiStaffZonesPost();
@@ -158,7 +158,6 @@ export function ZonesPage() {
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>{t('zones.name')}</Table.Th>
-                  <Table.Th>{t('zones.createdAt')}</Table.Th>
                   <Table.Th>{t('zones.actions')}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
@@ -167,14 +166,6 @@ export function ZonesPage() {
                   filteredZones.map((zone) => (
                     <Table.Tr key={zone.id}>
                       <Table.Td>{zone.name}</Table.Td>
-                      <Table.Td>
-                        <div>
-                          <Text size="sm">{formatDateTimeParts(zone.created_at).date}</Text>
-                          <Text size="xs" c="dimmed">
-                            {formatDateTimeParts(zone.created_at).time}
-                          </Text>
-                        </div>
-                      </Table.Td>
                       <Table.Td>
                         <Group gap="xs">
                           <ActionIcon

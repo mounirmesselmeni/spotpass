@@ -6,14 +6,14 @@ import {
   IconCalendar,
   IconChevronDown,
   IconDashboard,
+  IconLanguage,
   IconLayoutGrid,
   IconLogout,
   IconTable,
   IconUsers,
-  IconLanguage,
 } from '@tabler/icons-react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 export function DashboardLayout() {
   const [opened, { toggle, close }] = useDisclosure();
@@ -27,7 +27,15 @@ export function DashboardLayout() {
     { label: t('nav.dashboard'), icon: IconDashboard, path: '/' },
     { label: t('nav.reservations'), icon: IconCalendar, path: '/reservations' },
     { label: t('nav.clients'), icon: IconUsers, path: '/clients' },
-    { label: t('nav.tables'), icon: IconTable, path: '/tables' },
+    {
+      label: t('nav.tables'),
+      icon: IconTable,
+      path: '/tables',
+      submenu: [
+        { label: t('tables.list', 'List'), path: '/tables' },
+        { label: t('tables.occupation', 'Availability'), path: '/tables/availability' },
+      ],
+    },
     { label: t('nav.zones'), icon: IconLayoutGrid, path: '/zones' },
   ];
 
@@ -134,29 +142,73 @@ export function DashboardLayout() {
       <AppShell.Navbar p="md" style={{ background: '#FFFFFF', borderRight: '1px solid #E2E8F0' }}>
         <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {navigation.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive =
+              location.pathname === item.path ||
+              (item.submenu && item.submenu.some((sub) => location.pathname === sub.path));
             return (
-              <Box
-                key={item.path}
-                onClick={() => handleNavClick(item.path)}
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: 12,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  background: isActive
-                    ? 'linear-gradient(135deg, rgba(0,82,255,0.1), rgba(77,124,255,0.05))'
-                    : 'transparent',
-                  border: isActive ? '1px solid rgba(0,82,255,0.2)' : '1px solid transparent',
-                  color: isActive ? '#0052FF' : '#64748B',
-                  fontWeight: isActive ? 600 : 500,
-                  transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-                }}
-              >
-                <item.icon size={20} strokeWidth={1.5} />
-                <Text size="sm">{item.label}</Text>
+              <Box key={item.path}>
+                <Box
+                  onClick={() => handleNavClick(item.submenu ? item.submenu[0].path : item.path)}
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    background: isActive
+                      ? 'linear-gradient(135deg, rgba(0,82,255,0.1), rgba(77,124,255,0.05))'
+                      : 'transparent',
+                    border: isActive ? '1px solid rgba(0,82,255,0.2)' : '1px solid transparent',
+                    color: isActive ? '#0052FF' : '#64748B',
+                    fontWeight: isActive ? 600 : 500,
+                    transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                >
+                  <item.icon size={20} strokeWidth={1.5} />
+                  <Text size="sm">{item.label}</Text>
+                  {item.submenu && <IconChevronDown size={16} style={{ marginLeft: 'auto' }} />}
+                </Box>
+                {item.submenu && (
+                  <Box
+                    style={{
+                      marginLeft: 20,
+                      marginTop: 4,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 2,
+                    }}
+                  >
+                    {item.submenu.map((subItem) => {
+                      const isSubActive = location.pathname === subItem.path;
+                      return (
+                        <Box
+                          key={subItem.path}
+                          onClick={() => handleNavClick(subItem.path)}
+                          style={{
+                            padding: '8px 16px',
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            background: isSubActive
+                              ? 'linear-gradient(135deg, rgba(0,82,255,0.1), rgba(77,124,255,0.05))'
+                              : 'transparent',
+                            border: isSubActive
+                              ? '1px solid rgba(0,82,255,0.2)'
+                              : '1px solid transparent',
+                            color: isSubActive ? '#0052FF' : '#64748B',
+                            fontWeight: isSubActive ? 600 : 500,
+                            transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+                          }}
+                        >
+                          <Text size="sm">{subItem.label}</Text>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                )}
               </Box>
             );
           })}

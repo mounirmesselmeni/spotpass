@@ -238,7 +238,8 @@ paths:
 
         - **sort_order**: Sort order (asc, desc), default: asc
 
-        - **label_filter**: Filter by client label (vip, blacklisted, regular, all)
+        - **label_filter**: Filter by client labels (vip, blacklisted, regular). Can
+        be multiple values.
 
         - **search**: Search query to filter clients by name, phone, or email'
       operationId: list_clients_api_staff_clients__get
@@ -278,7 +279,9 @@ paths:
         required: false
         schema:
           anyOf:
-          - type: string
+          - type: array
+            items:
+              type: string
           - type: 'null'
           title: Label Filter
       - name: search
@@ -668,7 +671,7 @@ paths:
         required: false
         schema:
           type: string
-          default: asc
+          default: desc
           title: Sort Order
       responses:
         '200':
@@ -2426,6 +2429,11 @@ components:
         name:
           type: string
           title: Name
+        type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Type
         min_capacity:
           type: integer
           title: Min Capacity

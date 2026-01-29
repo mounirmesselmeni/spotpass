@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class TableType(str, Enum):
@@ -45,6 +45,9 @@ class Table(SQLModel, table=True):
     zone_id: int | None = Field(default=None, foreign_key="zones.id")
     account_id: int = Field(foreign_key="accounts.id")
     establishment_id: int = Field(foreign_key="establishments.id")
+
+    # Relationships
+    zone: Zone | None = Relationship()
 
     def __str__(self) -> str:
         return str(self.id)

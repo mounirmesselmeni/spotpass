@@ -4,6 +4,7 @@ import uuid as uuid_lib
 from datetime import date
 
 from fastapi import APIRouter, HTTPException, status
+from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
 from core.dependencies import DatabaseSession, StaffUser
@@ -57,6 +58,9 @@ def list_tables(
 
     if conditions:
         statement = statement.where(*conditions)
+
+    # Always order by created_at descending (newest first)
+    statement = statement.order_by(Table.created_at.desc())
 
     tables = session.exec(statement).all()
 
@@ -172,16 +176,37 @@ def update_table(
     token_payload: StaffUser,
 ):
     """Update a table (staff only)"""
-    statement = select(Table).where(Table.uuid == table_id)
+    statement = select(Table).where(Table.uuid == table_id).options(selectinload(Table.zone))
     table = session.exec(statement).first()
 
     if not table:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Table not found")
 
+    # Validate capacity if both are provided
+    if table_data.min_capacity is not None and table_data.max_capacity is not None:
+        if table_data.min_capacity > table_data.max_capacity:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="min_capacity cannot be greater than max_capacity",
+            )
+
+    # Check if zone exists (if provided)
+    zone_id = None
+    if table_data.zone_id:
+        statement = select(Zone).where(Zone.uuid == table_data.zone_id)
+        zone = session.exec(statement).first()
+
+        if not zone:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Zone not found")
+        zone_id = zone.id
+
     # Update fields
     update_data = table_data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
-        setattr(table, key, value)
+        if key == "zone_id":
+            setattr(table, key, zone_id)
+        else:
+            setattr(table, key, value)
 
     session.add(table)
     session.commit()
@@ -288,7 +313,7 @@ def list_zones(
     session: DatabaseSession,
     token_payload: StaffUser,
     sort_by: str = "created_at",
-    sort_order: str = "asc",
+    sort_order: str = "desc",
 ):
     """List all zones with optional sorting (staff only)"""
     from sqlmodel import asc, desc

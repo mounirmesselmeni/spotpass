@@ -344,11 +344,36 @@ class TestClientLabelFiltering:
         items = response.json()["items"]
         assert len(items) == 3
 
-        # Explicit all filter
-        response = client.get("/api/staff/clients/?label_filter=all", headers=auth_headers_staff)
+    def test_filter_by_multiple_labels(
+        self, client: TestClient, session: Session, auth_headers_staff
+    ):
+        """Test filtering by multiple client labels"""
+        establishment = EstablishmentFactory(session=session)
+
+        ClientFactory(
+            session=session, establishment=establishment, is_vip=True, is_blacklisted=False
+        )
+        ClientFactory(
+            session=session, establishment=establishment, is_vip=False, is_blacklisted=True
+        )
+        ClientFactory(
+            session=session, establishment=establishment, is_vip=False, is_blacklisted=False
+        )
+        ClientFactory(
+            session=session, establishment=establishment, is_vip=True, is_blacklisted=True
+        )
+        session.commit()
+
+        # Filter by VIP and blacklisted
+        response = client.get(
+            "/api/staff/clients/?label_filter=vip&label_filter=blacklisted",
+            headers=auth_headers_staff,
+        )
         assert response.status_code == 200
         items = response.json()["items"]
-        assert len(items) == 3
+
+        assert len(items) == 3  # VIP, blacklisted, and VIP+blacklisted
+        assert all(item["is_vip"] is True or item["is_blacklisted"] is True for item in items)
 
     def test_invalid_label_filter(self, client: TestClient, session: Session, auth_headers_staff):
         """Test that invalid label filter returns error"""

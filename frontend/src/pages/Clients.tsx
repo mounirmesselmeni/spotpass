@@ -5,34 +5,31 @@ import {
   useListClientsApiStaffClientsGet,
   useUpdateClientApiStaffClientsClientIdPatch,
 } from '@/api/generated/staff-clients/staff-clients';
+import { SortableTableHeader } from '@/components/SortableTableHeader';
+import { formatDateTimeParts } from '@/utils/dateUtils';
 import {
   ActionIcon,
-  Badge,
   Box,
   Button,
   Card,
   Group,
-  Loader,
   Modal,
+  MultiSelect,
   Pagination,
-  SegmentedControl,
   Skeleton,
   Stack,
-  Switch,
   Table,
   Text,
   TextInput,
   Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useDisclosure, useDebouncedValue } from '@mantine/hooks';
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconPencil, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDateTimeParts } from '@/utils/dateUtils';
-import { SortableTableHeader } from '@/components/SortableTableHeader';
 
 export function ClientsPage() {
   const { t } = useTranslation();
@@ -43,12 +40,10 @@ export function ClientsPage() {
   const [debouncedSearch] = useDebouncedValue(search, 300);
 
   const [page, setPage] = useState(1);
-  const [labelFilter, setLabelFilter] = useState<string | null>(null);
+  const [labelFilter, setLabelFilter] = useState<string[]>([]);
 
   // Sorting state
-  const [sortBy, setSortBy] = useState<'name' | 'email' | 'phone' | 'created_at' | 'status'>(
-    'created_at'
-  );
+  const [sortBy, setSortBy] = useState<'name' | 'email' | 'phone' | 'created_at'>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const { data: clientsResponse, isLoading: loadingClients } = useListClientsApiStaffClientsGet({
@@ -56,7 +51,7 @@ export function ClientsPage() {
     page_size: 20,
     sort_by: sortBy,
     sort_order: sortOrder,
-    label_filter: labelFilter || undefined,
+    label_filter: labelFilter.length > 0 ? labelFilter : undefined,
     search: debouncedSearch || undefined,
   });
 
@@ -80,24 +75,34 @@ export function ClientsPage() {
       full_name: '',
       phone_number: '',
       email: '',
-      is_vip: false,
-      is_blacklisted: false,
+      status: [] as string[],
     },
     validate: {
       full_name: (value) => (value.trim().length > 0 ? null : t('clients.nameRequired')),
       phone_number: (value) => (value.trim().length > 0 ? null : t('clients.phoneRequired')),
+      status: (value) =>
+        value.length === 1 ? null : t('clients.clientTypeRequired', 'Please select a client type'),
     },
   });
 
   const handleOpenModal = (client?: ClientRead) => {
     if (client) {
       setEditingClient(client);
+      const status: string[] = [];
+      if (client.is_vip) {
+        status.push('vip');
+      }
+      if (client.is_blacklisted) {
+        status.push('blacklisted');
+      }
+      if (!client.is_vip && !client.is_blacklisted) {
+        status.push('regular');
+      }
       form.setValues({
         full_name: client.full_name,
         phone_number: client.phone_number,
         email: client.email || '',
-        is_vip: client.is_vip || false,
-        is_blacklisted: client.is_blacklisted || false,
+        status,
       });
     } else {
       setEditingClient(null);
@@ -114,6 +119,11 @@ export function ClientsPage() {
 
   const handleSubmit = async (values: typeof form.values) => {
     const isEditing = !!editingClient;
+
+    // Convert status array to boolean fields
+    const is_vip = values.status.includes('vip');
+    const is_blacklisted = values.status.includes('blacklisted');
+
     try {
       let result;
       if (isEditing) {
@@ -123,8 +133,8 @@ export function ClientsPage() {
             full_name: values.full_name,
             phone_number: values.phone_number,
             email: values.email || undefined,
-            is_vip: values.is_vip,
-            is_blacklisted: values.is_blacklisted,
+            is_vip,
+            is_blacklisted,
           },
         });
       } else {
@@ -133,8 +143,8 @@ export function ClientsPage() {
             full_name: values.full_name,
             phone_number: values.phone_number,
             email: values.email || undefined,
-            is_vip: values.is_vip,
-            is_blacklisted: values.is_blacklisted,
+            is_vip,
+            is_blacklisted,
           },
         });
       }
@@ -213,15 +223,16 @@ export function ClientsPage() {
               onChange={(e) => setSearch(e.currentTarget.value)}
             />
 
-            <SegmentedControl
-              value={labelFilter || 'all'}
-              onChange={(value) => setLabelFilter(value === 'all' ? null : value)}
+            <MultiSelect
+              placeholder={t('clients.filterByLabel', 'Filter by label')}
               data={[
-                { label: t('common.all', 'All'), value: 'all' },
                 { label: t('clients.vip', 'VIP'), value: 'vip' },
-                { label: t('clients.regular', 'Regular'), value: 'regular' },
+                { label: t('clients.regular', 'Loyal'), value: 'regular' },
                 { label: t('clients.blacklisted', 'Blacklisted'), value: 'blacklisted' },
               ]}
+              value={labelFilter}
+              onChange={setLabelFilter}
+              clearable
             />
           </Stack>
 
@@ -258,13 +269,6 @@ export function ClientsPage() {
                     currentSortOrder={sortOrder}
                     onSort={handleSort}
                   />
-                  <SortableTableHeader
-                    label={t('common.status')}
-                    sortKey="status"
-                    currentSortBy={sortBy}
-                    currentSortOrder={sortOrder}
-                    onSort={handleSort}
-                  />
                   <Table.Th>{t('common.actions')}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
@@ -286,86 +290,78 @@ export function ClientsPage() {
                         <Skeleton height={20} />
                       </Table.Td>
                       <Table.Td>
-                        <Skeleton height={20} width={80} />
-                      </Table.Td>
-                      <Table.Td>
                         <Skeleton height={30} width={80} />
                       </Table.Td>
                     </Table.Tr>
                   ))
                 ) : filteredClients.length === 0 ? (
                   <Table.Tr>
-                    <Table.Td colSpan={6}>
+                    <Table.Td colSpan={5}>
                       <Text ta="center" c="dimmed" py="xl">
                         {t('clients.noClients')}
                       </Text>
                     </Table.Td>
                   </Table.Tr>
                 ) : (
-                  filteredClients.map((client: ClientRead) => (
-                    <Table.Tr key={client.id}>
-                      <Table.Td>{client.full_name}</Table.Td>
-                      <Table.Td>{client.email || '-'}</Table.Td>
-                      <Table.Td>{client.phone_number}</Table.Td>
-                      <Table.Td>
-                        <div>
-                          <Text size="sm">{formatDateTimeParts(client.created_at).date}</Text>
-                          <Text size="xs" c="dimmed">
-                            {formatDateTimeParts(client.created_at).time}
-                          </Text>
-                        </div>
-                      </Table.Td>
-                      <Table.Td>
-                        <Group gap="xs">
-                          {client.is_vip && (
-                            <Badge
-                              size="sm"
-                              variant="filled"
-                              style={{ backgroundColor: '#FFF4E5', color: '#FF8C00' }}
+                  filteredClients.map((client: ClientRead) => {
+                    const badges = [];
+                    if (client.is_vip) {
+                      badges.push(
+                        `<span style="display: inline-block; background-color: #FFF4E5; color: #FF8C00; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px;">${t('clients.vip')}</span>`
+                      );
+                    }
+                    if (client.is_blacklisted) {
+                      badges.push(
+                        `<span style="display: inline-block; background-color: #FFE5E5; color: #FF0000; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px;">${t('clients.blacklisted')}</span>`
+                      );
+                    }
+                    if (!client.is_vip && !client.is_blacklisted) {
+                      badges.push(
+                        `<span style="display: inline-block; background-color: #F0F0F0; color: #6B7280; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px;">${t('clients.regular')}</span>`
+                      );
+                    }
+                    const badgeHtml = badges.join('');
+
+                    return (
+                      <Table.Tr key={client.id}>
+                        <Table.Td>
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: `${client.full_name}${badgeHtml ? '<br>' + badgeHtml : ''}`,
+                            }}
+                          />
+                        </Table.Td>
+                        <Table.Td>{client.email || '-'}</Table.Td>
+                        <Table.Td>{client.phone_number}</Table.Td>
+                        <Table.Td>
+                          <div>
+                            <Text size="sm">{formatDateTimeParts(client.created_at).date}</Text>
+                            <Text size="xs" c="dimmed">
+                              {formatDateTimeParts(client.created_at).time}
+                            </Text>
+                          </div>
+                        </Table.Td>
+                        <Table.Td>
+                          <Group gap="xs">
+                            <ActionIcon
+                              variant="light"
+                              color="blue"
+                              onClick={() => handleOpenModal(client)}
                             >
-                              {t('clients.vip')}
-                            </Badge>
-                          )}
-                          {client.is_blacklisted && (
-                            <Badge
-                              size="sm"
-                              variant="filled"
-                              style={{ backgroundColor: '#FFE5E5', color: '#FF0000' }}
+                              <IconPencil size={16} />
+                            </ActionIcon>
+                            <ActionIcon
+                              variant="light"
+                              color="red"
+                              onClick={() => handleDelete(client.id)}
                             >
-                              {t('clients.blacklisted')}
-                            </Badge>
-                          )}
-                          {!client.is_vip && !client.is_blacklisted && (
-                            <Badge
-                              size="sm"
-                              variant="filled"
-                              style={{ backgroundColor: '#F0F0F0', color: '#6B7280' }}
-                            >
-                              {t('clients.regular')}
-                            </Badge>
-                          )}
-                        </Group>
-                      </Table.Td>
-                      <Table.Td>
-                        <Group gap="xs">
-                          <ActionIcon
-                            variant="light"
-                            color="blue"
-                            onClick={() => handleOpenModal(client)}
-                          >
-                            <IconPencil size={16} />
-                          </ActionIcon>
-                          <ActionIcon
-                            variant="light"
-                            color="red"
-                            onClick={() => handleDelete(client.id)}
-                          >
-                            <IconTrash size={16} />
-                          </ActionIcon>
-                        </Group>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))
+                              <IconTrash size={16} />
+                            </ActionIcon>
+                          </Group>
+                        </Table.Td>
+                      </Table.Tr>
+                    );
+                  })
                 )}
               </Table.Tbody>
             </Table>
@@ -391,52 +387,67 @@ export function ClientsPage() {
                   </Text>
                 </Card>
               ) : (
-                filteredClients.map((client: ClientRead) => (
-                  <Card key={client.id} withBorder padding="md">
-                    <Group justify="space-between" mb="xs">
-                      <Text fw={500} size="lg">
-                        {client.full_name}
-                      </Text>
-                      <Group gap="xs">
-                        <ActionIcon
-                          variant="light"
-                          color="blue"
-                          onClick={() => handleOpenModal(client)}
-                        >
-                          <IconPencil size={16} />
-                        </ActionIcon>
-                        <ActionIcon
-                          variant="light"
-                          color="red"
-                          onClick={() => handleDelete(client.id)}
-                        >
-                          <IconTrash size={16} />
-                        </ActionIcon>
+                filteredClients.map((client: ClientRead) => {
+                  const badges = [];
+                  if (client.is_vip) {
+                    badges.push(
+                      `<span style="display: inline-block; background-color: #FFF4E5; color: #FF8C00; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px;">${t('clients.vip')}</span>`
+                    );
+                  }
+                  if (client.is_blacklisted) {
+                    badges.push(
+                      `<span style="display: inline-block; background-color: #FFE5E5; color: #FF0000; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px;">${t('clients.blacklisted')}</span>`
+                    );
+                  }
+                  if (!client.is_vip && !client.is_blacklisted) {
+                    badges.push(
+                      `<span style="display: inline-block; background-color: #F0F0F0; color: #6B7280; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px;">${t('clients.regular')}</span>`
+                    );
+                  }
+                  const badgeHtml = badges.join('');
+
+                  return (
+                    <Card key={client.id} withBorder padding="md">
+                      <Group justify="space-between" mb="xs">
+                        <Text fw={500} size="lg">
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: `${client.full_name}${badgeHtml ? '<br>' + badgeHtml : ''}`,
+                            }}
+                          />
+                        </Text>
+                        <Group gap="xs">
+                          <ActionIcon
+                            variant="light"
+                            color="blue"
+                            onClick={() => handleOpenModal(client)}
+                          >
+                            <IconPencil size={16} />
+                          </ActionIcon>
+                          <ActionIcon
+                            variant="light"
+                            color="red"
+                            onClick={() => handleDelete(client.id)}
+                          >
+                            <IconTrash size={16} />
+                          </ActionIcon>
+                        </Group>
                       </Group>
-                    </Group>
-                    <Stack gap="xs">
-                      <Text size="sm">
-                        {t('clients.email')}: {client.email || '-'}
-                      </Text>
-                      <Text size="sm">
-                        {t('clients.phone')}: {client.phone_number}
-                      </Text>
-                      <Text size="sm">
-                        {t('clients.createdAt')}: {formatDateTimeParts(client.created_at).date}{' '}
-                        {formatDateTimeParts(client.created_at).time}
-                      </Text>
-                      <Group gap="xs">
-                        {client.is_vip && <Badge color="yellow">{t('clients.vip')}</Badge>}
-                        {client.is_blacklisted && (
-                          <Badge color="red">{t('clients.blacklisted')}</Badge>
-                        )}
-                        {!client.is_vip && !client.is_blacklisted && (
-                          <Badge color="gray">{t('clients.regular')}</Badge>
-                        )}
-                      </Group>
-                    </Stack>
-                  </Card>
-                ))
+                      <Stack gap="xs">
+                        <Text size="sm">
+                          {t('clients.email')}: {client.email || '-'}
+                        </Text>
+                        <Text size="sm">
+                          {t('clients.phone')}: {client.phone_number}
+                        </Text>
+                        <Text size="sm">
+                          {t('clients.createdAt')}: {formatDateTimeParts(client.created_at).date}{' '}
+                          {formatDateTimeParts(client.created_at).time}
+                        </Text>
+                      </Stack>
+                    </Card>
+                  );
+                })
               )}
             </Stack>
           </Box>
@@ -479,13 +490,16 @@ export function ClientsPage() {
                 placeholder={t('clients.emailPlaceholder')}
                 {...form.getInputProps('email')}
               />
-              <Switch
-                label={t('clients.vipClient')}
-                {...form.getInputProps('is_vip', { type: 'checkbox' })}
-              />
-              <Switch
-                label={t('clients.blacklisted')}
-                {...form.getInputProps('is_blacklisted', { type: 'checkbox' })}
+              <MultiSelect
+                label={t('clients.clientType', 'Client Type')}
+                placeholder={t('clients.selectClientType', 'Select client type')}
+                data={[
+                  { label: t('clients.vip', 'VIP'), value: 'vip' },
+                  { label: t('clients.regular', 'Loyal'), value: 'regular' },
+                  { label: t('clients.blacklisted', 'Blacklisted'), value: 'blacklisted' },
+                ]}
+                {...form.getInputProps('status')}
+                maxValues={1}
               />
               <Group justify="flex-end" mt="md">
                 <Button variant="light" onClick={handleCloseModal}>

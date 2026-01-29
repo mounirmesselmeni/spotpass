@@ -827,6 +827,7 @@ def get_available_tables(
             TableAvailabilityRead(
                 id=table.uuid,
                 name=table.name,
+                type=table.type.value if table.type else None,
                 min_capacity=table.min_capacity,
                 max_capacity=table.max_capacity,
                 zone_name=zone_name,

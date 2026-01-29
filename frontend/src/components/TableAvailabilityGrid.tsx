@@ -18,6 +18,8 @@ import {
 } from '@mantine/core';
 import { DatePickerInput, TimeInput } from '@mantine/dates';
 import { useTranslation } from 'react-i18next';
+import dayjs from 'dayjs';
+import { getTableTypeIcon, getTableTypeColor, getTableTypeLabel } from '@/utils/tableUtils';
 import { IconTable, IconUsers, IconRefresh, IconMapPin } from '@tabler/icons-react';
 import { useGetAvailableTablesApiStaffReservationsAvailableTablesPost } from '@/api/generated/staff-reservations/staff-reservations';
 import { useListTablesApiStaffTablesGet } from '@/api/generated/staff-tables/staff-tables';
@@ -25,16 +27,34 @@ import type { TableRead } from '@/api/generated/models';
 
 interface TableAvailabilityGridProps {
   onTableSelect?: (table: TableRead) => void;
+  selectedDate?: Date | null;
+  selectedTime?: string;
+  guestCount?: number;
 }
 
-export function TableAvailabilityGrid({ onTableSelect }: TableAvailabilityGridProps) {
+export function TableAvailabilityGrid({
+  onTableSelect,
+  selectedDate,
+  selectedTime,
+  guestCount,
+}: TableAvailabilityGridProps) {
   const { t } = useTranslation();
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [selectedTime, setSelectedTime] = useState<string>('12:00');
-  const [guestsCount, setGuestsCount] = useState<string | number>(2);
+
+  // Use props if provided, otherwise use internal state
+  const [internalSelectedDate, setInternalSelectedDate] = useState<string>(
+    dayjs().format('YYYY-MM-DD')
+  );
+  const [internalSelectedTime, setInternalSelectedTime] = useState<string>('12:00');
+  const [internalGuestsCount, setInternalGuestsCount] = useState<string | number>(2);
   const [viewMode, setViewMode] = useState<'all' | 'available'>('available');
 
-  const reservationDateTime = `${selectedDate}T${selectedTime}:00`;
+  const currentDate = selectedDate
+    ? dayjs(selectedDate).format('YYYY-MM-DD')
+    : internalSelectedDate;
+  const currentTime = selectedTime || internalSelectedTime;
+  const currentGuests = guestCount || internalGuestsCount;
+
+  const reservationDateTime = `${currentDate}T${currentTime}:00`;
 
   const availableTablesMutation = useGetAvailableTablesApiStaffReservationsAvailableTablesPost();
   const { data: allTablesResponse, isLoading: loadingAll } = useListTablesApiStaffTablesGet();
@@ -47,9 +67,9 @@ export function TableAvailabilityGrid({ onTableSelect }: TableAvailabilityGridPr
   const refetchAvailable = () => {
     availableTablesMutation.mutate({
       data: {
-        reservation_date: selectedDate,
+        reservation_date: currentDate,
         reservation_time: reservationDateTime,
-        number_of_guests: Number(guestsCount),
+        number_of_guests: Number(currentGuests),
       },
     });
   };
@@ -60,7 +80,7 @@ export function TableAvailabilityGrid({ onTableSelect }: TableAvailabilityGridPr
       refetchAvailable();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedTime, guestsCount, viewMode]);
+  }, [currentDate, currentTime, currentGuests, viewMode]);
 
   const isLoading = viewMode === 'available' ? loadingAvailable : loadingAll;
   const tables = viewMode === 'available' ? availableTables : allTables;
@@ -105,113 +125,115 @@ export function TableAvailabilityGrid({ onTableSelect }: TableAvailabilityGridPr
 
   return (
     <Stack gap="md">
-      {/* Filters Section */}
-      <Paper p="md" withBorder>
-        <Stack gap="md">
-          <Group justify="space-between">
-            <Title order={4}>{t('tables.availabilityTitle')}</Title>
-            <Group gap="xs">
-              <Button
-                variant={viewMode === 'available' ? 'filled' : 'light'}
-                size="xs"
-                onClick={() => setViewMode('available')}
-              >
-                {t('tables.availables')}
-              </Button>
-              <Button
-                variant={viewMode === 'all' ? 'filled' : 'light'}
-                size="xs"
-                onClick={() => setViewMode('all')}
-              >
-                {t('common.all')}
-              </Button>
-              <ActionIcon
-                variant="light"
-                onClick={handleRefresh}
-                loading={loadingAvailable}
-                aria-label="Actualiser la disponibilité des tables"
-              >
-                <IconRefresh size={16} />
-              </ActionIcon>
+      {/* Filters Section - only show when not controlled by props */}
+      {(!selectedDate || !selectedTime || guestCount === undefined) && (
+        <Paper p="md" withBorder>
+          <Stack gap="md">
+            <Group justify="space-between">
+              <Title order={4}>{t('tables.availabilityTitle')}</Title>
+              <Group gap="xs">
+                <Button
+                  variant={viewMode === 'available' ? 'filled' : 'light'}
+                  size="xs"
+                  onClick={() => setViewMode('available')}
+                >
+                  {t('tables.availables')}
+                </Button>
+                <Button
+                  variant={viewMode === 'all' ? 'filled' : 'light'}
+                  size="xs"
+                  onClick={() => setViewMode('all')}
+                >
+                  {t('common.all')}
+                </Button>
+                <ActionIcon
+                  variant="light"
+                  onClick={handleRefresh}
+                  loading={loadingAvailable}
+                  aria-label="Actualiser la disponibilité des tables"
+                >
+                  <IconRefresh size={16} />
+                </ActionIcon>
+              </Group>
             </Group>
-          </Group>
 
-          <Grid>
-            <Grid.Col span={{ base: 12, sm: 4 }}>
-              <DatePickerInput
-                label={t('reservations.date')}
-                placeholder={t('common.selectDate')}
-                value={selectedDate ? new Date(selectedDate) : null}
-                onChange={(date) => {
-                  const dateValue = date as Date | null;
-                  if (dateValue) {
-                    setSelectedDate(dateValue.toISOString().split('T')[0]);
-                  }
-                }}
-                minDate={new Date()}
-                size="sm"
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 4 }}>
-              <TimeInput
-                label={t('reservations.time')}
-                value={selectedTime}
-                onChange={(event) => setSelectedTime(event.currentTarget.value)}
-                size="sm"
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 4 }}>
-              <Select
-                label={t('reservations.guests')}
-                placeholder="Nombre d'invités"
-                data={Array.from({ length: 20 }, (_, i) => ({
-                  value: String(i + 1),
-                  label: `${i + 1} ${i + 1 === 1 ? 'invité' : 'invités'}`,
-                }))}
-                value={String(guestsCount)}
-                onChange={(value) => value && setGuestsCount(value)}
-                size="sm"
-              />
-            </Grid.Col>
-          </Grid>
+            <Grid>
+              <Grid.Col span={{ base: 12, sm: 4 }}>
+                <DatePickerInput
+                  label={t('reservations.date')}
+                  placeholder={t('common.selectDate')}
+                  value={internalSelectedDate ? dayjs(internalSelectedDate).toDate() : null}
+                  onChange={(date) => {
+                    const dateValue = date as Date | null;
+                    if (dateValue) {
+                      setInternalSelectedDate(dayjs(dateValue).format('YYYY-MM-DD'));
+                    }
+                  }}
+                  minDate={dayjs().toDate()}
+                  size="sm"
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 4 }}>
+                <TimeInput
+                  label={t('reservations.time')}
+                  value={internalSelectedTime}
+                  onChange={(event) => setInternalSelectedTime(event.currentTarget.value)}
+                  size="sm"
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 4 }}>
+                <Select
+                  label={t('reservations.guests')}
+                  placeholder="Nombre d'invités"
+                  data={Array.from({ length: 20 }, (_, i) => ({
+                    value: String(i + 1),
+                    label: `${i + 1} ${i + 1 === 1 ? 'invité' : 'invités'}`,
+                  }))}
+                  value={String(internalGuestsCount)}
+                  onChange={(value) => value && setInternalGuestsCount(value)}
+                  size="sm"
+                />
+              </Grid.Col>
+            </Grid>
 
-          <Group gap="lg">
-            <Group gap="xs">
-              <Box
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--mantine-color-green-6)',
-                }}
-              />
-              <Text size="xs">{t('tables.available')}</Text>
+            <Group gap="lg">
+              <Group gap="xs">
+                <Box
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--mantine-color-green-6)',
+                  }}
+                />
+                <Text size="xs">{t('tables.available')}</Text>
+              </Group>
+              <Group gap="xs">
+                <Box
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--mantine-color-red-6)',
+                  }}
+                />
+                <Text size="xs">{t('tables.occupied')}</Text>
+              </Group>
+              <Group gap="xs">
+                <Box
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--mantine-color-gray-6)',
+                  }}
+                />
+                <Text size="xs">{t('tables.unavailable')}</Text>
+              </Group>
             </Group>
-            <Group gap="xs">
-              <Box
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--mantine-color-red-6)',
-                }}
-              />
-              <Text size="xs">{t('tables.occupied')}</Text>
-            </Group>
-            <Group gap="xs">
-              <Box
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--mantine-color-gray-6)',
-                }}
-              />
-              <Text size="xs">{t('tables.unavailable')}</Text>
-            </Group>
-          </Group>
-        </Stack>
-      </Paper>
+          </Stack>
+        </Paper>
+      )}
 
       {/* Tables Grid by Zone */}
       <Box pos="relative">
@@ -250,6 +272,9 @@ export function TableAvailabilityGrid({ onTableSelect }: TableAvailabilityGridPr
                                 {table.name}
                               </Text>
                               <Text size="xs">
+                                Type: {getTableTypeLabel(table.type || 'table', t)}
+                              </Text>
+                              <Text size="xs">
                                 Capacité: {table.min_capacity}-{table.max_capacity}
                               </Text>
                               <Text size="xs">{getTableStatusLabel(table)}</Text>
@@ -263,14 +288,6 @@ export function TableAvailabilityGrid({ onTableSelect }: TableAvailabilityGridPr
                             withBorder
                             style={{
                               cursor: isAvailable && onTableSelect ? 'pointer' : 'default',
-                              borderColor:
-                                statusColor === 'green'
-                                  ? 'var(--mantine-color-green-6)'
-                                  : statusColor === 'red'
-                                    ? 'var(--mantine-color-red-6)'
-                                    : 'var(--mantine-color-gray-4)',
-                              borderWidth: 2,
-                              opacity: statusColor === 'gray' ? 0.5 : 1,
                               transition: 'all 0.2s',
                             }}
                             onClick={() => isAvailable && onTableSelect?.(table)}
@@ -284,16 +301,7 @@ export function TableAvailabilityGrid({ onTableSelect }: TableAvailabilityGridPr
                             }}
                           >
                             <Stack gap="xs" align="center">
-                              <IconTable
-                                size={32}
-                                color={
-                                  statusColor === 'green'
-                                    ? 'var(--mantine-color-green-6)'
-                                    : statusColor === 'red'
-                                      ? 'var(--mantine-color-red-6)'
-                                      : 'var(--mantine-color-gray-6)'
-                                }
-                              />
+                              {getTableTypeIcon(table.type || 'table', 32)}
                               <Text size="sm" fw={600} ta="center">
                                 {table.name}
                               </Text>
@@ -303,9 +311,6 @@ export function TableAvailabilityGrid({ onTableSelect }: TableAvailabilityGridPr
                                   {table.min_capacity}-{table.max_capacity}
                                 </Text>
                               </Group>
-                              <Badge color={statusColor} variant="light" size="xs" fullWidth>
-                                {getTableStatusLabel(table)}
-                              </Badge>
                             </Stack>
                           </Card>
                         </Tooltip>

@@ -1,59 +1,55 @@
-import { useState } from 'react';
 import {
-  Stack,
-  Title,
-  Button,
-  Group,
-  TextInput,
-  Table,
-  Badge,
-  ActionIcon,
-  Modal,
-  Card,
-  Text,
-  Select,
-  NumberInput,
-  Grid,
-  Tooltip,
-  Box,
-  SegmentedControl,
-  ThemeIcon,
-  ScrollArea,
-  Timeline,
-  Loader,
-  Center,
-  Paper,
-  Textarea,
-} from '@mantine/core';
-import { DatePickerInput } from '@mantine/dates';
-import { useForm } from '@mantine/form';
-import { useDisclosure } from '@mantine/hooks';
-import { modals } from '@mantine/modals';
-import {
-  IconPlus,
-  IconPencil,
-  IconTrash,
-  IconSearch,
-  IconFilter,
-  IconTable,
-  IconUmbrella,
-  IconHome,
-  IconChevronDown,
-  IconClock,
-  IconX,
-  IconCheck,
-} from '@tabler/icons-react';
-import { notifications } from '@mantine/notifications';
-import { useTranslation } from 'react-i18next';
-import {
-  useListTablesApiStaffTablesGet,
   useCreateTableApiStaffTablesPost,
-  useUpdateTableApiStaffTablesTableIdPatch,
   useDeleteTableApiStaffTablesTableIdDelete,
+  useListTablesApiStaffTablesGet,
+  useUpdateTableApiStaffTablesTableIdPatch,
 } from '@/api/generated/staff-tables/staff-tables';
 import { useListZonesApiStaffZonesGet } from '@/api/generated/staff-zones/staff-zones';
 import { axios } from '@/api/mutator/custom-instance';
-import { TableAvailabilityGrid } from '@/components/TableAvailabilityGrid';
+import { getTableTypeIcon } from '@/utils/tableUtils';
+import {
+  ActionIcon,
+  Badge,
+  Box,
+  Button,
+  Card,
+  Center,
+  Grid,
+  Group,
+  Loader,
+  Modal,
+  NumberInput,
+  Paper,
+  ScrollArea,
+  Select,
+  Stack,
+  Switch,
+  Table,
+  Text,
+  Textarea,
+  TextInput,
+  ThemeIcon,
+  Timeline,
+  Title,
+  Tooltip,
+} from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
+import { useForm } from '@mantine/form';
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
+import { modals } from '@mantine/modals';
+import { notifications } from '@mantine/notifications';
+import {
+  IconCheck,
+  IconClock,
+  IconFilter,
+  IconPencil,
+  IconPlus,
+  IconSearch,
+  IconTrash,
+  IconX,
+} from '@tabler/icons-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface TableFormValues {
   name: string;
@@ -81,8 +77,9 @@ export function TablesPage() {
   // Filter states
   const [zoneFilter, setZoneFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [capacityFilter, setCapacityFilter] = useState<number | undefined>(undefined);
   const [nameSearch, setNameSearch] = useState('');
-  const [viewMode, setViewMode] = useState<'list' | 'availability'>('list');
+  const [debouncedNameSearch] = useDebouncedValue(nameSearch, 300);
 
   // Modal states
   const [opened, { open, close }] = useDisclosure(false);
@@ -101,10 +98,18 @@ export function TablesPage() {
   } = useListTablesApiStaffTablesGet({
     zone_id: zoneFilter || undefined,
     is_on_service:
-      statusFilter === 'available' ? true : statusFilter === 'unavailable' ? false : undefined,
-    name: nameSearch || undefined,
+      statusFilter === 'onService' ? true : statusFilter === 'offService' ? false : undefined,
+    name: debouncedNameSearch || undefined,
   });
   const tables = Array.isArray(tablesResponse?.data) ? tablesResponse?.data : [];
+
+  // Apply client-side capacity filter
+  const filteredTables = tables.filter((table: any) => {
+    if (capacityFilter !== undefined) {
+      return table.min_capacity <= capacityFilter && table.max_capacity >= capacityFilter;
+    }
+    return true;
+  });
 
   const { data: zonesResponse } = useListZonesApiStaffZonesGet({
     sort_by: 'created_at',
@@ -283,48 +288,14 @@ export function TablesPage() {
     fetchTimeSlots(table.id, selectedDate);
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'parasol':
-        return <IconUmbrella size={20} />;
-      case 'hut':
-        return <IconHome size={20} />;
-      default:
-        return <IconTable size={20} />;
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'parasol':
-        return 'orange';
-      case 'hut':
-        return 'teal';
-      default:
-        return 'blue';
-    }
-  };
-
-  // Group tables by zone for better UX
-  const tablesByZone = tables?.reduce(
-    (acc: Record<string, any[]>, table: any) => {
-      const zoneName = table.zone?.name || t('tables.noZone', 'No Zone');
-      if (!acc[zoneName]) {
-        acc[zoneName] = [];
-      }
-      acc[zoneName].push(table);
-      return acc;
-    },
-    {} as Record<string, any[]>
-  );
-
   const clearFilters = () => {
     setZoneFilter(null);
     setStatusFilter(null);
+    setCapacityFilter(undefined);
     setNameSearch('');
   };
 
-  const hasActiveFilters = zoneFilter || statusFilter || nameSearch;
+  const hasActiveFilters = zoneFilter || statusFilter || capacityFilter !== undefined || nameSearch;
 
   if (isLoading) {
     return (
@@ -345,14 +316,6 @@ export function TablesPage() {
         <Group justify="space-between">
           <Title order={2}>{t('tables.title', 'Tables')}</Title>
           <Group>
-            <SegmentedControl
-              value={viewMode}
-              onChange={(value) => setViewMode(value as 'list' | 'availability')}
-              data={[
-                { label: 'Liste', value: 'list' },
-                { label: 'Disponibilité', value: 'availability' },
-              ]}
-            />
             <Button leftSection={<IconPlus size={16} />} onClick={() => handleOpenModal()}>
               {t('tables.newTable', 'New Table')}
             </Button>
@@ -398,12 +361,23 @@ export function TablesPage() {
                   onChange={setStatusFilter}
                   clearable
                   data={[
-                    { value: 'available', label: t('tables.available', 'Available') },
-                    { value: 'unavailable', label: t('tables.unavailable', 'Unavailable') },
+                    { value: 'onService', label: t('tables.onService', 'On service') },
+                    { value: 'offService', label: t('tables.offService', 'Off service') },
                   ]}
                 />
               </Grid.Col>
-              <Grid.Col span={12}>
+              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                <NumberInput
+                  label={t('tables.capacity', 'Capacity')}
+                  placeholder={t('common.all', 'All')}
+                  value={capacityFilter}
+                  onChange={(value) =>
+                    setCapacityFilter(typeof value === 'number' ? value : undefined)
+                  }
+                  min={1}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
                 <TextInput
                   placeholder={t('tables.searchByName', 'Search by table name...')}
                   leftSection={<IconSearch size={16} />}
@@ -416,117 +390,13 @@ export function TablesPage() {
         </Card>
 
         {/* Tables Display */}
-        {!tables || tables.length === 0 ? (
+        {!filteredTables || filteredTables.length === 0 ? (
           <Card withBorder>
             <Text ta="center" c="dimmed" py="xl">
               {t('tables.noTables', 'No tables found')}
             </Text>
           </Card>
-        ) : viewMode === 'availability' ? (
-          <TableAvailabilityGrid />
         ) : (
-          <Stack gap="xl">
-            {Object.entries(tablesByZone || {}).map(([zoneName, zoneTables]) => (
-              <div key={zoneName}>
-                <Group mb="md">
-                  <ThemeIcon size="lg" variant="light">
-                    <IconChevronDown size={18} />
-                  </ThemeIcon>
-                  <div>
-                    <Text fw={700} size="lg">
-                      {zoneName}
-                    </Text>
-                    <Text size="sm" c="dimmed">
-                      {zoneTables.length} {t('tables.tables', 'tables')}
-                    </Text>
-                  </div>
-                </Group>
-
-                <Grid>
-                  {zoneTables.map((table: any) => (
-                    <Grid.Col key={table.id} span={{ base: 12, sm: 6, md: 4, lg: 3 }}>
-                      <Card
-                        withBorder
-                        shadow="sm"
-                        padding="lg"
-                        style={{
-                          height: '100%',
-                          transition: 'transform 0.2s',
-                          cursor: 'pointer',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                        }}
-                        onClick={() => handleViewTimeSlots(table)}
-                      >
-                        <Stack gap="md">
-                          <Group justify="space-between">
-                            <ThemeIcon size="lg" color={getTypeColor(table.type)} variant="light">
-                              {getTypeIcon(table.type)}
-                            </ThemeIcon>
-                            <Badge color={table.is_on_service ? 'green' : 'red'}>
-                              {table.is_on_service
-                                ? t('tables.available', 'Available')
-                                : t('tables.unavailable', 'Unavailable')}
-                            </Badge>
-                          </Group>
-
-                          <div>
-                            <Text fw={700} size="lg">
-                              {table.name}
-                            </Text>
-                            {table.description && (
-                              <Text size="sm" c="dimmed" lineClamp={2}>
-                                {table.description}
-                              </Text>
-                            )}
-                          </div>
-
-                          <Group gap="xs">
-                            <Badge variant="light" size="lg">
-                              {table.min_capacity}-{table.max_capacity}{' '}
-                              {t('reservations.guests', 'guests')}
-                            </Badge>
-                          </Group>
-
-                          <Group gap="xs" mt="auto" onClick={(e) => e.stopPropagation()}>
-                            <ActionIcon
-                              variant="light"
-                              color="blue"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenModal(table);
-                              }}
-                              style={{ flex: 1 }}
-                            >
-                              <IconPencil size={16} />
-                            </ActionIcon>
-                            <ActionIcon
-                              variant="light"
-                              color="red"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(table.id, table.name);
-                              }}
-                              style={{ flex: 1 }}
-                            >
-                              <IconTrash size={16} />
-                            </ActionIcon>
-                          </Group>
-                        </Stack>
-                      </Card>
-                    </Grid.Col>
-                  ))}
-                </Grid>
-              </div>
-            ))}
-          </Stack>
-        )}
-
-        {viewMode === 'list' && (
           <Card withBorder>
             <Table striped highlightOnHover>
               <Table.Thead>
@@ -535,17 +405,13 @@ export function TablesPage() {
                   <Table.Th>{t('tables.type', 'Type')}</Table.Th>
                   <Table.Th>{t('tables.capacity', 'Capacity')}</Table.Th>
                   <Table.Th>{t('tables.zone', 'Zone')}</Table.Th>
-                  <Table.Th>{t('tables.status', 'Status')}</Table.Th>
+                  <Table.Th>{t('tables.status', 'Statut')}</Table.Th>
                   <Table.Th>{t('common.actions', 'Actions')}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {tables.map((table: any) => (
-                  <Table.Tr
-                    key={table.id}
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => handleViewTimeSlots(table)}
-                  >
+                {filteredTables.map((table: any) => (
+                  <Table.Tr key={table.id}>
                     <Table.Td>
                       <Text fw={600}>{table.name}</Text>
                       {table.description && (
@@ -556,15 +422,13 @@ export function TablesPage() {
                     </Table.Td>
                     <Table.Td>
                       <Group gap="xs">
-                        <ThemeIcon
-                          size="sm"
-                          color={getTypeColor(table.type || 'table')}
-                          variant="light"
-                        >
-                          {getTypeIcon(table.type || 'table')}
-                        </ThemeIcon>
+                        {getTableTypeIcon(table.type || 'table')}
                         <Text size="sm" tt="capitalize">
-                          {table.type || 'table'}
+                          {table.type === 'parasol'
+                            ? t('tables.typeParasol', 'Parasol')
+                            : table.type === 'hut'
+                              ? t('tables.typeHut', 'Cabane')
+                              : t('tables.typeTable', 'Table')}
                         </Text>
                       </Group>
                     </Table.Td>
@@ -575,11 +439,20 @@ export function TablesPage() {
                     </Table.Td>
                     <Table.Td>{table.zone?.name || '-'}</Table.Td>
                     <Table.Td>
-                      <Badge color={table.is_on_service ? 'green' : 'red'}>
-                        {table.is_on_service
-                          ? t('tables.available', 'Available')
-                          : t('tables.unavailable', 'Unavailable')}
-                      </Badge>
+                      <Group gap="xs">
+                        <ThemeIcon
+                          size="sm"
+                          color={table.is_on_service ? 'green' : 'red'}
+                          variant="light"
+                        >
+                          {table.is_on_service ? <IconCheck size={16} /> : <IconX size={16} />}
+                        </ThemeIcon>
+                        <Text size="sm" c={table.is_on_service ? 'green' : 'red'}>
+                          {table.is_on_service
+                            ? t('tables.onService', 'On service')
+                            : t('tables.offService', 'Off service')}
+                        </Text>
+                      </Group>
                     </Table.Td>
                     <Table.Td onClick={(e) => e.stopPropagation()}>
                       <Group gap="xs">
@@ -680,14 +553,10 @@ export function TablesPage() {
               {...form.getInputProps('zone_id')}
             />
 
-            <Select
-              label={t('tables.status', 'Status')}
-              data={[
-                { value: 'true', label: t('tables.available', 'Available') },
-                { value: 'false', label: t('tables.unavailable', 'Unavailable') },
-              ]}
-              value={form.values.is_on_service.toString()}
-              onChange={(value) => form.setFieldValue('is_on_service', value === 'true')}
+            <Switch
+              label={t('tables.onService', 'On service')}
+              checked={form.values.is_on_service}
+              onChange={(event) => form.setFieldValue('is_on_service', event.currentTarget.checked)}
             />
 
             <Group justify="flex-end" mt="md">
