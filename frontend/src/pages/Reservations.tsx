@@ -452,27 +452,49 @@ export function ReservationsPage() {
                                 <Group gap="xs" wrap="nowrap">
                                   <Text>{reservation.client?.full_name || 'Unknown'}</Text>
                                   {reservation.client?.is_vip && (
-                                    <Badge
+                                    <span
                                       style={{
-                                        background: '#FFD700',
-                                        color: 'white',
+                                        display: 'inline-block',
+                                        backgroundColor: '#FFF4E5',
+                                        color: '#FF8C00',
+                                        padding: '2px 6px',
+                                        borderRadius: '4px',
+                                        fontSize: '12px',
                                       }}
-                                      size="sm"
                                     >
                                       {t('clients.vip', 'VIP')}
-                                    </Badge>
+                                    </span>
                                   )}
                                   {reservation.client?.is_blacklisted && (
-                                    <Badge
+                                    <span
                                       style={{
-                                        background: 'red',
-                                        color: 'white',
+                                        display: 'inline-block',
+                                        backgroundColor: '#FFE5E5',
+                                        color: '#FF0000',
+                                        padding: '2px 6px',
+                                        borderRadius: '4px',
+                                        fontSize: '12px',
                                       }}
-                                      size="sm"
                                     >
                                       {t('clients.blacklisted', 'Blacklisté')}
-                                    </Badge>
+                                    </span>
                                   )}
+                                  {reservation.client &&
+                                    !reservation.client.is_vip &&
+                                    !reservation.client.is_blacklisted && (
+                                      <span
+                                        style={{
+                                          display: 'inline-block',
+                                          backgroundColor: '#F0F0F0',
+                                          color: '#6B7280',
+                                          padding: '2px 6px',
+                                          borderRadius: '4px',
+                                          fontSize: '12px',
+                                        }}
+                                      >
+                                        {t('clients.regular', 'Fidéle')}
+                                      </span>
+                                    )}
                                 </Group>
                               </Table.Td>
                               <Table.Td>
@@ -562,15 +584,49 @@ export function ReservationsPage() {
                                   {reservation.client?.full_name || 'Unknown'}
                                 </Text>
                                 {reservation.client?.is_vip && (
-                                  <Badge color="yellow" size="xs">
+                                  <span
+                                    style={{
+                                      display: 'inline-block',
+                                      backgroundColor: '#FFF4E5',
+                                      color: '#FF8C00',
+                                      padding: '2px 6px',
+                                      borderRadius: '4px',
+                                      fontSize: '12px',
+                                    }}
+                                  >
                                     {t('clients.vip', 'VIP')}
-                                  </Badge>
+                                  </span>
                                 )}
                                 {reservation.client?.is_blacklisted && (
-                                  <Badge color="red" size="xs">
+                                  <span
+                                    style={{
+                                      display: 'inline-block',
+                                      backgroundColor: '#FFE5E5',
+                                      color: '#FF0000',
+                                      padding: '2px 6px',
+                                      borderRadius: '4px',
+                                      fontSize: '12px',
+                                    }}
+                                  >
                                     {t('clients.blacklisted', 'Blacklisté')}
-                                  </Badge>
+                                  </span>
                                 )}
+                                {reservation.client &&
+                                  !reservation.client.is_vip &&
+                                  !reservation.client.is_blacklisted && (
+                                    <span
+                                      style={{
+                                        display: 'inline-block',
+                                        backgroundColor: '#F0F0F0',
+                                        color: '#6B7280',
+                                        padding: '2px 6px',
+                                        borderRadius: '4px',
+                                        fontSize: '12px',
+                                      }}
+                                    >
+                                      {t('clients.regular', 'Fidéle')}
+                                    </span>
+                                  )}
                               </Group>
                             </Group>
 

@@ -447,14 +447,49 @@ export function ReservationDetailsPage() {
                 </Text>
                 {client.full_name}
                 {client.is_vip && (
-                  <Badge color="yellow" size="xs" ml="xs">
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      backgroundColor: '#FFF4E5',
+                      color: '#FF8C00',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      marginLeft: '8px',
+                    }}
+                  >
                     {t('clients.vip', 'VIP')}
-                  </Badge>
+                  </span>
                 )}
                 {client.is_blacklisted && (
-                  <Badge color="red" size="xs" ml="xs">
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      backgroundColor: '#FFE5E5',
+                      color: '#FF0000',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      marginLeft: '8px',
+                    }}
+                  >
                     {t('clients.blacklisted', 'Blacklisté')}
-                  </Badge>
+                  </span>
+                )}
+                {!client.is_vip && !client.is_blacklisted && (
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      backgroundColor: '#F0F0F0',
+                      color: '#6B7280',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      marginLeft: '8px',
+                    }}
+                  >
+                    {t('clients.regular', 'Fidéle')}
+                  </span>
                 )}
               </Text>
 

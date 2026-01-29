@@ -337,8 +337,16 @@ export function TablesPage() {
               )}
             </Group>
 
+            {/* Search Box - Own Row */}
+            <TextInput
+              placeholder={t('tables.searchByName', 'Search by table name...')}
+              leftSection={<IconSearch size={16} />}
+              value={nameSearch}
+              onChange={(e) => setNameSearch(e.currentTarget.value)}
+            />
+
             <Grid>
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
                 <Select
                   label={t('tables.zone', 'Zone')}
                   placeholder={t('common.all', 'All zones')}
@@ -353,7 +361,7 @@ export function TablesPage() {
                   }
                 />
               </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
                 <Select
                   label={t('tables.status', 'Status')}
                   placeholder={t('common.all', 'All')}
@@ -366,7 +374,7 @@ export function TablesPage() {
                   ]}
                 />
               </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
                 <NumberInput
                   label={t('tables.capacity', 'Capacity')}
                   placeholder={t('common.all', 'All')}
@@ -375,14 +383,6 @@ export function TablesPage() {
                     setCapacityFilter(typeof value === 'number' ? value : undefined)
                   }
                   min={1}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                <TextInput
-                  placeholder={t('tables.searchByName', 'Search by table name...')}
-                  leftSection={<IconSearch size={16} />}
-                  value={nameSearch}
-                  onChange={(e) => setNameSearch(e.currentTarget.value)}
                 />
               </Grid.Col>
             </Grid>
@@ -516,6 +516,13 @@ export function TablesPage() {
                 { value: 'parasol', label: t('tables.typeParasol', 'Parasol') },
                 { value: 'hut', label: t('tables.typeHut', 'Hut') },
               ]}
+              renderOption={({ option, checked }) => (
+                <Group flex="1" gap="xs">
+                  {getTableTypeIcon(option.value)}
+                  {option.label}
+                  {checked && <IconCheck style={{ marginInlineStart: 'auto' }} size={16} />}
+                </Group>
+              )}
               {...form.getInputProps('type')}
             />
 
