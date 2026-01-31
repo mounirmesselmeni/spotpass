@@ -13,6 +13,7 @@ import type { ReservationStatus } from './reservationStatus';
 export type ReservationUpdate = {
   status?: ReservationStatus | null;
   table_id?: string | null;
+  /** Internal notes (max 1000 characters) */
   note?: string | null;
   no_show?: boolean | null;
   duration_minutes?: number | null;

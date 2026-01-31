@@ -18,6 +18,7 @@ class Client(SQLModel, table=True):
     email: str | None = None
     messenger_id: str | None = None
     is_vip: bool = Field(default=False)
+    is_loyal: bool = Field(default=False)
     is_blacklisted: bool = Field(default=False)
     account_id: int = Field(foreign_key="accounts.id")
     establishment_id: int = Field(foreign_key="establishments.id")

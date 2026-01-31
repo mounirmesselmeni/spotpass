@@ -13,6 +13,7 @@ export type ClientUpdate = {
   full_name?: string | null;
   email?: string | null;
   phone_number?: string | null;
-  is_blacklisted?: boolean | null;
   is_vip?: boolean | null;
+  is_loyal?: boolean | null;
+  is_blacklisted?: boolean | null;
 };

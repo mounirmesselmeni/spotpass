@@ -6,8 +6,11 @@ import {
   useCreateReservationApiStaffReservationsPost,
   useListReservationsApiStaffReservationsGet,
 } from '@/api/generated/staff-reservations/staff-reservations';
-import { ReservationCalendar } from '@/components/ReservationCalendar';
-import { TableAvailabilityGrid } from '@/components/TableAvailabilityGrid';
+import { ClientBadges } from '@/components';
+import { SortableTableHeader } from '@/components/SortableTableHeader';
+import { StatusBadge } from '@/components/StatusBadge';
+import { NOTIFICATION_ERROR, NOTIFICATION_SUCCESS } from '@/utils/colorConstants';
+import { formatDateTimeParts } from '@/utils/dateUtils';
 import {
   ActionIcon,
   Badge,
@@ -40,40 +43,76 @@ import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconEye, IconFilter, IconPlus, IconSearch, IconX } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDateTimeParts } from '@/utils/dateUtils';
-import { useNavigate } from 'react-router-dom';
-import { StatusBadge } from '@/components/StatusBadge';
-import { SortableTableHeader } from '@/components/SortableTableHeader';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export function ReservationsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [wizardOpened, { open: openWizard, close: closeWizard }] = useDisclosure(false);
 
-  // Filter states
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [dateFrom, setDateFrom] = useState<Date | null>(null);
-  const [dateTo, setDateTo] = useState<Date | null>(null);
-  const [keyword, setKeyword] = useState('');
+  // Initialize states from URL params
+  const [statusFilter, setStatusFilter] = useState<string | null>(
+    searchParams.get('status') || null
+  );
+  const [dateFrom, setDateFrom] = useState<Date | null>(
+    searchParams.get('dateFrom') ? new Date(searchParams.get('dateFrom')!) : null
+  );
+  const [dateTo, setDateTo] = useState<Date | null>(
+    searchParams.get('dateTo') ? new Date(searchParams.get('dateTo')!) : null
+  );
+  const [keyword, setKeyword] = useState(searchParams.get('keyword') || '');
   const [debouncedKeyword] = useDebouncedValue(keyword, 300);
 
   // Pagination state
-  const [page, setPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
+  const [itemsPerPage, setItemsPerPage] = useState(Number(searchParams.get('pageSize')) || 20);
 
   // Sorting state
   const [sortBy, setSortBy] = useState<
     'datetime' | 'client_name' | 'guests' | 'status' | 'created_at'
-  >('datetime');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  >((searchParams.get('sortBy') as any) || 'datetime');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(
+    (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc'
+  );
 
-  // Client search state
+  // Client search state for modal
   const [clientSearch, setClientSearch] = useState('');
-  const [debouncedClientSearch] = useDebouncedValue(clientSearch, 300);
+  const [debouncedClientSearchModal] = useDebouncedValue(clientSearch, 300);
   const [showNewClientForm, setShowNewClientForm] = useState(false);
+
+  // Separate state for selected client to avoid dependency on API results
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [selectedClientName, setSelectedClientName] = useState<string>('');
+  const [clientSelectionError, setClientSelectionError] = useState<string>('');
+
+  // Update URL params when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (statusFilter) params.set('status', statusFilter);
+    if (dateFrom) params.set('dateFrom', dateFrom.toISOString().split('T')[0]);
+    if (dateTo) params.set('dateTo', dateTo.toISOString().split('T')[0]);
+    if (keyword) params.set('keyword', keyword);
+    if (page !== 1) params.set('page', page.toString());
+    if (itemsPerPage !== 20) params.set('pageSize', itemsPerPage.toString());
+    if (sortBy !== 'datetime') params.set('sortBy', sortBy);
+    if (sortOrder !== 'desc') params.set('sortOrder', sortOrder);
+
+    setSearchParams(params, { replace: true });
+  }, [
+    statusFilter,
+    dateFrom,
+    dateTo,
+    keyword,
+    page,
+    itemsPerPage,
+    sortBy,
+    sortOrder,
+    setSearchParams,
+  ]);
 
   // API hooks with filters
   const {
@@ -111,7 +150,7 @@ export function ReservationsPage() {
 
   const { data: clientsResponse } = useListClientsApiStaffClientsGet({
     page_size: 100,
-    search: debouncedClientSearch || undefined,
+    search: debouncedClientSearchModal || undefined,
   });
   const clientsPaginatedData =
     clientsResponse?.data && 'items' in clientsResponse.data ? clientsResponse.data : null;
@@ -122,7 +161,6 @@ export function ReservationsPage() {
 
   const form = useForm({
     initialValues: {
-      client_id: '',
       reservation_date: null as Date | null,
       reservation_time: '',
       number_of_guests: 2,
@@ -133,10 +171,6 @@ export function ReservationsPage() {
       email: '',
     },
     validate: {
-      client_id: (value) =>
-        !showNewClientForm && !value
-          ? t('reservations.selectClientRequired', 'Veuillez sélectionner un client')
-          : null,
       reservation_date: (value) => (!value ? t('reservations.dateRequired', 'Date requise') : null),
       number_of_guests: (value) =>
         value < 1 ? t('reservations.guestsMin', 'Au moins 1 invité') : null,
@@ -151,6 +185,9 @@ export function ReservationsPage() {
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
 
+  // Display value is either the selected client name or the current search text
+  const displayValue = selectedClientId ? selectedClientName : clientSearch;
+
   const handleSort = (newSortBy: typeof sortBy) => {
     if (sortBy === newSortBy) {
       // Toggle sort order if clicking same column
@@ -163,104 +200,6 @@ export function ReservationsPage() {
   };
 
   const filteredClients = clients || [];
-
-  const handleClientSelect = (clientId: string) => {
-    if (clientId === 'new') {
-      setShowNewClientForm(true);
-      combobox.closeDropdown();
-    } else {
-      form.setFieldValue('client_id', clientId);
-      setClientSearch('');
-      combobox.closeDropdown();
-    }
-  };
-
-  const handleCreateClient = async () => {
-    if (!form.validateField('full_name').hasError && !form.validateField('phone_number').hasError) {
-      try {
-        const newClientResponse = await createClientMutation.mutateAsync({
-          data: {
-            full_name: form.values.full_name,
-            phone_number: form.values.phone_number,
-            email: form.values.email || undefined,
-            is_vip: false,
-            is_blacklisted: false,
-          },
-        });
-        if ('id' in newClientResponse.data) {
-          form.setFieldValue('client_id', newClientResponse.data.id);
-        }
-        setShowNewClientForm(false);
-        notifications.show({
-          title: t('common.success'),
-          message: t('clients.createdSuccessfully', 'Client créé'),
-          color: 'green',
-        });
-        // Invalidate client queries to refresh the list
-        queryClient.invalidateQueries({ queryKey: ['/api/staff/clients/'] });
-      } catch (error) {
-        notifications.show({
-          title: t('common.error'),
-          message: t('clients.createError', 'Erreur lors de la création du client'),
-          color: 'red',
-        });
-      }
-    }
-  };
-
-  const handleSubmit = async (values: typeof form.values) => {
-    try {
-      let clientId = values.client_id;
-
-      if (showNewClientForm) {
-        const newClientResponse = await createClientMutation.mutateAsync({
-          data: {
-            full_name: values.full_name,
-            phone_number: values.phone_number,
-            email: values.email || undefined,
-            is_vip: false,
-            is_blacklisted: false,
-          },
-        });
-        if ('id' in newClientResponse.data) {
-          clientId = newClientResponse.data.id;
-        }
-        // Invalidate client queries to refresh the list
-        queryClient.invalidateQueries({ queryKey: ['/api/staff/clients/'] });
-      }
-
-      const createdReservationResponse = await createReservationMutation.mutateAsync({
-        data: {
-          client_id: clientId,
-          reservation_date: values.reservation_date!.toISOString().split('T')[0],
-          reservation_time: values.reservation_time ? `${values.reservation_time}:00` : undefined,
-          number_of_guests: values.number_of_guests,
-          special_request: values.special_request ? values.special_request : undefined,
-        },
-      });
-
-      notifications.show({
-        title: t('common.success'),
-        message: t('reservations.createdSuccessfully', 'Réservation créée'),
-        color: 'green',
-      });
-      close();
-      form.reset();
-      setShowNewClientForm(false);
-      refetch();
-
-      if ('id' in createdReservationResponse.data) {
-        // Navigate to reservation details
-        navigate(`/reservations/${createdReservationResponse.data.id}`);
-      }
-    } catch (error) {
-      notifications.show({
-        title: t('common.error'),
-        message: t('reservations.createError', 'Erreur lors de la création de la réservation'),
-        color: 'red',
-      });
-    }
-  };
 
   // Import status helpers at the top of the file
   // Use the utility function for consistent status colors
@@ -291,7 +230,14 @@ export function ReservationsPage() {
           <Group gap="xs" wrap="wrap">
             <Button
               leftSection={<IconPlus size={16} />}
-              onClick={openWizard}
+              onClick={() => {
+                setSelectedClientId('');
+                setSelectedClientName('');
+                setClientSearch('');
+                setClientSelectionError('');
+                setShowNewClientForm(false);
+                openWizard();
+              }}
               aria-label={t('reservations.newReservation')}
             >
               {t('reservations.newReservation')}
@@ -451,50 +397,14 @@ export function ReservationsPage() {
                               <Table.Td>
                                 <Group gap="xs" wrap="nowrap">
                                   <Text>{reservation.client?.full_name || 'Unknown'}</Text>
-                                  {reservation.client?.is_vip && (
-                                    <span
-                                      style={{
-                                        display: 'inline-block',
-                                        backgroundColor: '#FFF4E5',
-                                        color: '#FF8C00',
-                                        padding: '2px 6px',
-                                        borderRadius: '4px',
-                                        fontSize: '12px',
-                                      }}
-                                    >
-                                      {t('clients.vip', 'VIP')}
-                                    </span>
+                                  {reservation.client && (
+                                    <ClientBadges
+                                      isVip={reservation.client.is_vip}
+                                      isLoyal={reservation.client.is_loyal}
+                                      isBlacklisted={reservation.client.is_blacklisted}
+                                      size="xs"
+                                    />
                                   )}
-                                  {reservation.client?.is_blacklisted && (
-                                    <span
-                                      style={{
-                                        display: 'inline-block',
-                                        backgroundColor: '#FFE5E5',
-                                        color: '#FF0000',
-                                        padding: '2px 6px',
-                                        borderRadius: '4px',
-                                        fontSize: '12px',
-                                      }}
-                                    >
-                                      {t('clients.blacklisted', 'Blacklisté')}
-                                    </span>
-                                  )}
-                                  {reservation.client &&
-                                    !reservation.client.is_vip &&
-                                    !reservation.client.is_blacklisted && (
-                                      <span
-                                        style={{
-                                          display: 'inline-block',
-                                          backgroundColor: '#F0F0F0',
-                                          color: '#6B7280',
-                                          padding: '2px 6px',
-                                          borderRadius: '4px',
-                                          fontSize: '12px',
-                                        }}
-                                      >
-                                        {t('clients.regular', 'Fidéle')}
-                                      </span>
-                                    )}
                                 </Group>
                               </Table.Td>
                               <Table.Td>
@@ -583,50 +493,14 @@ export function ReservationsPage() {
                                 <Text size="sm" fw={500}>
                                   {reservation.client?.full_name || 'Unknown'}
                                 </Text>
-                                {reservation.client?.is_vip && (
-                                  <span
-                                    style={{
-                                      display: 'inline-block',
-                                      backgroundColor: '#FFF4E5',
-                                      color: '#FF8C00',
-                                      padding: '2px 6px',
-                                      borderRadius: '4px',
-                                      fontSize: '12px',
-                                    }}
-                                  >
-                                    {t('clients.vip', 'VIP')}
-                                  </span>
+                                {reservation.client && (
+                                  <ClientBadges
+                                    isVip={reservation.client.is_vip}
+                                    isLoyal={reservation.client.is_loyal}
+                                    isBlacklisted={reservation.client.is_blacklisted}
+                                    size="xs"
+                                  />
                                 )}
-                                {reservation.client?.is_blacklisted && (
-                                  <span
-                                    style={{
-                                      display: 'inline-block',
-                                      backgroundColor: '#FFE5E5',
-                                      color: '#FF0000',
-                                      padding: '2px 6px',
-                                      borderRadius: '4px',
-                                      fontSize: '12px',
-                                    }}
-                                  >
-                                    {t('clients.blacklisted', 'Blacklisté')}
-                                  </span>
-                                )}
-                                {reservation.client &&
-                                  !reservation.client.is_vip &&
-                                  !reservation.client.is_blacklisted && (
-                                    <span
-                                      style={{
-                                        display: 'inline-block',
-                                        backgroundColor: '#F0F0F0',
-                                        color: '#6B7280',
-                                        padding: '2px 6px',
-                                        borderRadius: '4px',
-                                        fontSize: '12px',
-                                      }}
-                                    >
-                                      {t('clients.regular', 'Fidéle')}
-                                    </span>
-                                  )}
                               </Group>
                             </Group>
 
@@ -704,14 +578,40 @@ export function ReservationsPage() {
       {/* New Reservation Modal */}
       <Modal
         opened={wizardOpened}
-        onClose={closeWizard}
+        onClose={() => {
+          form.reset();
+          setClientSearch('');
+          setSelectedClientId('');
+          setSelectedClientName('');
+          setClientSelectionError('');
+          setShowNewClientForm(false);
+          closeWizard();
+        }}
         title={t('reservations.newReservation')}
         size="lg"
       >
         <form
           onSubmit={form.onSubmit(async (values) => {
             try {
-              let clientId = values.client_id;
+              // Clear any previous client selection error
+              setClientSelectionError('');
+
+              let clientId = selectedClientId;
+
+              // Validate client selection FIRST (before creating new client)
+              if (!showNewClientForm && !clientId) {
+                const errorMsg = t(
+                  'reservations.selectClientRequired',
+                  'Veuillez sélectionner un client'
+                );
+                setClientSelectionError(errorMsg);
+                notifications.show({
+                  title: t('common.error'),
+                  message: errorMsg,
+                  color: NOTIFICATION_ERROR,
+                });
+                return;
+              }
 
               // Create new client if needed
               if (showNewClientForm) {
@@ -721,6 +621,7 @@ export function ReservationsPage() {
                     phone_number: values.phone_number,
                     email: values.email || undefined,
                     is_vip: false,
+                    is_loyal: false,
                     is_blacklisted: false,
                   },
                 });
@@ -730,103 +631,145 @@ export function ReservationsPage() {
               }
 
               // Create reservation
-              await createReservationMutation.mutateAsync({
-                data: {
-                  client_id: clientId,
-                  reservation_date: values.reservation_date?.toISOString().split('T')[0] || '',
-                  reservation_time: values.reservation_time,
-                  number_of_guests: values.number_of_guests,
-                  special_request: values.special_request || undefined,
-                },
+              const reservationDate = values.reservation_date
+                ? values.reservation_date instanceof Date
+                  ? values.reservation_date.toISOString().split('T')[0]
+                  : String(values.reservation_date).split('T')[0]
+                : '';
+
+              const reservationData = {
+                client_id: clientId,
+                reservation_date: reservationDate,
+                reservation_time: values.reservation_time
+                  ? values.reservation_time.length === 5
+                    ? `${values.reservation_time}:00`
+                    : values.reservation_time
+                  : undefined,
+                number_of_guests: values.number_of_guests,
+                special_request: values.special_request || undefined,
+              };
+
+              const createdReservation = await createReservationMutation.mutateAsync({
+                data: reservationData,
               });
 
               notifications.show({
                 title: t('common.success'),
                 message: t('reservations.createdSuccessfully'),
-                color: 'green',
+                color: NOTIFICATION_SUCCESS,
               });
 
               form.reset();
-              setShowNewClientForm(false);
               setClientSearch('');
+              setSelectedClientId('');
+              setSelectedClientName('');
+              setClientSelectionError('');
+              setShowNewClientForm(false);
               closeWizard();
               refetch();
+
+              // Navigate to reservation details
+              if (createdReservation?.data && 'id' in createdReservation.data) {
+                navigate(`/reservations/${createdReservation.data.id}`);
+              }
             } catch (error) {
               notifications.show({
                 title: t('common.error'),
                 message: t('reservations.createError'),
-                color: 'red',
+                color: NOTIFICATION_ERROR,
               });
             }
           })}
         >
           <Stack gap="md">
             {/* Client Selection */}
-            <Combobox
-              store={combobox}
-              onOptionSubmit={(val) => {
-                if (val === 'new') {
-                  setShowNewClientForm(true);
-                  combobox.closeDropdown();
-                } else {
-                  form.setFieldValue('client_id', val);
-                  setClientSearch('');
-                  combobox.closeDropdown();
-                }
-              }}
-            >
-              <Combobox.Target>
-                <TextInput
-                  label={t('reservations.client')}
-                  placeholder={t('reservations.searchClient')}
-                  value={clientSearch}
-                  onChange={(event) => {
-                    setClientSearch(event.currentTarget.value);
-                    combobox.openDropdown();
-                  }}
-                  onClick={() => combobox.openDropdown()}
-                  onFocus={() => combobox.openDropdown()}
-                  onBlur={() => combobox.closeDropdown()}
-                  rightSection={
-                    clientSearch ? (
-                      <ActionIcon
-                        size="sm"
-                        variant="transparent"
-                        onClick={() => {
-                          setClientSearch('');
-                          form.setFieldValue('client_id', '');
-                        }}
-                      >
-                        <IconX size={16} />
-                      </ActionIcon>
-                    ) : (
-                      <Combobox.Chevron />
-                    )
+            <div>
+              <Combobox
+                store={combobox}
+                onOptionSubmit={(val) => {
+                  if (val === 'new') {
+                    setShowNewClientForm(true);
+                    setClientSelectionError(''); // Clear error when switching to new client form
+                    combobox.closeDropdown();
+                  } else {
+                    const selectedClient = clients.find((c) => c.id === val);
+                    if (selectedClient) {
+                      setSelectedClientId(val);
+                      setSelectedClientName(selectedClient.full_name);
+                      setClientSearch('');
+                      setClientSelectionError(''); // Clear error when client is selected
+                    }
+                    combobox.closeDropdown();
                   }
-                />
-              </Combobox.Target>
+                }}
+              >
+                <Combobox.Target>
+                  <TextInput
+                    label={t('reservations.client')}
+                    placeholder={t('reservations.searchClient')}
+                    value={displayValue}
+                    error={clientSelectionError}
+                    onChange={(event) => {
+                      const value = event.currentTarget.value;
+                      setClientSearch(value);
+                      // Clear selection if user modifies the text
+                      if (selectedClientId) {
+                        setSelectedClientId('');
+                        setSelectedClientName('');
+                      }
+                      setClientSelectionError(''); // Clear error when user types
+                      combobox.openDropdown();
+                    }}
+                    onClick={() => combobox.openDropdown()}
+                    onFocus={() => combobox.openDropdown()}
+                    onBlur={() => combobox.closeDropdown()}
+                    rightSection={
+                      displayValue ? (
+                        <ActionIcon
+                          size="sm"
+                          variant="transparent"
+                          onClick={() => {
+                            setClientSearch('');
+                            setSelectedClientId('');
+                            setSelectedClientName('');
+                          }}
+                        >
+                          <IconX size={16} />
+                        </ActionIcon>
+                      ) : (
+                        <Combobox.Chevron />
+                      )
+                    }
+                  />
+                </Combobox.Target>
 
-              <Combobox.Dropdown>
-                <Combobox.Options>
-                  {filteredClients.map((client) => (
-                    <Combobox.Option value={client.id} key={client.id}>
+                <Combobox.Dropdown>
+                  <Combobox.Options>
+                    {filteredClients.map((client) => (
+                      <Combobox.Option value={client.id} key={client.id}>
+                        <Group gap="sm">
+                          <Text size="sm">{client.full_name}</Text>
+                          <Text size="xs" c="dimmed">
+                            {client.phone_number}
+                          </Text>
+                        </Group>
+                      </Combobox.Option>
+                    ))}
+                    <Combobox.Option value="new">
                       <Group gap="sm">
-                        <Text size="sm">{client.full_name}</Text>
-                        <Text size="xs" c="dimmed">
-                          {client.phone_number}
-                        </Text>
+                        <IconPlus size={16} />
+                        <Text size="sm">{t('clients.addNew')}</Text>
                       </Group>
                     </Combobox.Option>
-                  ))}
-                  <Combobox.Option value="new">
-                    <Group gap="sm">
-                      <IconPlus size={16} />
-                      <Text size="sm">{t('clients.addNew')}</Text>
-                    </Group>
-                  </Combobox.Option>
-                </Combobox.Options>
-              </Combobox.Dropdown>
-            </Combobox>
+                  </Combobox.Options>
+                </Combobox.Dropdown>
+              </Combobox>
+              {selectedClientId && !showNewClientForm && (
+                <Text size="xs" c="dimmed" mt={4}>
+                  ✓ {t('reservations.clientSelected', 'Client sélectionné')}: {selectedClientName}
+                </Text>
+              )}
+            </div>
 
             {/* New Client Form */}
             {showNewClientForm && (
@@ -867,6 +810,7 @@ export function ReservationsPage() {
                 <TimeInput
                   label={t('reservations.time')}
                   {...form.getInputProps('reservation_time')}
+                  withSeconds={false}
                 />
               </Grid.Col>
             </Grid>
@@ -886,7 +830,18 @@ export function ReservationsPage() {
             />
 
             <Group justify="flex-end" gap="sm">
-              <Button variant="default" onClick={closeWizard}>
+              <Button
+                variant="default"
+                onClick={() => {
+                  form.reset();
+                  setClientSearch('');
+                  setSelectedClientId('');
+                  setSelectedClientName('');
+                  setClientSelectionError('');
+                  setShowNewClientForm(false);
+                  closeWizard();
+                }}
+              >
                 {t('common.cancel')}
               </Button>
               <Button type="submit" loading={createReservationMutation.isPending}>

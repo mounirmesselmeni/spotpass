@@ -1,9 +1,10 @@
 """Reservation Pydantic schemas"""
 
 from datetime import date, datetime, time
+from datetime import date as date_type
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from reservations.models import ReservationSource, ReservationStatus
 
@@ -11,10 +12,22 @@ from reservations.models import ReservationSource, ReservationStatus
 class ReservationBase(BaseModel):
     """Base reservation schema"""
 
-    number_of_guests: int = Field(ge=1)
+    number_of_guests: int = Field(
+        ge=1, le=50, description="Number of guests (max 50 per reservation)"
+    )
     reservation_date: date
     reservation_time: time | None = None
-    special_request: str | None = None
+    special_request: str | None = Field(
+        None, max_length=500, description="Special requests (max 500 characters)"
+    )
+
+    @field_validator("reservation_date")
+    @classmethod
+    def validate_future_date(cls, v):
+        """Ensure reservation date is not in the past"""
+        if v < date_type.today():
+            raise ValueError("Reservation date must be today or in the future")
+        return v
 
 
 class ReservationCreate(ReservationBase):
@@ -46,7 +59,9 @@ class ReservationUpdate(BaseModel):
 
     status: ReservationStatus | None = None
     table_id: UUID | None = None
-    note: str | None = None
+    note: str | None = Field(
+        None, max_length=1000, description="Internal notes (max 1000 characters)"
+    )
     no_show: bool | None = None
     duration_minutes: int | None = Field(default=None, ge=30, le=360)
 

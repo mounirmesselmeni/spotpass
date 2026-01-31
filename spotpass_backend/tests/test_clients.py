@@ -301,31 +301,45 @@ class TestClientLabelFiltering:
         assert all(item["is_blacklisted"] is True for item in items)
 
     def test_filter_by_regular(self, client: TestClient, session: Session, auth_headers_staff):
-        """Test filtering by regular clients (not VIP, not blacklisted)"""
+        """Test filtering by loyal clients"""
         establishment = EstablishmentFactory(session=session)
 
         ClientFactory(
-            session=session, establishment=establishment, is_vip=True, is_blacklisted=False
+            session=session,
+            establishment=establishment,
+            is_vip=True,
+            is_loyal=False,
+            is_blacklisted=False,
         )
         ClientFactory(
-            session=session, establishment=establishment, is_vip=False, is_blacklisted=False
+            session=session,
+            establishment=establishment,
+            is_vip=False,
+            is_loyal=True,
+            is_blacklisted=False,
         )
         ClientFactory(
-            session=session, establishment=establishment, is_vip=False, is_blacklisted=True
+            session=session,
+            establishment=establishment,
+            is_vip=False,
+            is_loyal=False,
+            is_blacklisted=True,
         )
         ClientFactory(
-            session=session, establishment=establishment, is_vip=False, is_blacklisted=False
+            session=session,
+            establishment=establishment,
+            is_vip=False,
+            is_loyal=True,
+            is_blacklisted=False,
         )
         session.commit()
 
-        response = client.get(
-            "/api/staff/clients/?label_filter=regular", headers=auth_headers_staff
-        )
+        response = client.get("/api/staff/clients/?label_filter=loyal", headers=auth_headers_staff)
         assert response.status_code == 200
         items = response.json()["items"]
 
         assert len(items) == 2
-        assert all(item["is_vip"] is False and item["is_blacklisted"] is False for item in items)
+        assert all(item["is_loyal"] is True for item in items)
 
     def test_filter_all_clients(self, client: TestClient, session: Session, auth_headers_staff):
         """Test getting all clients (no filter)"""

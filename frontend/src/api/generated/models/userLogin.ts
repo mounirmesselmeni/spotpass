@@ -13,7 +13,7 @@ export type UserLogin = {
   email: string;
   /**
    * @minLength 6
-   * @maxLength 32
+   * @maxLength 72
    */
   password: string;
 };

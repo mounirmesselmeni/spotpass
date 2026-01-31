@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from establishments.schemas import EstablishmentRead
 from tables.models import TableType
@@ -60,11 +60,18 @@ class TableBase(BaseModel):
     """Base table schema"""
 
     name: str = Field(min_length=1, max_length=64)
-    description: str | None = Field(None, max_length=256)
+    description: str | None = Field(None, max_length=500)
     type: TableType = TableType.TABLE
     is_on_service: bool = True
     min_capacity: int = Field(ge=1, le=100)
     max_capacity: int = Field(ge=1, le=100)
+
+    @model_validator(mode="after")
+    def check_capacity_logic(self):
+        """Ensure min_capacity <= max_capacity"""
+        if self.min_capacity > self.max_capacity:
+            raise ValueError("Minimum capacity cannot be greater than maximum capacity")
+        return self
 
 
 class TableCreate(TableBase):
@@ -72,7 +79,17 @@ class TableCreate(TableBase):
 
     # establishment_id is now optional and will be inferred from the user's account
     establishment_id: UUID | None = None
-    zone_id: UUID | None = None
+    zone_id: UUID | None = Field(None, description="Zone assignment for the table")
+
+    @field_validator("zone_id", mode="before")
+    @classmethod
+    def validate_zone_id(cls, v):
+        """Validate zone_id with user-friendly error message"""
+        if v == "" or (isinstance(v, str) and not v.strip()):
+            raise ValueError("This field is required")
+        if v is None:
+            raise ValueError("This field is required")
+        return v
 
     model_config = {
         "json_schema_extra": {

@@ -38,6 +38,7 @@ export function TableAvailabilityPage() {
                 placeholder="19:00"
                 value={selectedTime}
                 onChange={(event) => setSelectedTime(event.currentTarget.value)}
+                withSeconds={false}
               />
 
               <NumberInput

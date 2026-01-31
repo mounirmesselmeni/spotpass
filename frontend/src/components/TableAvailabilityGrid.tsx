@@ -179,6 +179,7 @@ export function TableAvailabilityGrid({
                   value={internalSelectedTime}
                   onChange={(event) => setInternalSelectedTime(event.currentTarget.value)}
                   size="sm"
+                  withSeconds={false}
                 />
               </Grid.Col>
               <Grid.Col span={{ base: 12, sm: 4 }}>

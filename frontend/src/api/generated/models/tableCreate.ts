@@ -30,5 +30,6 @@ export type TableCreate = {
    */
   max_capacity: number;
   establishment_id?: string | null;
+  /** Zone assignment for the table */
   zone_id?: string | null;
 };

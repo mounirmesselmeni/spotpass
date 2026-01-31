@@ -110,7 +110,10 @@ axios.interceptors.response.use(
     }
 
     // Show error notification for other errors
-    if (error.response?.status && error.response.status >= 400) {
+    // Skip 422 (validation errors) - let forms handle them with field-level errors
+    // Skip 400 (bad request) - forms will handle these too
+    if (error.response?.status && error.response.status >= 500) {
+      // Only show notifications for server errors (500+)
       const errorData = error.response.data as Record<string, unknown>;
       const message = String(errorData?.detail || errorData?.message || error.message);
       notifications.show({
@@ -119,6 +122,8 @@ axios.interceptors.response.use(
         color: 'red',
       });
     }
+    // For 400-499 errors (client errors), let the calling code handle them
+    // This allows forms to show field-level validation errors properly
 
     return Promise.reject(error);
   }

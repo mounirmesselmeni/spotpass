@@ -10,10 +10,15 @@
  * Schema for creating reservations
  */
 export type ReservationCreate = {
-  /** @minimum 1 */
+  /**
+   * Number of guests (max 50 per reservation)
+   * @minimum 1
+   * @maximum 50
+   */
   number_of_guests: number;
   reservation_date: string;
   reservation_time?: string | null;
+  /** Special requests (max 500 characters) */
   special_request?: string | null;
   client_id: string;
   table_id?: string | null;

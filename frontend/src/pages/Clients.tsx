@@ -6,7 +6,10 @@ import {
   useUpdateClientApiStaffClientsClientIdPatch,
 } from '@/api/generated/staff-clients/staff-clients';
 import { SortableTableHeader } from '@/components/SortableTableHeader';
+import { ClientBadges } from '@/components';
 import { formatDateTimeParts } from '@/utils/dateUtils';
+import { NOTIFICATION_SUCCESS, NOTIFICATION_ERROR } from '@/utils/colorConstants';
+import { handleFormErrors } from '@/utils/formErrors';
 import {
   ActionIcon,
   Box,
@@ -26,7 +29,14 @@ import {
 import { useForm } from '@mantine/form';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconPencil, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react';
+import {
+  IconFilter,
+  IconPencil,
+  IconPlus,
+  IconSearch,
+  IconTrash,
+  IconX,
+} from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -44,7 +54,7 @@ export function ClientsPage() {
 
   // Sorting state
   const [sortBy, setSortBy] = useState<'name' | 'email' | 'phone' | 'created_at'>('created_at');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const { data: clientsResponse, isLoading: loadingClients } = useListClientsApiStaffClientsGet({
     page: page,
@@ -79,9 +89,27 @@ export function ClientsPage() {
     },
     validate: {
       full_name: (value) => (value.trim().length > 0 ? null : t('clients.nameRequired')),
-      phone_number: (value) => (value.trim().length > 0 ? null : t('clients.phoneRequired')),
-      status: (value) =>
-        value.length === 1 ? null : t('clients.clientTypeRequired', 'Please select a client type'),
+      phone_number: (value) => {
+        if (!value || value.trim().length === 0) {
+          return t('clients.phoneRequired');
+        }
+        // Basic phone format check (allow common formats)
+        const cleaned = value.replace(/[\s\-()]/g, '');
+        if (!/^\+?[0-9]{8,15}$/.test(cleaned)) {
+          return t('clients.phoneInvalid', 'Format invalide (ex: +33612345678)');
+        }
+        return null;
+      },
+      email: (value) => {
+        // Email is optional, but if provided, validate format
+        if (value && value.trim().length > 0) {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value)) {
+            return t('clients.emailInvalid', 'Adresse email invalide');
+          }
+        }
+        return null;
+      },
     },
   });
 
@@ -92,11 +120,11 @@ export function ClientsPage() {
       if (client.is_vip) {
         status.push('vip');
       }
+      if (client.is_loyal) {
+        status.push('loyal');
+      }
       if (client.is_blacklisted) {
         status.push('blacklisted');
-      }
-      if (!client.is_vip && !client.is_blacklisted) {
-        status.push('regular');
       }
       form.setValues({
         full_name: client.full_name,
@@ -121,7 +149,9 @@ export function ClientsPage() {
     const isEditing = !!editingClient;
 
     // Convert status array to boolean fields
+    // Each flag is independent - user can select none, one, two, or all three
     const is_vip = values.status.includes('vip');
+    const is_loyal = values.status.includes('loyal');
     const is_blacklisted = values.status.includes('blacklisted');
 
     try {
@@ -134,6 +164,7 @@ export function ClientsPage() {
             phone_number: values.phone_number,
             email: values.email || undefined,
             is_vip,
+            is_loyal,
             is_blacklisted,
           },
         });
@@ -144,6 +175,7 @@ export function ClientsPage() {
             phone_number: values.phone_number,
             email: values.email || undefined,
             is_vip,
+            is_loyal,
             is_blacklisted,
           },
         });
@@ -157,18 +189,32 @@ export function ClientsPage() {
       notifications.show({
         title: t('common.success'),
         message: isEditing ? t('clients.updatedSuccessfully') : t('clients.createdSuccessfully'),
-        color: 'green',
+        color: NOTIFICATION_SUCCESS,
       });
 
       queryClient.invalidateQueries({ queryKey: ['/api/staff/clients/'] });
       handleCloseModal();
     } catch (error: any) {
       console.error('Error saving client:', error);
-      notifications.show({
-        title: t('common.error'),
-        message: error.message || (isEditing ? t('clients.updateError') : t('clients.createError')),
-        color: 'red',
-      });
+
+      // Handle validation errors with field-level feedback and translation
+      const { hasFieldErrors, globalError } = handleFormErrors(error, form, t);
+
+      // Only show global notification if no field errors were set
+      if (!hasFieldErrors && globalError) {
+        notifications.show({
+          title: t('common.error'),
+          message: globalError,
+          color: NOTIFICATION_ERROR,
+        });
+      } else if (hasFieldErrors) {
+        // Show subtle notification that fields have errors
+        notifications.show({
+          title: t('common.validationError'),
+          message: t('common.checkFields'),
+          color: NOTIFICATION_ERROR,
+        });
+      }
     }
   };
 
@@ -178,7 +224,7 @@ export function ClientsPage() {
       notifications.show({
         title: t('common.success'),
         message: t('clients.deletedSuccessfully'),
-        color: 'green',
+        color: NOTIFICATION_SUCCESS,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/staff/clients/'] });
     } catch (error) {
@@ -186,7 +232,7 @@ export function ClientsPage() {
       notifications.show({
         title: t('common.error'),
         message: t('clients.deleteError'),
-        color: 'red',
+        color: NOTIFICATION_ERROR,
       });
     }
   };
@@ -216,24 +262,51 @@ export function ClientsPage() {
 
         <Card withBorder>
           <Stack gap="md" mb="md">
-            <TextInput
-              placeholder={t('clients.searchPlaceholder')}
-              leftSection={<IconSearch size={16} />}
-              value={search}
-              onChange={(e) => setSearch(e.currentTarget.value)}
-            />
+            <Group justify="space-between" align="center">
+              <Group gap="xs">
+                <IconFilter size={16} />
+                <Text size="sm" fw={600}>
+                  {t('common.filters', 'Filters')}
+                </Text>
+              </Group>
+              {(search || labelFilter.length > 0) && (
+                <Button
+                  variant="subtle"
+                  size="xs"
+                  leftSection={<IconX size={14} />}
+                  onClick={() => {
+                    setSearch('');
+                    setLabelFilter([]);
+                    setPage(1);
+                  }}
+                >
+                  {t('common.clearFilters', 'Clear all')}
+                </Button>
+              )}
+            </Group>
 
-            <MultiSelect
-              placeholder={t('clients.filterByLabel', 'Filter by label')}
-              data={[
-                { label: t('clients.vip', 'VIP'), value: 'vip' },
-                { label: t('clients.regular', 'Loyal'), value: 'regular' },
-                { label: t('clients.blacklisted', 'Blacklisted'), value: 'blacklisted' },
-              ]}
-              value={labelFilter}
-              onChange={setLabelFilter}
-              clearable
-            />
+            <Group gap="md">
+              <TextInput
+                placeholder={t('clients.searchPlaceholder')}
+                leftSection={<IconSearch size={16} />}
+                value={search}
+                onChange={(e) => setSearch(e.currentTarget.value)}
+                style={{ flex: 1 }}
+              />
+
+              <MultiSelect
+                placeholder={t('clients.filterByLabel', 'Filter by label')}
+                data={[
+                  { label: t('clients.vip', 'VIP'), value: 'vip' },
+                  { label: t('clients.loyal', 'Loyal'), value: 'loyal' },
+                  { label: t('clients.blacklisted', 'Blacklisted'), value: 'blacklisted' },
+                ]}
+                value={labelFilter}
+                onChange={setLabelFilter}
+                clearable
+                style={{ flex: 1, minWidth: 200 }}
+              />
+            </Group>
           </Stack>
 
           {/* Desktop Table View */}
@@ -304,32 +377,18 @@ export function ClientsPage() {
                   </Table.Tr>
                 ) : (
                   filteredClients.map((client: ClientRead) => {
-                    const badges = [];
-                    if (client.is_vip) {
-                      badges.push(
-                        `<span style="display: inline-block; background-color: #FFF4E5; color: #FF8C00; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px;">${t('clients.vip')}</span>`
-                      );
-                    }
-                    if (client.is_blacklisted) {
-                      badges.push(
-                        `<span style="display: inline-block; background-color: #FFE5E5; color: #FF0000; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px;">${t('clients.blacklisted')}</span>`
-                      );
-                    }
-                    if (!client.is_vip && !client.is_blacklisted) {
-                      badges.push(
-                        `<span style="display: inline-block; background-color: #F0F0F0; color: #6B7280; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px;">${t('clients.regular')}</span>`
-                      );
-                    }
-                    const badgeHtml = badges.join('');
-
                     return (
                       <Table.Tr key={client.id}>
                         <Table.Td>
-                          <div
-                            dangerouslySetInnerHTML={{
-                              __html: `${client.full_name}${badgeHtml ? '<br>' + badgeHtml : ''}`,
-                            }}
-                          />
+                          <Stack gap={4}>
+                            <Text>{client.full_name}</Text>
+                            <ClientBadges
+                              isVip={client.is_vip}
+                              isLoyal={client.is_loyal}
+                              isBlacklisted={client.is_blacklisted}
+                              size="xs"
+                            />
+                          </Stack>
                         </Table.Td>
                         <Table.Td>{client.email || '-'}</Table.Td>
                         <Table.Td>{client.phone_number}</Table.Td>
@@ -388,34 +447,20 @@ export function ClientsPage() {
                 </Card>
               ) : (
                 filteredClients.map((client: ClientRead) => {
-                  const badges = [];
-                  if (client.is_vip) {
-                    badges.push(
-                      `<span style="display: inline-block; background-color: #FFF4E5; color: #FF8C00; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px;">${t('clients.vip')}</span>`
-                    );
-                  }
-                  if (client.is_blacklisted) {
-                    badges.push(
-                      `<span style="display: inline-block; background-color: #FFE5E5; color: #FF0000; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px;">${t('clients.blacklisted')}</span>`
-                    );
-                  }
-                  if (!client.is_vip && !client.is_blacklisted) {
-                    badges.push(
-                      `<span style="display: inline-block; background-color: #F0F0F0; color: #6B7280; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px;">${t('clients.regular')}</span>`
-                    );
-                  }
-                  const badgeHtml = badges.join('');
-
                   return (
                     <Card key={client.id} withBorder padding="md">
                       <Group justify="space-between" mb="xs">
-                        <Text fw={500} size="lg">
-                          <div
-                            dangerouslySetInnerHTML={{
-                              __html: `${client.full_name}${badgeHtml ? '<br>' + badgeHtml : ''}`,
-                            }}
+                        <Stack gap={4}>
+                          <Text fw={500} size="lg">
+                            {client.full_name}
+                          </Text>
+                          <ClientBadges
+                            isVip={client.is_vip}
+                            isLoyal={client.is_loyal}
+                            isBlacklisted={client.is_blacklisted}
+                            size="xs"
                           />
-                        </Text>
+                        </Stack>
                         <Group gap="xs">
                           <ActionIcon
                             variant="light"
@@ -482,6 +527,7 @@ export function ClientsPage() {
               <TextInput
                 label={t('clients.phone')}
                 placeholder={t('clients.phonePlaceholder')}
+                description={t('clients.phoneDescription', 'Format: +33612345678 ou 0612345678')}
                 {...form.getInputProps('phone_number')}
                 required
               />
@@ -493,13 +539,16 @@ export function ClientsPage() {
               <MultiSelect
                 label={t('clients.clientType', 'Client Type')}
                 placeholder={t('clients.selectClientType', 'Select client type')}
+                description={t(
+                  'clients.clientTypeDescription',
+                  'Select any combination of VIP, Loyal, and/or Blacklisted'
+                )}
                 data={[
                   { label: t('clients.vip', 'VIP'), value: 'vip' },
-                  { label: t('clients.regular', 'Loyal'), value: 'regular' },
+                  { label: t('clients.loyal', 'Loyal'), value: 'loyal' },
                   { label: t('clients.blacklisted', 'Blacklisted'), value: 'blacklisted' },
                 ]}
                 {...form.getInputProps('status')}
-                maxValues={1}
               />
               <Group justify="flex-end" mt="md">
                 <Button variant="light" onClick={handleCloseModal}>

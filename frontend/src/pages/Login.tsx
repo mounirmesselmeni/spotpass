@@ -3,6 +3,7 @@ import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
+import { NOTIFICATION_ERROR, PRIMARY_BLUE } from '@/utils/colorConstants';
 import { useStaffLoginApiStaffAuthLoginPost } from '@/api/generated/authentication/authentication';
 import { useTranslation } from 'react-i18next';
 import { ModernButton, GradientText } from '@/components';
@@ -37,14 +38,18 @@ export function LoginPage() {
           notifications.show({
             title: t('common.success'),
             message: t('auth.loginSuccess'),
-            color: 'blue',
+            color: PRIMARY_BLUE,
           });
           navigate('/');
         }
       },
       onError: (error: any) => {
         const errorMessage = error?.response?.data?.detail || t('auth.loginError');
-        notifications.show({ title: t('common.error'), message: errorMessage, color: 'red' });
+        notifications.show({
+          title: t('common.error'),
+          message: errorMessage,
+          color: NOTIFICATION_ERROR,
+        });
       },
     },
   });
@@ -60,7 +65,7 @@ export function LoginPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#FAFAFA',
+        background: 'var(--mantine-color-gray-0)',
         padding: '48px 24px',
       }}
     >

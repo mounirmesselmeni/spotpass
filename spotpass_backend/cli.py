@@ -229,19 +229,33 @@ def init_db(
         created_clients = []
         for i in range(10):
             is_vip = i < 2  # First 2 are VIP
+            is_loyal = i in [2, 3, 4]  # Next 3 are Loyal
+            is_blacklisted = i == 9  # Last one is blacklisted
             client = Client(
                 full_name=fake.name(),
                 email=fake.email(),
                 phone_number=fake.phone_number(),
                 is_vip=is_vip,
+                is_loyal=is_loyal,
+                is_blacklisted=is_blacklisted,
                 establishment_id=establishment.id,
                 account_id=account.id,
             )
             session.add(client)
             session.flush()
             created_clients.append(client)
-            vip_badge = " [gold]⭐ VIP[/gold]" if client.is_vip else ""
-            console.print(f"[green]✓[/green] Client: {client.full_name}{vip_badge}")
+
+            # Build status badges
+            badges = []
+            if client.is_vip:
+                badges.append("[gold]⭐ VIP[/gold]")
+            if client.is_loyal:
+                badges.append("[blue]💙 Loyal[/blue]")
+            if client.is_blacklisted:
+                badges.append("[red]⛔ Blacklisted[/red]")
+
+            badge_str = " " + " ".join(badges) if badges else ""
+            console.print(f"[green]✓[/green] Client: {client.full_name}{badge_str}")
 
         # 8. Create Sample Reservations
         from datetime import timedelta
@@ -448,6 +462,7 @@ def seed_data(
             email = fake.email()
             phone = fake.phone_number()
             is_vip = random.random() < 0.15  # 15% VIP clients
+            is_loyal = random.random() < 0.25  # 25% loyal clients
             is_blacklisted = random.random() < 0.05  # 5% blacklisted
 
             client = Client(
@@ -455,6 +470,7 @@ def seed_data(
                 email=email,
                 phone_number=phone,
                 is_vip=is_vip,
+                is_loyal=is_loyal,
                 is_blacklisted=is_blacklisted,
                 establishment_id=establishment.id,
                 account_id=account.id,

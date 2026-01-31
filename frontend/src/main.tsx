@@ -38,7 +38,7 @@ export function Root() {
   return (
     <React.StrictMode>
       <MantineProvider defaultColorScheme={colorScheme} theme={theme}>
-        <DatesProvider settings={{ locale: 'fr' }}>
+        <DatesProvider settings={{ locale: 'fr', firstDayOfWeek: 1 }}>
           <ModalsProvider>
             <Notifications position="top-right" />
             <QueryClientProvider client={queryClient}>

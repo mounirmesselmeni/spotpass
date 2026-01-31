@@ -22,8 +22,9 @@ export type BoUserCreate = {
   last_name: string;
   email: string;
   /**
-   * @minLength 6
-   * @maxLength 32
+   * Password (min 8 chars, must include uppercase, lowercase, and number)
+   * @minLength 8
+   * @maxLength 72
    */
   password: string;
   disabled?: boolean;

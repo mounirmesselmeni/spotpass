@@ -44,7 +44,7 @@ class TestBoUsers:
             "first_name": "Jane",
             "last_name": "Doe",
             "email": "jane@example.com",
-            "password": "password123",
+            "password": "Password123",
         }
 
         response = client.post("/api/bo/bo-users", json=user_data, headers=auth_headers_bo)
@@ -66,7 +66,7 @@ class TestBoUsers:
             "first_name": "Jane",
             "last_name": "Doe",
             "email": "duplicate@example.com",
-            "password": "password123",
+            "password": "Password123",
         }
 
         response = client.post("/api/bo/bo-users", json=user_data, headers=auth_headers_bo)

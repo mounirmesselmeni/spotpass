@@ -3,6 +3,7 @@ import {
   useListClientsApiStaffClientsGet,
 } from '@/api/generated/staff-clients/staff-clients';
 import { useCreateReservationApiStaffReservationsPost } from '@/api/generated/staff-reservations/staff-reservations';
+import { formatDate } from '@/utils/dateUtils';
 import {
   Alert,
   Button,
@@ -20,8 +21,8 @@ import {
   Textarea,
   TextInput,
   Title,
+  useCombobox,
 } from '@mantine/core';
-import { useCombobox } from '@mantine/core';
 import { DatePickerInput, TimeInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { useDebouncedValue } from '@mantine/hooks';
@@ -31,7 +32,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { formatDate } from '@/utils/dateUtils';
 
 interface ReservationWizardProps {
   opened: boolean;
@@ -155,8 +155,8 @@ export function ReservationWizard({ opened, onClose, onSuccess }: ReservationWiz
       // Ensure reservation_time is in HH:MM:SS format
       let timeValue = form.values.reservation_time;
       // If time doesn't have seconds, add them
-      if (timeValue && !timeValue.includes(':00:')) {
-        timeValue = timeValue.length === 5 ? `${timeValue}:00` : timeValue;
+      if (timeValue && timeValue.length === 5) {
+        timeValue = `${timeValue}:00`;
       }
 
       const reservationResponse = await createReservationMutation.mutateAsync({

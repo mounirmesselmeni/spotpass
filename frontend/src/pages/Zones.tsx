@@ -5,6 +5,9 @@ import {
   useListZonesApiStaffZonesGet,
   useUpdateZoneApiStaffZonesZoneIdPatch,
 } from '@/api/generated/staff-zones/staff-zones';
+import { NOTIFICATION_ERROR } from '@/utils/colorConstants';
+import { formatDateTimeParts } from '@/utils/dateUtils';
+import { handleFormErrors } from '@/utils/formErrors';
 import {
   ActionIcon,
   Box,
@@ -20,13 +23,19 @@ import {
   Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useDisclosure } from '@mantine/hooks';
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconPencil, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react';
+import {
+  IconFilter,
+  IconPencil,
+  IconPlus,
+  IconSearch,
+  IconTrash,
+  IconX,
+} from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDateTimeParts } from '@/utils/dateUtils';
 
 export function ZonesPage() {
   const { t } = useTranslation();
@@ -34,6 +43,7 @@ export function ZonesPage() {
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
   const [editingZone, setEditingZone] = useState<ZoneRead | null>(null);
   const [search, setSearch] = useState('');
+  const [debouncedSearch] = useDebouncedValue(search, 300);
 
   const { data: zonesResponse, isLoading } = useListZonesApiStaffZonesGet({
     sort_by: 'created_at',
@@ -92,13 +102,24 @@ export function ZonesPage() {
 
       queryClient.invalidateQueries({ queryKey: ['/api/staff/zones/'] });
       handleCloseModal();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving zone:', error);
-      notifications.show({
-        title: t('common.error'),
-        message: isEditing ? t('zones.updateError') : t('zones.createError'),
-        color: 'red',
-      });
+
+      const { hasFieldErrors, globalError } = handleFormErrors(error, form, t);
+
+      if (!hasFieldErrors && globalError) {
+        notifications.show({
+          title: t('common.error'),
+          message: globalError,
+          color: NOTIFICATION_ERROR,
+        });
+      } else if (hasFieldErrors) {
+        notifications.show({
+          title: t('common.validationError'),
+          message: t('common.checkFields'),
+          color: NOTIFICATION_ERROR,
+        });
+      }
     }
   };
 
@@ -122,7 +143,7 @@ export function ZonesPage() {
   };
 
   const filteredZones = Array.isArray(zonesResponse?.data)
-    ? zonesResponse.data.filter((z) => z.name.toLowerCase().includes(search.toLowerCase()))
+    ? zonesResponse.data.filter((z) => z.name.toLowerCase().includes(debouncedSearch.toLowerCase()))
     : [];
 
   if (isLoading) {
@@ -145,13 +166,33 @@ export function ZonesPage() {
         </Group>
 
         <Card withBorder>
-          <TextInput
-            placeholder={t('zones.searchPlaceholder')}
-            leftSection={<IconSearch size={16} />}
-            value={search}
-            onChange={(e) => setSearch(e.currentTarget.value)}
-            mb="md"
-          />
+          <Stack gap="md">
+            <Group justify="space-between" align="center">
+              <Group gap="xs">
+                <IconFilter size={16} />
+                <Text size="sm" fw={600}>
+                  {t('common.filters', 'Filters')}
+                </Text>
+              </Group>
+              {search && (
+                <Button
+                  variant="subtle"
+                  size="xs"
+                  leftSection={<IconX size={14} />}
+                  onClick={() => setSearch('')}
+                >
+                  {t('common.clearFilters', 'Clear')}
+                </Button>
+              )}
+            </Group>
+
+            <TextInput
+              placeholder={t('zones.searchPlaceholder')}
+              leftSection={<IconSearch size={16} />}
+              value={search}
+              onChange={(e) => setSearch(e.currentTarget.value)}
+            />
+          </Stack>
 
           <Box visibleFrom="md">
             <Table striped highlightOnHover>

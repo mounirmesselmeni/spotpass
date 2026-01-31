@@ -238,7 +238,7 @@ paths:
 
         - **sort_order**: Sort order (asc, desc), default: asc
 
-        - **label_filter**: Filter by client labels (vip, blacklisted, regular). Can
+        - **label_filter**: Filter by client labels (vip, loyal, blacklisted). Can
         be multiple values.
 
         - **search**: Search query to filter clients by name, phone, or email'
@@ -1297,9 +1297,11 @@ components:
           title: Email
         password:
           type: string
-          maxLength: 32
-          minLength: 6
+          maxLength: 72
+          minLength: 8
           title: Password
+          description: Password (min 8 chars, must include uppercase, lowercase, and
+            number)
         disabled:
           type: boolean
           title: Disabled
@@ -1360,6 +1362,7 @@ components:
           maxLength: 64
           minLength: 1
           title: Full Name
+          description: Client full name
         email:
           anyOf:
           - type: string
@@ -1371,18 +1374,25 @@ components:
           maxLength: 32
           minLength: 1
           title: Phone Number
+          description: International phone number format
         messenger_id:
           anyOf:
           - type: string
+            maxLength: 255
           - type: 'null'
           title: Messenger Id
-        is_blacklisted:
-          type: boolean
-          title: Is Blacklisted
-          default: false
+          description: Messenger ID
         is_vip:
           type: boolean
           title: Is Vip
+          default: false
+        is_loyal:
+          type: boolean
+          title: Is Loyal
+          default: false
+        is_blacklisted:
+          type: boolean
+          title: Is Blacklisted
           default: false
       type: object
       required:
@@ -1394,6 +1404,7 @@ components:
       - email: jane.smith@example.com
         full_name: Jane Smith
         is_blacklisted: false
+        is_loyal: false
         is_vip: false
         messenger_id: messenger_12345
         phone_number: '+33612345678'
@@ -1463,6 +1474,7 @@ components:
           maxLength: 64
           minLength: 1
           title: Full Name
+          description: Client full name
         email:
           anyOf:
           - type: string
@@ -1474,18 +1486,25 @@ components:
           maxLength: 32
           minLength: 1
           title: Phone Number
+          description: International phone number format
         messenger_id:
           anyOf:
           - type: string
+            maxLength: 255
           - type: 'null'
           title: Messenger Id
-        is_blacklisted:
-          type: boolean
-          title: Is Blacklisted
-          default: false
+          description: Messenger ID
         is_vip:
           type: boolean
           title: Is Vip
+          default: false
+        is_loyal:
+          type: boolean
+          title: Is Loyal
+          default: false
+        is_blacklisted:
+          type: boolean
+          title: Is Blacklisted
           default: false
         id:
           type: string
@@ -1531,16 +1550,21 @@ components:
             minLength: 1
           - type: 'null'
           title: Phone Number
-        is_blacklisted:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Is Blacklisted
         is_vip:
           anyOf:
           - type: boolean
           - type: 'null'
           title: Is Vip
+        is_loyal:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Loyal
+        is_blacklisted:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Blacklisted
       type: object
       title: ClientUpdate
       description: Schema for updating clients
@@ -1889,8 +1913,10 @@ components:
       properties:
         number_of_guests:
           type: integer
+          maximum: 50.0
           minimum: 1.0
           title: Number Of Guests
+          description: Number of guests (max 50 per reservation)
         reservation_date:
           type: string
           format: date
@@ -1904,8 +1930,10 @@ components:
         special_request:
           anyOf:
           - type: string
+            maxLength: 500
           - type: 'null'
           title: Special Request
+          description: Special requests (max 500 characters)
         client_id:
           type: string
           format: uuid
@@ -2175,8 +2203,10 @@ components:
       properties:
         number_of_guests:
           type: integer
+          maximum: 50.0
           minimum: 1.0
           title: Number Of Guests
+          description: Number of guests (max 50 per reservation)
         reservation_date:
           type: string
           format: date
@@ -2190,8 +2220,10 @@ components:
         special_request:
           anyOf:
           - type: string
+            maxLength: 500
           - type: 'null'
           title: Special Request
+          description: Special requests (max 500 characters)
         id:
           type: string
           format: uuid
@@ -2281,8 +2313,10 @@ components:
         note:
           anyOf:
           - type: string
+            maxLength: 1000
           - type: 'null'
           title: Note
+          description: Internal notes (max 1000 characters)
         no_show:
           anyOf:
           - type: boolean
@@ -2320,8 +2354,10 @@ components:
       properties:
         number_of_guests:
           type: integer
+          maximum: 50.0
           minimum: 1.0
           title: Number Of Guests
+          description: Number of guests (max 50 per reservation)
         reservation_date:
           type: string
           format: date
@@ -2335,8 +2371,10 @@ components:
         special_request:
           anyOf:
           - type: string
+            maxLength: 500
           - type: 'null'
           title: Special Request
+          description: Special requests (max 500 characters)
         id:
           type: string
           format: uuid
@@ -2474,7 +2512,7 @@ components:
         description:
           anyOf:
           - type: string
-            maxLength: 256
+            maxLength: 500
           - type: 'null'
           title: Description
         type:
@@ -2506,6 +2544,7 @@ components:
             format: uuid
           - type: 'null'
           title: Zone Id
+          description: Zone assignment for the table
       type: object
       required:
       - name
@@ -2553,7 +2592,7 @@ components:
         description:
           anyOf:
           - type: string
-            maxLength: 256
+            maxLength: 500
           - type: 'null'
           title: Description
         type:
@@ -2765,7 +2804,7 @@ components:
           title: Email
         password:
           type: string
-          maxLength: 32
+          maxLength: 72
           minLength: 6
           title: Password
       type: object

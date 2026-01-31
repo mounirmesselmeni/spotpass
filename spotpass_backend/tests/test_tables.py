@@ -69,7 +69,7 @@ class TestTableList:
 
         response = client.post("/api/staff/tables/", json=table_data, headers=auth_headers_staff)
 
-        assert response.status_code == 400
+        assert response.status_code == 422
 
 
 class TestTableDetail:

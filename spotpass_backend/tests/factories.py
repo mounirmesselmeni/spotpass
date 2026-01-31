@@ -150,8 +150,9 @@ class ClientFactory(BaseFactory):
     email = factory.Faker("email")
     phone_number = factory.Faker("phone_number")
     messenger_id = factory.Sequence(lambda n: f"messenger_{n}")
-    is_blacklisted = False
     is_vip = False
+    is_loyal = False
+    is_blacklisted = False
     establishment_id = 1  # Default
     account_id = 1  # Default
 

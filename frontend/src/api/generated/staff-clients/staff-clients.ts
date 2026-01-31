@@ -41,7 +41,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 - **page_size**: Number of items per page (max 1000), default: 20
 - **sort_by**: Sort field (name, email, phone, created_at), default: name
 - **sort_order**: Sort order (asc, desc), default: asc
-- **label_filter**: Filter by client labels (vip, blacklisted, regular). Can be multiple values.
+- **label_filter**: Filter by client labels (vip, loyal, blacklisted). Can be multiple values.
 - **search**: Search query to filter clients by name, phone, or email
  * @summary List Clients
  */

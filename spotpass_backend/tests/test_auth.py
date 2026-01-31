@@ -20,12 +20,12 @@ class TestStaffAuth:
 
         # Create a staff user
         user = UserFactory(
-            session=session, email="staff@test.com", password="password123", account_id=account.id
+            session=session, email="staff@test.com", password="Password123", account_id=account.id
         )
         session.commit()
 
         response = client.post(
-            "/api/staff/auth/login", json={"email": "staff@test.com", "password": "password123"}
+            "/api/staff/auth/login", json={"email": "staff@test.com", "password": "Password123"}
         )
 
         assert response.status_code == 200
@@ -53,7 +53,7 @@ class TestStaffAuth:
         """Test staff login with invalid email"""
         response = client.post(
             "/api/staff/auth/login",
-            json={"email": "nonexistent@test.com", "password": "password123"},
+            json={"email": "nonexistent@test.com", "password": "Password123"},
         )
 
         assert response.status_code == 401
@@ -69,7 +69,7 @@ class TestStaffAuth:
         session.flush()
 
         UserFactory(
-            session=session, email="staff@test.com", password="password123", account_id=account.id
+            session=session, email="staff@test.com", password="Password123", account_id=account.id
         )
         session.commit()
 
@@ -86,11 +86,11 @@ class TestBoAuth:
 
     def test_bo_login_success(self, client: TestClient, session: Session):
         """Test successful BO login"""
-        user = BoUserFactory(session=session, email="admin@test.com", password="password123")
+        user = BoUserFactory(session=session, email="admin@test.com", password="Password123")
         session.commit()
 
         response = client.post(
-            "/api/bo/auth/login", json={"email": "admin@test.com", "password": "password123"}
+            "/api/bo/auth/login", json={"email": "admin@test.com", "password": "Password123"}
         )
 
         assert response.status_code == 200
@@ -136,13 +136,13 @@ class TestRefreshToken:
         session.flush()
 
         UserFactory(
-            session=session, email="staff@test.com", password="password123", account_id=account.id
+            session=session, email="staff@test.com", password="Password123", account_id=account.id
         )
         session.commit()
 
         # Login to get tokens
         login_response = client.post(
-            "/api/staff/auth/login", json={"email": "staff@test.com", "password": "password123"}
+            "/api/staff/auth/login", json={"email": "staff@test.com", "password": "Password123"}
         )
 
         assert login_response.status_code == 200
@@ -164,12 +164,12 @@ class TestRefreshToken:
 
     def test_bo_refresh_token_success(self, client: TestClient, session: Session):
         """Test successful BO token refresh"""
-        BoUserFactory(session=session, email="admin@test.com", password="password123")
+        BoUserFactory(session=session, email="admin@test.com", password="Password123")
         session.commit()
 
         # Login to get tokens
         login_response = client.post(
-            "/api/bo/auth/login", json={"email": "admin@test.com", "password": "password123"}
+            "/api/bo/auth/login", json={"email": "admin@test.com", "password": "Password123"}
         )
 
         assert login_response.status_code == 200

@@ -13,10 +13,15 @@ import type { ReservationStatus } from './reservationStatus';
  * Reservation with full client details
  */
 export type ReservationWithClientRead = {
-  /** @minimum 1 */
+  /**
+   * Number of guests (max 50 per reservation)
+   * @minimum 1
+   * @maximum 50
+   */
   number_of_guests: number;
   reservation_date: string;
   reservation_time?: string | null;
+  /** Special requests (max 500 characters) */
   special_request?: string | null;
   id: string;
   reference: string;

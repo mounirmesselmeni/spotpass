@@ -5,7 +5,9 @@ import {
   useUpdateTableApiStaffTablesTableIdPatch,
 } from '@/api/generated/staff-tables/staff-tables';
 import { useListZonesApiStaffZonesGet } from '@/api/generated/staff-zones/staff-zones';
-import { axios } from '@/api/mutator/custom-instance';
+import { getAvailabilityBadgeColor } from '@/utils/badgeHelpers';
+import { NOTIFICATION_ERROR } from '@/utils/colorConstants';
+import { handleFormErrors } from '@/utils/formErrors';
 import { getTableTypeIcon } from '@/utils/tableUtils';
 import {
   ActionIcon,
@@ -187,12 +189,22 @@ export function TablesPage() {
             form.reset();
             refetch();
           },
-          onError: () => {
-            notifications.show({
-              title: t('common.error'),
-              message: t('tables.updateError', 'Failed to update table'),
-              color: 'red',
-            });
+          onError: (error: any) => {
+            const { hasFieldErrors, globalError } = handleFormErrors(error, form, t);
+
+            if (!hasFieldErrors && globalError) {
+              notifications.show({
+                title: t('common.error'),
+                message: globalError,
+                color: NOTIFICATION_ERROR,
+              });
+            } else if (hasFieldErrors) {
+              notifications.show({
+                title: t('common.validationError'),
+                message: t('common.checkFields'),
+                color: NOTIFICATION_ERROR,
+              });
+            }
           },
         }
       );
@@ -210,12 +222,22 @@ export function TablesPage() {
             form.reset();
             refetch();
           },
-          onError: () => {
-            notifications.show({
-              title: t('common.error'),
-              message: t('tables.createError', 'Failed to create table'),
-              color: 'red',
-            });
+          onError: (error: any) => {
+            const { hasFieldErrors, globalError } = handleFormErrors(error, form, t);
+
+            if (!hasFieldErrors && globalError) {
+              notifications.show({
+                title: t('common.error'),
+                message: globalError,
+                color: NOTIFICATION_ERROR,
+              });
+            } else if (hasFieldErrors) {
+              notifications.show({
+                title: t('common.validationError'),
+                message: t('common.checkFields'),
+                color: NOTIFICATION_ERROR,
+              });
+            }
           },
         }
       );
@@ -263,20 +285,25 @@ export function TablesPage() {
   const fetchTimeSlots = async (tableId: string, date: Date | null) => {
     if (!date) return;
     setLoadingSlots(true);
+    setTimeSlots([]);
+
     try {
-      const response = await axios.get(`/api/staff/tables/${tableId}/time-slots`, {
-        params: {
-          date: date.toISOString().split('T')[0],
-        },
+      // Use Orval-generated function
+      const { getTableTimeSlotsApiStaffTablesTableIdTimeSlotsGet } =
+        await import('@/api/generated/staff-tables/staff-tables');
+      const response = await getTableTimeSlotsApiStaffTablesTableIdTimeSlotsGet(tableId, {
+        date: date.toISOString().split('T')[0],
       });
-      setTimeSlots(response.data.data);
+
+      if (response?.data) {
+        setTimeSlots(response.data as TimeSlot[]);
+      }
     } catch (error) {
       notifications.show({
         title: t('common.error'),
         message: 'Failed to load time slots',
-        color: 'red',
+        color: NOTIFICATION_ERROR,
       });
-      setTimeSlots([]);
     } finally {
       setLoadingSlots(false);
     }
@@ -627,7 +654,7 @@ export function TablesPage() {
                     title={
                       <Group justify="space-between">
                         <Text fw={500}>{slot.time}</Text>
-                        <Badge color={slot.status === 'available' ? 'green' : 'red'}>
+                        <Badge color={getAvailabilityBadgeColor(slot.status === 'available')}>
                           {slot.status === 'available'
                             ? t('tables.available', 'Available')
                             : t('tables.occupied', 'Occupied')}

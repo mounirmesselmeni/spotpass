@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from accounts.schemas import AccountRead
 from users.models import UserRole
@@ -19,10 +19,28 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """Schema for creating users"""
 
-    password: str = Field(min_length=6, max_length=32)
+    password: str = Field(
+        min_length=8,
+        max_length=72,
+        description="Password (min 8 chars, must include uppercase, lowercase, and number)",
+    )
     role: UserRole
     account_id: int
     disabled: bool = False
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v):
+        """Validate password strength requirements"""
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not any(c.islower() for c in v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain at least one number")
+        return v
 
 
 class UserUpdate(BaseModel):
@@ -52,8 +70,26 @@ class BoUserCreate(BaseModel):
     first_name: str = Field(min_length=2, max_length=64)
     last_name: str = Field(min_length=2, max_length=64)
     email: EmailStr
-    password: str = Field(min_length=6, max_length=32)
+    password: str = Field(
+        min_length=8,
+        max_length=72,
+        description="Password (min 8 chars, must include uppercase, lowercase, and number)",
+    )
     disabled: bool = False
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v):
+        """Validate password strength requirements"""
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not any(c.islower() for c in v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain at least one number")
+        return v
 
 
 class BoUserRead(BaseModel):
@@ -72,7 +108,7 @@ class UserLogin(BaseModel):
     """Schema for user login"""
 
     email: EmailStr
-    password: str = Field(min_length=6, max_length=32)
+    password: str = Field(min_length=6, max_length=72)
 
     model_config = {
         "json_schema_extra": {

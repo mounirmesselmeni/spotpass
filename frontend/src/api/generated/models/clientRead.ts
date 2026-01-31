@@ -13,19 +13,23 @@ import type { ReservationHistory } from './reservationHistory';
  */
 export type ClientRead = {
   /**
+   * Client full name
    * @minLength 1
    * @maxLength 64
    */
   full_name: string;
   email?: string | null;
   /**
+   * International phone number format
    * @minLength 1
    * @maxLength 32
    */
   phone_number: string;
+  /** Messenger ID */
   messenger_id?: string | null;
-  is_blacklisted?: boolean;
   is_vip?: boolean;
+  is_loyal?: boolean;
+  is_blacklisted?: boolean;
   id: string;
   created_at: string;
   establishment?: EstablishmentRead | null;

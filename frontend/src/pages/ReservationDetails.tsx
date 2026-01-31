@@ -1,7 +1,12 @@
-import { useUpdateReservationApiStaffReservationsReservationIdPatch } from '@/api/generated/staff-reservations/staff-reservations';
-import { axios } from '@/api/mutator/custom-instance';
+import {
+  useUpdateReservationApiStaffReservationsReservationIdPatch,
+  useGetReservationDetailsApiStaffReservationsReservationIdDetailsGet,
+  getAvailableTablesApiStaffReservationsAvailableTablesPost,
+} from '@/api/generated/staff-reservations/staff-reservations';
 import { StatusBadge } from '@/components/StatusBadge';
+import { ClientBadges } from '@/components';
 import { formatDate } from '@/utils/dateUtils';
+import { NOTIFICATION_SUCCESS, NOTIFICATION_ERROR } from '@/utils/colorConstants';
 import {
   Badge,
   Box,
@@ -66,22 +71,23 @@ export function ReservationDetailsPage() {
         const reservationTime = reservation.reservation_time || '19:00';
         const reservationDate = reservation.reservation_date;
 
-        const response = await axios.post('/api/staff/reservations/available-tables', {
+        const response = await getAvailableTablesApiStaffReservationsAvailableTablesPost({
           reservation_date: reservationDate,
           reservation_time: reservationTime,
           number_of_guests: reservation.number_of_guests,
-          duration_minutes: reservation.duration_minutes || 120,
+          establishment_id: reservation.establishment_id || undefined,
         });
 
-        setAvailableTables(response.data);
+        const tables = Array.isArray(response.data) ? response.data : [];
+        setAvailableTables(tables as AvailableTable[]);
 
         // Pre-select existing table if assigned, otherwise first available
         if (reservationDetails.table) {
           // Reservation already has a table assigned
           setSelectedTableId(reservationDetails.table.id);
-        } else if (response.data.length > 0) {
+        } else if (tables.length > 0) {
           // No existing table, select first available
-          setSelectedTableId(response.data[0].id);
+          setSelectedTableId((tables[0] as any).id);
         }
       } catch (error) {
         notifications.show({
@@ -96,27 +102,46 @@ export function ReservationDetailsPage() {
     [t]
   );
 
+  // Use Orval hook for fetching reservation details
+  const {
+    data: detailsData,
+    isLoading: detailsLoading,
+    refetch: refetchDetails,
+  } = useGetReservationDetailsApiStaffReservationsReservationIdDetailsGet(id!, {
+    query: {
+      enabled: !!id,
+    },
+  });
+
+  // Update local state when data changes
+  useEffect(() => {
+    if (detailsData?.data) {
+      setDetails(detailsData.data as ReservationDetails);
+      setLoading(false);
+
+      // If reservation is pending, auto-fetch available tables
+      if ((detailsData.data as any).reservation?.status === 'pending') {
+        fetchAvailableTables(detailsData.data as ReservationDetails);
+      }
+    }
+  }, [detailsData, fetchAvailableTables]);
+
   const fetchDetails = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`/api/staff/reservations/${id}/details`);
-      setDetails(response.data);
-
-      // If reservation is pending, auto-fetch available tables
-      if (response.data.reservation.status === 'pending') {
-        fetchAvailableTables(response.data);
-      }
+      await refetchDetails();
+      // Data will be handled by the effect above
     } catch (error) {
       notifications.show({
         title: t('common.error'),
         message: t('reservations.loadDetailsError'),
-        color: 'red',
+        color: NOTIFICATION_ERROR,
       });
       navigate('/reservations');
     } finally {
       setLoading(false);
     }
-  }, [id, navigate, t, fetchAvailableTables]);
+  }, [refetchDetails, navigate, t]);
 
   useEffect(() => {
     fetchDetails();
@@ -152,10 +177,13 @@ export function ReservationDetailsPage() {
           queryClient.invalidateQueries({ queryKey: ['reservations'] });
           fetchDetails();
         },
-        onError: () => {
+        onError: (error: any) => {
+          console.error('Error accepting reservation:', error);
+          const errorMessage =
+            error?.response?.data?.detail || error?.message || t('reservations.acceptError');
           notifications.show({
             title: t('common.error'),
-            message: t('reservations.acceptError'),
+            message: errorMessage,
             color: 'red',
           });
         },
@@ -201,10 +229,15 @@ export function ReservationDetailsPage() {
                       modals.closeAll();
                       fetchDetails();
                     },
-                    onError: () => {
+                    onError: (error: any) => {
+                      console.error('Error rejecting reservation:', error);
+                      const errorMessage =
+                        error?.response?.data?.detail ||
+                        error?.message ||
+                        t('reservations.rejectError');
                       notifications.show({
                         title: t('common.error'),
-                        message: t('reservations.rejectError'),
+                        message: errorMessage,
                         color: 'red',
                       });
                     },
@@ -259,10 +292,15 @@ export function ReservationDetailsPage() {
                       modals.closeAll();
                       fetchDetails();
                     },
-                    onError: () => {
+                    onError: (error: any) => {
+                      console.error('Error canceling reservation:', error);
+                      const errorMessage =
+                        error?.response?.data?.detail ||
+                        error?.message ||
+                        t('reservations.cancelError');
                       notifications.show({
                         title: t('common.error'),
-                        message: t('reservations.cancelError'),
+                        message: errorMessage,
                         color: 'red',
                       });
                     },
@@ -445,52 +483,13 @@ export function ReservationDetailsPage() {
                 <Text component="span" fw={600}>
                   {t('clients.name', 'Nom')}:{' '}
                 </Text>
-                {client.full_name}
-                {client.is_vip && (
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      backgroundColor: '#FFF4E5',
-                      color: '#FF8C00',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      marginLeft: '8px',
-                    }}
-                  >
-                    {t('clients.vip', 'VIP')}
-                  </span>
-                )}
-                {client.is_blacklisted && (
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      backgroundColor: '#FFE5E5',
-                      color: '#FF0000',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      marginLeft: '8px',
-                    }}
-                  >
-                    {t('clients.blacklisted', 'Blacklisté')}
-                  </span>
-                )}
-                {!client.is_vip && !client.is_blacklisted && (
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      backgroundColor: '#F0F0F0',
-                      color: '#6B7280',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      marginLeft: '8px',
-                    }}
-                  >
-                    {t('clients.regular', 'Fidéle')}
-                  </span>
-                )}
+                {client.full_name}{' '}
+                <ClientBadges
+                  isVip={client.is_vip}
+                  isLoyal={client.is_loyal}
+                  isBlacklisted={client.is_blacklisted}
+                  size="xs"
+                />
               </Text>
 
               <Text size="sm">
@@ -510,13 +509,13 @@ export function ReservationDetailsPage() {
               )}
 
               <Group gap="xs" mt="xs">
-                <Badge color="green" size="sm">
+                <Badge color={NOTIFICATION_SUCCESS} size="sm">
                   {client.total_accepted} acceptées
                 </Badge>
                 <Badge color="gray" size="sm">
                   {client.total_canceled} annulées
                 </Badge>
-                <Badge color="red" size="sm">
+                <Badge color={NOTIFICATION_ERROR} size="sm">
                   {client.total_refused} refusées
                 </Badge>
               </Group>

@@ -66,7 +66,9 @@
     "status": "Status",
     "success": "Success",
     "to": "To",
-    "update": "Update"
+    "update": "Update",
+    "validationError": "Validation Error",
+    "checkFields": "Please check the highlighted fields"
   },
   "dashboard": {
     "stats": {
@@ -220,5 +222,39 @@
     "updateError": "Failed to update zone",
     "zoneName": "Zone Name",
     "zoneNamePlaceholder": "Enter zone name"
+  },
+  "validation": {
+    "fieldRequired": "This field is required",
+    "invalidValue": "Invalid value",
+    "zoneRequired": "Please select a zone",
+    "tableRequired": "Please select a table",
+    "emailRequired": "Email is required",
+    "invalidEmail": "Invalid email address",
+    "phoneRequired": "Phone number is required",
+    "invalidPhone": "Invalid phone number",
+    "passwordRequired": "Password is required",
+    "passwordTooShort": "Password is too short",
+    "nameRequired": "Name is required",
+    "tooShort": "This value is too short",
+    "tooLong": "This value is too long",
+    "tooSmall": "Value is too small",
+    "tooLarge": "Value is too large",
+    "mustBeInteger": "Must be a whole number",
+    "mustBeString": "Must be text",
+    "mustBeBoolean": "Must be true or false",
+    "invalidUrl": "Invalid URL",
+    "fields": {
+      "zone": "Zone",
+      "table": "Table",
+      "email": "Email",
+      "phone": "Phone",
+      "fullName": "Full Name",
+      "name": "Name",
+      "password": "Password",
+      "minCapacity": "Minimum Capacity",
+      "maxCapacity": "Maximum Capacity",
+      "numberOfGuests": "Number of Guests",
+      "duration": "Duration"
+    }
   }
 }
