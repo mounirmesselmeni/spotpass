@@ -18,6 +18,8 @@ from users.schemas import (
     BoUserRead,
     DashboardStats,
     LoginResponse,
+    PasswordChange,
+    ProfileUpdate,
     RefreshTokenRequest,
     RefreshTokenResponse,
     UserInfo,
@@ -264,6 +266,142 @@ def get_current_bo_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     return user
+
+
+@staff_auth_router.put("/me", response_model=UserRead)
+def update_staff_profile(
+    profile_data: ProfileUpdate,
+    session: DatabaseSession,
+    user_id: CurrentUserId,
+    token_payload: TokenPayload,
+):
+    """Update current staff user profile"""
+
+    if token_payload.get("user_type") != "staff":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a staff user")
+
+    statement = select(User).where(User.id == int(user_id))
+    user = session.exec(statement).first()
+
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    update_data = profile_data.model_dump(exclude_unset=True)
+
+    if "email" in update_data and update_data["email"] != user.email:
+        existing = session.exec(select(User).where(User.email == update_data["email"])).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
+            )
+
+    for key, value in update_data.items():
+        setattr(user, key, value)
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    return user
+
+
+@bo_auth_router.put("/me", response_model=BoUserRead)
+def update_bo_profile(
+    profile_data: ProfileUpdate,
+    session: DatabaseSession,
+    user_id: CurrentUserId,
+    token_payload: TokenPayload,
+):
+    """Update current back office user profile"""
+
+    if token_payload.get("user_type") != "bo":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a back office user")
+
+    statement = select(BoUser).where(BoUser.id == int(user_id))
+    user = session.exec(statement).first()
+
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    update_data = profile_data.model_dump(exclude_unset=True)
+
+    if "email" in update_data and update_data["email"] != user.email:
+        existing = session.exec(select(BoUser).where(BoUser.email == update_data["email"])).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
+            )
+
+    for key, value in update_data.items():
+        setattr(user, key, value)
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    return user
+
+
+@staff_auth_router.post("/change-password", status_code=status.HTTP_200_OK)
+def change_staff_password(
+    password_data: PasswordChange,
+    session: DatabaseSession,
+    user_id: CurrentUserId,
+    token_payload: TokenPayload,
+):
+    """Change current staff user password"""
+
+    if token_payload.get("user_type") != "staff":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a staff user")
+
+    statement = select(User).where(User.id == int(user_id))
+    user = session.exec(statement).first()
+
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if not user.check_password(password_data.current_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect"
+        )
+
+    user.password = password_data.new_password
+    user.hash_password()
+    session.add(user)
+    session.commit()
+
+    return {"message": "Password changed successfully"}
+
+
+@bo_auth_router.post("/change-password", status_code=status.HTTP_200_OK)
+def change_bo_password(
+    password_data: PasswordChange,
+    session: DatabaseSession,
+    user_id: CurrentUserId,
+    token_payload: TokenPayload,
+):
+    """Change current back office user password"""
+
+    if token_payload.get("user_type") != "bo":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a back office user")
+
+    statement = select(BoUser).where(BoUser.id == int(user_id))
+    user = session.exec(statement).first()
+
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if not user.check_password(password_data.current_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect"
+        )
+
+    user.password = password_data.new_password
+    user.hash_password()
+    session.add(user)
+    session.commit()
+
+    return {"message": "Password changed successfully"}
 
 
 # Dashboard stats endpoint
