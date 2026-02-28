@@ -1,7 +1,7 @@
 """Security utilities for password hashing and JWT tokens"""
 
 import hashlib
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from jose import JWTError, jwt
@@ -50,9 +50,9 @@ def create_access_token(
     if expires_delta is None:
         expires_delta = timedelta(minutes=settings.jwt_access_token_expire_minutes)
 
-    expire = datetime.utcnow() + expires_delta
+    expire = datetime.now(UTC) + expires_delta
 
-    to_encode = {"sub": identity, "exp": expire, "iat": datetime.utcnow(), "type": "access"}
+    to_encode = {"sub": identity, "exp": expire, "iat": datetime.now(UTC), "type": "access"}
 
     if additional_claims:
         to_encode.update(additional_claims)
@@ -81,9 +81,9 @@ def create_refresh_token(
     if expires_delta is None:
         expires_delta = timedelta(days=settings.jwt_refresh_token_expire_days)
 
-    expire = datetime.utcnow() + expires_delta
+    expire = datetime.now(UTC) + expires_delta
 
-    to_encode = {"sub": identity, "exp": expire, "iat": datetime.utcnow(), "type": "refresh"}
+    to_encode = {"sub": identity, "exp": expire, "iat": datetime.now(UTC), "type": "refresh"}
 
     if additional_claims:
         to_encode.update(additional_claims)

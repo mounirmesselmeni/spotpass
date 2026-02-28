@@ -1,6 +1,6 @@
 """User authentication routes"""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, status
 from sqlmodel import func, select
@@ -39,7 +39,6 @@ def staff_login(login_data: UserLogin, session: DatabaseSession):
     user = session.exec(statement).first()
 
     if user is None or not user.check_password(login_data.password):
-        print(f"{user=}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Email or password invalid"
         )
@@ -66,7 +65,7 @@ def staff_login(login_data: UserLogin, session: DatabaseSession):
     )
 
     # Calculate expires_in (seconds)
-    expires_in = int((access_expires - datetime.utcnow()).total_seconds())
+    expires_in = int((access_expires - datetime.now(UTC)).total_seconds())
 
     return LoginResponse(
         access_token=access_token,
@@ -119,7 +118,7 @@ def bo_login(login_data: UserLogin, session: DatabaseSession):
     )
 
     # Calculate expires_in (seconds)
-    expires_in = int((access_expires - datetime.utcnow()).total_seconds())
+    expires_in = int((access_expires - datetime.now(UTC)).total_seconds())
 
     return LoginResponse(
         access_token=access_token,
@@ -178,7 +177,7 @@ def refresh_staff_token(refresh_data: RefreshTokenRequest, session: DatabaseSess
         },
     )
 
-    expires_in = int((access_expires - datetime.utcnow()).total_seconds())
+    expires_in = int((access_expires - datetime.now(UTC)).total_seconds())
 
     return RefreshTokenResponse(
         access_token=access_token,
@@ -219,7 +218,7 @@ def refresh_bo_token(refresh_data: RefreshTokenRequest, session: DatabaseSession
         identity=str(user.id), additional_claims={"user_type": "bo", "email": user.email}
     )
 
-    expires_in = int((access_expires - datetime.utcnow()).total_seconds())
+    expires_in = int((access_expires - datetime.now(UTC)).total_seconds())
 
     return RefreshTokenResponse(
         access_token=access_token,

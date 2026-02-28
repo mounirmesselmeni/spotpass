@@ -1,6 +1,6 @@
 """Reservation SQLModel models"""
 
-from datetime import date, datetime, time
+from datetime import UTC, date, datetime, time
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -42,7 +42,7 @@ class Reservation(SQLModel, table=True):
     duration_minutes: int | None = Field(
         default=120, ge=30, le=360
     )  # 30min to 6 hours, default 2 hours
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     accepted_at: datetime | None = None
     refused_at: datetime | None = None
     canceled_at: datetime | None = None

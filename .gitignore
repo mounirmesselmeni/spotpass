@@ -96,3 +96,5 @@ temp/
 
 # CI/CD
 bandit-report.json
+frontend/vite.config.d.ts
+frontend/vite.config.js
