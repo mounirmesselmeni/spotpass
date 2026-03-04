@@ -1,7 +1,7 @@
 """Reservation management routes"""
 
 import uuid as uuid_lib
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException, status
 from sqlmodel import select
@@ -37,6 +37,21 @@ from tables.models import Table as TableModel
 staff_reservations_router = APIRouter(
     prefix="/api/staff/reservations", tags=["Staff - Reservations"]
 )
+
+
+def _get_establishment_or_404(session, establishment_id: int) -> Establishment:
+    """Fetch an Establishment by its integer PK, raising 404 if not found."""
+    establishment = session.get(Establishment, establishment_id)
+    if not establishment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Establishment not found")
+    return establishment
+
+
+def _reservation_to_read(reservation: Reservation, establishment: Establishment) -> ReservationRead:
+    """Convert a Reservation ORM model to a ReservationRead schema."""
+    return ReservationRead.model_validate(
+        reservation, context={"establishment_uuid": establishment.uuid}
+    )
 
 
 @staff_reservations_router.get("/", response_model=PaginatedReservationResponse)
@@ -236,7 +251,8 @@ def get_reservation(
     if not reservation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reservation not found")
 
-    return ReservationRead.model_validate(reservation)
+    establishment = _get_establishment_or_404(session, reservation.establishment_id)
+    return _reservation_to_read(reservation, establishment)
 
 
 @staff_reservations_router.get(
@@ -394,7 +410,7 @@ def create_reservation(
                 )
 
     # Generate reference
-    reference = f"REF{datetime.utcnow().timestamp():.0f}"
+    reference = f"REF{datetime.now(UTC).timestamp():.0f}"
 
     # Create reservation
     reservation = Reservation(
@@ -415,7 +431,7 @@ def create_reservation(
     session.commit()
     session.refresh(reservation)
 
-    return ReservationRead.model_validate(reservation)
+    return _reservation_to_read(reservation, establishment)
 
 
 @staff_reservations_router.patch("/{reservation_id}", response_model=ReservationRead)
@@ -444,11 +460,11 @@ def update_reservation(
     if "status" in update_data:
         new_status = update_data["status"]
         if new_status == ReservationStatus.ACCEPTED:
-            reservation.accepted_at = datetime.utcnow()
+            reservation.accepted_at = datetime.now(UTC)
         elif new_status == ReservationStatus.REFUSED:
-            reservation.refused_at = datetime.utcnow()
+            reservation.refused_at = datetime.now(UTC)
         elif new_status == ReservationStatus.CANCELED:
-            reservation.canceled_at = datetime.utcnow()
+            reservation.canceled_at = datetime.now(UTC)
 
     # Handle table_id conversion and availability validation
     if "table_id" in update_data and update_data["table_id"]:
@@ -522,7 +538,8 @@ def update_reservation(
     session.commit()
     session.refresh(reservation)
 
-    return ReservationRead.model_validate(reservation)
+    establishment = _get_establishment_or_404(session, reservation.establishment_id)
+    return _reservation_to_read(reservation, establishment)
 
 
 # Client-facing reservation routes (no auth required)
@@ -549,12 +566,12 @@ def get_new_reservation_token(request_data: NewReservationTokenRequest, session:
     # Create using access token function but we'll handle validation differently
     from core.security import jwt, settings
 
-    expire = datetime.utcnow() + expires
+    expire = datetime.now(UTC) + expires
 
     to_encode = {
         "sub": str(establishment.uuid),
         "exp": expire,
-        "iat": datetime.utcnow(),
+        "iat": datetime.now(UTC),
         "type": "reservation",  # Custom type for reservation tokens
         "establishment_id": str(establishment.uuid),
     }
@@ -609,7 +626,7 @@ def create_reservation_for_new_client(
     session.flush()
 
     # Generate reference
-    reference = f"REF{datetime.utcnow().timestamp():.0f}"
+    reference = f"REF{datetime.now(UTC).timestamp():.0f}"
 
     # Create reservation
     reservation = Reservation(
@@ -629,7 +646,7 @@ def create_reservation_for_new_client(
     session.commit()
     session.refresh(reservation)
 
-    return ReservationRead.model_validate(reservation)
+    return _reservation_to_read(reservation, establishment)
 
 
 @client_reservations_router.post("/reservation-for-existing-client", response_model=ReservationRead)
@@ -673,7 +690,7 @@ def create_reservation_for_existing_client(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
 
     # Generate reference
-    reference = f"REF{datetime.utcnow().timestamp():.0f}"
+    reference = f"REF{datetime.now(UTC).timestamp():.0f}"
 
     # Create reservation
     reservation = Reservation(
@@ -693,7 +710,7 @@ def create_reservation_for_existing_client(
     session.commit()
     session.refresh(reservation)
 
-    return ReservationRead.model_validate(reservation)
+    return _reservation_to_read(reservation, establishment)
 
 
 @client_reservations_router.post("/cancel-reservation", response_model=MessageResponse)
@@ -724,7 +741,7 @@ def cancel_reservation(request_data: CancelReservationRequest, session: Database
 
     # Cancel reservation
     reservation.status = ReservationStatus.CANCELED
-    reservation.canceled_at = datetime.utcnow()
+    reservation.canceled_at = datetime.now(UTC)
 
     session.add(reservation)
     session.commit()

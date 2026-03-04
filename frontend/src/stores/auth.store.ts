@@ -91,97 +91,40 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Initialize auth check on app startup
-const initializeAuth = async () => {
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
+/**
+ * Attempt to refresh the access token using the stored refresh token.
+ * Logs the user out if the refresh fails.
+ */
+async function tryRefreshToken(): Promise<void> {
   const authStore = useAuthStore.getState();
-  if (authStore.isAuthenticated && authStore.refreshToken) {
-    // Check if token is expired
-    if (authStore.isTokenExpired()) {
-      console.log('Access token expired on app startup, attempting refresh...');
+  if (!authStore.isAuthenticated || !authStore.refreshToken) return;
+  if (!authStore.isTokenExpired()) return;
 
-      try {
-        // Determine which refresh endpoint to use based on user type
-        const userType = authStore.user?.user_type || 'staff';
-        const refreshEndpoint =
-          userType === 'bo' ? '/api/bo/auth/refresh' : '/api/staff/auth/refresh';
+  const userType = authStore.user?.user_type || 'staff';
+  const refreshEndpoint = userType === 'bo' ? '/api/bo/auth/refresh' : '/api/staff/auth/refresh';
 
-        // Try to refresh the token
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${refreshEndpoint}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              refresh_token: authStore.refreshToken,
-            }),
-          }
-        );
+  try {
+    const response = await fetch(`${BASE_URL}${refreshEndpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: authStore.refreshToken }),
+    });
 
-        if (response.ok) {
-          const data = await response.json();
-          // Update the store with new tokens
-          authStore.updateAccessToken(data.access_token, data.expires_at);
-          console.log('Token refreshed successfully on app startup');
-        } else {
-          // Refresh failed, logout
-          console.log('Token refresh failed on app startup, logging out');
-          authStore.logout();
-        }
-      } catch (error) {
-        // Network error or other issue, logout
-        console.log('Token refresh error on app startup, logging out:', error);
-        authStore.logout();
-      }
+    if (response.ok) {
+      const data = await response.json();
+      authStore.updateAccessToken(data.access_token, data.expires_at);
+    } else {
+      authStore.logout();
     }
+  } catch {
+    authStore.logout();
   }
-};
+}
 
-// Call initialization
-initializeAuth().catch(console.error);
+// Initialize auth check on app startup
+tryRefreshToken().catch(() => useAuthStore.getState().logout());
 
 // Set up periodic token expiration check (every 5 minutes)
-setInterval(
-  async () => {
-    const authStore = useAuthStore.getState();
-    if (authStore.isAuthenticated && authStore.refreshToken) {
-      if (authStore.isTokenExpired()) {
-        console.log('Access token expired during periodic check, attempting refresh...');
-
-        try {
-          // Determine which refresh endpoint to use based on user type
-          const userType = authStore.user?.user_type || 'staff';
-          const refreshEndpoint =
-            userType === 'bo' ? '/api/bo/auth/refresh' : '/api/staff/auth/refresh';
-
-          const response = await fetch(
-            `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${refreshEndpoint}`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                refresh_token: authStore.refreshToken,
-              }),
-            }
-          );
-
-          if (response.ok) {
-            const data = await response.json();
-            authStore.updateAccessToken(data.access_token, data.expires_at);
-            console.log('Token refreshed successfully during periodic check');
-          } else {
-            console.log('Token refresh failed during periodic check, logging out');
-            authStore.logout();
-          }
-        } catch (error) {
-          console.log('Token refresh error during periodic check, logging out:', error);
-          authStore.logout();
-        }
-      }
-    }
-  },
-  5 * 60 * 1000
-); // Check every 5 minutes
+setInterval(tryRefreshToken, 5 * 60 * 1000);

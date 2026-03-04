@@ -3,6 +3,7 @@ SpotPass Backend - FastAPI Application
 Main application entry point
 """
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -31,19 +32,21 @@ from users.routes import (
     staff_auth_router,
 )
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
-    print("Creating database tables...")
+    logger.info("Creating database tables...")
     create_db_and_tables()
-    print("Database tables created successfully")
+    logger.info("Database tables created successfully")
 
     yield
 
     # Shutdown
-    print("Shutting down...")
+    logger.info("Shutting down...")
 
 
 # Create FastAPI application
