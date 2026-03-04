@@ -10,6 +10,7 @@ import {
   IconLayoutGrid,
   IconLogout,
   IconTable,
+  IconUser,
   IconUsers,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -109,6 +110,13 @@ export function DashboardLayout() {
                     {user?.email || ''}
                   </Text>
                 </Menu.Label>
+                <Menu.Divider />
+                <Menu.Item
+                  leftSection={<IconUser size={16} />}
+                  onClick={() => navigate('/profile')}
+                >
+                  {t('profile.title', 'My Profile')}
+                </Menu.Item>
                 <Menu.Divider />
                 <Menu.Label>{t('language.switch')}</Menu.Label>
                 <Menu.Item

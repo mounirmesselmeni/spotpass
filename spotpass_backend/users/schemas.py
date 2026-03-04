@@ -180,6 +180,37 @@ class RefreshTokenResponse(BaseModel):
     expires_at: datetime
 
 
+class ProfileUpdate(BaseModel):
+    """Schema for updating user profile"""
+
+    first_name: str | None = Field(None, min_length=2, max_length=64)
+    last_name: str | None = Field(None, min_length=2, max_length=64)
+    email: EmailStr | None = None
+
+
+class PasswordChange(BaseModel):
+    """Schema for changing password"""
+
+    current_password: str = Field(min_length=1, max_length=72)
+    new_password: str = Field(
+        min_length=8,
+        max_length=72,
+        description="Password (min 8 chars, must include uppercase, lowercase, and number)",
+    )
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password_strength(cls, v):
+        """Validate password strength requirements"""
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not any(c.islower() for c in v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain at least one number")
+        return v
+
+
 class DashboardStats(BaseModel):
     """Dashboard statistics schema"""
 
