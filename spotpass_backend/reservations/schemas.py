@@ -125,7 +125,9 @@ class ReservationRead(ReservationBase):
                 "establishment_id": establishment_uuid,
             }
             return cls.model_construct(**data)
-        return super().model_validate(obj, strict=strict, from_attributes=from_attributes, context=context)
+        return super().model_validate(
+            obj, strict=strict, from_attributes=from_attributes, context=context
+        )
 
 
 # Client-facing schemas for reservation flow
