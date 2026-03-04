@@ -9,13 +9,13 @@ class Settings(BaseSettings):
     """Application settings with environment variable support"""
 
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="allow"
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
     )
 
     # Application
     app_name: str = "SpotPass Backend"
     app_env: Literal["dev", "prod"] = "dev"
-    debug: bool = True
+    debug: bool = False
 
     # Database
     database_url: str = "sqlite:///./serveme.db"

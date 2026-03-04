@@ -214,7 +214,7 @@ class TableAvailabilityService:
         # Get all tables that match capacity and are enabled
         statement = select(Table).where(
             Table.establishment_id == establishment_id,
-            Table.is_on_service == True,  # noqa: E712
+            Table.is_on_service.is_(True),
             Table.min_capacity <= number_of_guests,
             Table.max_capacity >= number_of_guests,
         )

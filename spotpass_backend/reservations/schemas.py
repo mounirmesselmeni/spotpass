@@ -1,7 +1,6 @@
 """Reservation Pydantic schemas"""
 
 from datetime import date, datetime, time
-from datetime import date as date_type
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -25,7 +24,7 @@ class ReservationBase(BaseModel):
     @classmethod
     def validate_future_date(cls, v):
         """Ensure reservation date is not in the past"""
-        if v < date_type.today():
+        if v < date.today():
             raise ValueError("Reservation date must be today or in the future")
         return v
 
@@ -98,13 +97,16 @@ class ReservationRead(ReservationBase):
     model_config = {"from_attributes": True}
 
     @classmethod
-    def model_validate(cls, obj, *args, **kwargs):
-        """Custom validation to map uuid to id"""
+    def model_validate(cls, obj, *, strict=None, from_attributes=None, context=None):
+        """Custom validation to map ORM model fields to schema fields"""
         if hasattr(obj, "uuid") and hasattr(obj, "reference"):
             # This is a Reservation model instance
-            # Note: establishment_id will be set externally after fetching establishment
-            import uuid as uuid_lib
-
+            # establishment_uuid must be passed via context to map the FK integer to a UUID
+            establishment_uuid = (context or {}).get("establishment_uuid")
+            if establishment_uuid is None:
+                raise ValueError(
+                    "establishment_uuid must be provided in context when validating a Reservation instance"
+                )
             data = {
                 "id": obj.uuid,
                 "reference": obj.reference,
@@ -120,10 +122,12 @@ class ReservationRead(ReservationBase):
                 "accepted_at": obj.accepted_at,
                 "refused_at": obj.refused_at,
                 "canceled_at": obj.canceled_at,
-                "establishment_id": uuid_lib.uuid4(),  # Will be overridden
+                "establishment_id": establishment_uuid,
             }
             return cls.model_construct(**data)
-        return super().model_validate(obj, *args, **kwargs)
+        return super().model_validate(
+            obj, strict=strict, from_attributes=from_attributes, context=context
+        )
 
 
 # Client-facing schemas for reservation flow

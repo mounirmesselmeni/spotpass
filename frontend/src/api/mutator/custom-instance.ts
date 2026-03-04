@@ -43,7 +43,6 @@ axios.interceptors.response.use(
 
       // If we have too many consecutive 401s, logout immediately
       if (consecutive401Count >= MAX_CONSECUTIVE_401) {
-        console.log('Too many consecutive 401 errors, logging out');
         const { logout } = useAuthStore.getState();
         logout();
         window.location.href = '/login';
@@ -60,7 +59,6 @@ axios.interceptors.response.use(
 
         // Check if token is already expired locally
         if (isTokenExpired()) {
-          console.log('Token expired locally, logging out');
           logout();
           window.location.href = '/login';
           return Promise.reject(error);
@@ -95,14 +93,12 @@ axios.interceptors.response.use(
             return axios(originalRequest);
           } catch (refreshError) {
             // Refresh failed, logout and redirect to login
-            console.log('Token refresh failed, logging out');
             logout();
             window.location.href = '/login';
             return Promise.reject(refreshError);
           }
         } else {
           // No refresh token, logout and redirect to login
-          console.log('No refresh token available, logging out');
           logout();
           window.location.href = '/login';
         }
