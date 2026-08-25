@@ -2,6 +2,11 @@
 
 A modern, full-stack restaurant reservation and management system built with FastAPI and React.
 
+## Try it out
+https://spotpass.mounirmesselmeni.de/
+Login: manager@spotpass.com
+Password: manager123
+
 ## 🚀 Features
 
 ### Core Functionality
